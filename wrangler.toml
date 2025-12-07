@@ -1,0 +1,7 @@
+name = "dcvaas-frontend"
+main = "workers/api/src/index.ts"
+compatibility_date = "2025-12-07"
+
+[assets]
+directory = "./dist"
+

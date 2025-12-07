@@ -20,21 +20,11 @@ CREATE TABLE IF NOT EXISTS organization_members (
   FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
 );
 
--- Domains
-CREATE TABLE IF NOT EXISTS domains (
-  id TEXT PRIMARY KEY,
-  org_id TEXT NOT NULL,
-  domain_name TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('pending_cname', 'issuing', 'active', 'error')),
-  cname_target TEXT NOT NULL UNIQUE,
-  last_issued_at TEXT,
-  expires_at TEXT,
-  error_message TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
-  UNIQUE(org_id, domain_name)
-);
+-- Modify existing domains table or create migration
+ALTER TABLE domains ADD COLUMN cf_custom_hostname_id TEXT;
+ALTER TABLE domains ADD COLUMN cf_status TEXT; -- e.g., 'pending', 'active'
+ALTER TABLE domains ADD COLUMN cf_ssl_status TEXT; -- e.g., 'initializing', 'pending_validation', 'active'
+ALTER TABLE domains ADD COLUMN cf_verification_errors TEXT; -- Store JSON array of errors
 
 CREATE INDEX IF NOT EXISTS idx_domains_org ON domains(org_id);
 CREATE INDEX IF NOT EXISTS idx_domains_expires

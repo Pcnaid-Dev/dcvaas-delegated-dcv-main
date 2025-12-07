@@ -7,7 +7,11 @@ type DNSRecordDisplayProps = {
 };
 
 export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps) {
-  const instruction = `_acme-challenge.${domain} CNAME ${cnameTarget}`;
+  // Cloudflare typically requires CNAMEing the hostname to your SaaS fallback
+  const instruction = `${domain} CNAME ${cnameTarget}`;
+  
+  // OR if you are doing TXT verification (if they can't CNAME root)
+  // const instruction = `_cf-custom-hostname.${domain} TXT ${verificationValue}`;
 
   return (
     <Card className="p-4 bg-muted/50">
@@ -22,8 +26,7 @@ export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps)
           {instruction}
         </div>
         <div className="text-xs text-muted-foreground">
-          Add this CNAME record to your DNS provider. DNS propagation typically
-          takes 5-15 minutes.
+          Point your domain to our edge network. Cloudflare will automatically validate and issue your certificate.
         </div>
       </div>
     </Card>

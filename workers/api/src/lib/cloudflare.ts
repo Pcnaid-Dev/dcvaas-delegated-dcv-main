@@ -1,77 +1,76 @@
 import type { Env } from '../env';
 
-type CFResponse<T> = { success: boolean; errors: any[]; messages: any[]; result: T };
-
-export type CFCustomHostname = {
+// Types based on Cloudflare API response
+export interface CustomHostname {
   id: string;
   hostname: string;
-  status?: string;
-  verification_errors?: string[];
-  ownership_verification?: { type?: string; name?: string; value?: string };
-  ssl?: {
-    status?: string;
-    method?: string;
-    type?: string;
-    validation_records?: Array<{
-      txt_name?: string;
-      txt_value?: string;
-      http_url?: string;
-      http_body?: string;
-    }>;
+  status: string;
+  ssl: {
+    status: string;
+    method: string;
+    type: string;
+    validation_errors?: { message: string }[];
+    // Information needed for TXT verification if CNAME isn't used immediately
+    ownership_verification?: {
+        name: string;
+        value: string;
+        type: string; 
+    };
   };
-};
+}
 
-async function cfApi<T>(env: Env, method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
-    method,
+export async function createCustomHostname(env: Env, domain: string): Promise<CustomHostname> {
+  const url = `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames`;
+  
+  const body = {
+    hostname: domain,
+    ssl: {
+      method: 'http', // Use 'http' if they CNAME to you, or 'txt' for pre-validation
+      type: 'dv',
+      settings: {
+        min_tls_version: '1.2'
+      }
+    }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      'Content-Type': 'application/json'
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify(body)
   });
 
-  const data = (await res.json().catch(() => null)) as CFResponse<T> | null;
-
-  if (!res.ok || !data || data.success !== true) {
-    const msg =
-      data?.errors?.[0]?.message ||
-      data?.messages?.[0]?.message ||
-      `Cloudflare API error (${res.status})`;
-    throw new Error(msg);
+  const data: any = await response.json();
+  if (!data.success) {
+    throw new Error(data.errors[0]?.message || 'Failed to create custom hostname');
   }
-
   return data.result;
 }
 
-export async function getDcvDelegationUuid(env: Env): Promise<string> {
-  const result = await cfApi<{ uuid: string }>(
-    env,
-    'GET',
-    `/zones/${env.CLOUDFLARE_ZONE_ID}/dcv_delegation/uuid`,
-  );
-  return result.uuid;
-}
-
-export async function createCustomHostname(env: Env, hostname: string, metadata?: Record<string, any>) {
-  return cfApi<CFCustomHostname>(env, 'POST', `/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames`, {
-    hostname,
-    ssl: { method: 'txt', type: 'dv' },
-    custom_metadata: metadata || {},
+export async function getCustomHostname(env: Env, hostnameId: string): Promise<CustomHostname> {
+  const url = `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${hostnameId}`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
   });
+
+  const data: any = await response.json();
+  return data.result;
 }
 
-export async function getCustomHostname(env: Env, id: string) {
-  return cfApi<CFCustomHostname>(env, 'GET', `/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${id}`);
-}
-
-// PATCH with same SSL config can trigger DCV re-check 
-export async function recheckCustomHostname(env: Env, id: string) {
-  return cfApi<CFCustomHostname>(env, 'PATCH', `/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${id}`, {
-    ssl: { method: 'txt', type: 'dv' },
+export async function deleteCustomHostname(env: Env, hostnameId: string): Promise<void> {
+  const url = `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${hostnameId}`;
+  
+  await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
   });
-}
-
-export async function deleteCustomHostname(env: Env, id: string) {
-  return cfApi<{ id: string }>(env, 'DELETE', `/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${id}`);
 }
