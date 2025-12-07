@@ -24,13 +24,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshOrganizations = async () => {
     if (!user) return;
-    const orgs = await getUserOrganizations(user.id);
-    setOrganizations(orgs);
+    const orgs = await getUserOrganizations();
+    const completeOrgs: Organization[] = orgs.map(org => ({
+      ...org,
+      ownerId: org.ownerId || user.id,
+      subscriptionTier: org.subscriptionTier || 'free',
+      createdAt: org.createdAt || new Date().toISOString(),
+    }));
+    setOrganizations(completeOrgs);
     
-    if (!currentOrg && orgs.length > 0) {
-      setCurrentOrg(orgs[0]);
+    if (!currentOrg && completeOrgs.length > 0) {
+      setCurrentOrg(completeOrgs[0]);
     } else if (currentOrg) {
-      const updated = orgs.find(o => o.id === currentOrg.id);
+      const updated = completeOrgs.find(o => o.id === currentOrg.id);
       if (updated) {
         setCurrentOrg(updated);
       }
@@ -40,28 +46,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function initAuth() {
       try {
-        const sparkUser = await spark.user();
+        let sparkUser;
         
-        let existingUser = await getUser(sparkUser.id);
+        // CHECK IF SPARK EXISTS (Localhost fallback)
+        if (typeof window.spark !== 'undefined') {
+            sparkUser = await window.spark.user();
+        } else {
+            console.log("Running locally (No Spark), using mock user.");
+            sparkUser = {
+                id: "dev-user-1",
+                email: "dev@local",
+                login: "DevUser",
+                avatarUrl: "",
+                isOwner: true
+            };
+        }
         
+        let existingUser = await getUser();
+        
+        let completeUser: User;
         if (!existingUser) {
-          existingUser = {
+          completeUser = {
             id: sparkUser.id,
             email: sparkUser.email,
             login: sparkUser.login,
             avatarUrl: sparkUser.avatarUrl,
             createdAt: new Date().toISOString(),
           };
-          await setUser(existingUser);
+          await setUser(completeUser);
+        } else {
+          // Ensure existingUser has all required User properties
+          completeUser = {
+            id: existingUser.id,
+            email: existingUser.email,
+            login: existingUser.login || sparkUser.login,
+            avatarUrl: existingUser.avatarUrl || sparkUser.avatarUrl,
+            createdAt: existingUser.createdAt || new Date().toISOString(),
+          };
+          await setUser(completeUser);
         }
         
-        setUserState(existingUser);
+        setUserState(completeUser);
         
-        const orgs = await getUserOrganizations(existingUser.id);
-        setOrganizations(orgs);
+        const orgs = await getUserOrganizations();
+        const completeOrgs: Organization[] = orgs.map(org => ({
+          ...org,
+          ownerId: org.ownerId || completeUser.id,
+          subscriptionTier: org.subscriptionTier || 'free',
+          createdAt: org.createdAt || new Date().toISOString(),
+        }));
+        setOrganizations(completeOrgs);
         
-        if (orgs.length > 0) {
-          setCurrentOrg(orgs[0]);
+        if (completeOrgs.length > 0) {
+          setCurrentOrg(completeOrgs[0]);
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);

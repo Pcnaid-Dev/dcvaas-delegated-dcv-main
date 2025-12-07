@@ -84,6 +84,8 @@ const DEFAULT_USER: User = {
   id: 'user_1',
   email: 'admin@pcnaid.com',
   name: 'Admin',
+  login: 'Admin',
+  avatarUrl: '',
 };
 
 const DEFAULT_ORG: Organization = {
