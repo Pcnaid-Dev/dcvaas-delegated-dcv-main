@@ -30,20 +30,6 @@ CREATE INDEX IF NOT EXISTS idx_domains_org ON domains(org_id);
 CREATE INDEX IF NOT EXISTS idx_domains_expires
   ON domains(expires_at) WHERE status = 'active';
 
--- Jobs
-CREATE TABLE IF NOT EXISTS jobs (
-  id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK(type IN ('dns_check', 'start_issuance', 'renewal')),
-  domain_id TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('queued', 'running', 'succeeded', 'failed')),
-  attempts INTEGER NOT NULL DEFAULT 0,
-  last_error TEXT,
-  result TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
-);
-
 CREATE INDEX IF NOT EXISTS idx_jobs_domain ON jobs(domain_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, created_at);
 

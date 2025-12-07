@@ -41,7 +41,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     }
   };
 
-  const handleCheckDNS = async () => {
+  const handleSyncStatus = async () => {
     if (!domain || !user || !currentOrg) return;
 
     setIsChecking(true);
@@ -257,7 +257,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   cnameTarget={domain.cnameTarget}
                 />
                 <Button
-                  onClick={handleCheckDNS}
+                  onClick={handleSyncStatus}
                   disabled={isChecking}
                   className="w-full"
                 >
@@ -274,15 +274,6 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                 <p className="text-muted-foreground">
                   DNS verification successful. Ready to issue certificate.
                 </p>
-                {!txtChallenge && (
-                  <Button
-                    onClick={handleStartIssuance}
-                    disabled={isIssuing}
-                    className="w-full"
-                  >
-                    {isIssuing ? 'Starting...' : 'Start Issuance'}
-                  </Button>
-                )}
                 {txtChallenge && (
                   <div className="space-y-4">
                     <div className="bg-muted p-4 rounded">
@@ -297,10 +288,6 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       In production, this value is automatically published to our DNS zone.
                       For demo, click below to simulate CA verification.
                     </p>
-                    <Button onClick={handleSimulateVerify} className="w-full">
-                      <CheckCircle size={20} weight="fill" className="mr-2" />
-                      Simulate CA Verify
-                    </Button>
                   </div>
                 )}
               </Card>
@@ -341,7 +328,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                 <p className="text-sm text-muted-foreground">
                   {domain.errorMessage}
                 </p>
-                <Button onClick={handleCheckDNS} variant="outline" className="mt-4">
+                <Button onClick={handleSyncStatus} variant="outline" className="mt-4">
                   Retry DNS Check
                 </Button>
               </Card>
