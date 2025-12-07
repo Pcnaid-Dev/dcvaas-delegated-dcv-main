@@ -1,0 +1,26 @@
+name = "dcvaas-api"
+main = "src/index.ts"
+compatibility_date = "2025-12-03"
+
+# Route just the API + health on your custom domain
+routes = [
+  { pattern = "dcv.pcnaid.com/api/*", zone_name = "pcnaid.com" },
+  { pattern = "dcv.pcnaid.com/health", zone_name = "pcnaid.com" }
+]
+
+[vars]
+# Your Cloudflare zone (pcnaid.com) zone id
+CLOUDFLARE_ZONE_ID = "82684ace8215d30a8156c5a8dc5edb1a"
+
+# The CNAME target you want customers to point their hostnames at
+SAAS_CNAME_TARGET = "dcv.pcnaid.com"
+
+# Comma-separated list for CORS
+CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dcvaas-db"
+database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
+# strongly recommended for preview/dev:
+# preview_database_id = "REPLACE_ME_D1_PREVIEW_DATABASE_ID"

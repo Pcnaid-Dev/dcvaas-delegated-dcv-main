@@ -1,0 +1,15 @@
+name = "dcvaas-cron"
+main = "src/index.ts"
+compatibility_date = "2024-05-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dcvaas-db"
+database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
+
+[[queues.producers]]
+binding = "QUEUE"
+queue = "dcvaas-jobs"
+
+[triggers]
+crons = ["0 0 * * *"]  # daily at midnight UTC
