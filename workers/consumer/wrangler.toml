@@ -1,0 +1,16 @@
+name = "dcvaas-consumer"
+main = "src/index.ts"
+compatibility_date = "2025-12-03"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dcvaas-db"
+database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
+
+[[queues.consumers]]
+queue = "dcvaas-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[vars]
+CLOUDFLARE_ZONE_ID = "82684ace8215d30a8156c5a8dc5edb1a"

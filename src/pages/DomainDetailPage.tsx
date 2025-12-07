@@ -7,8 +7,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ArrowsClockwise, CheckCircle } from '@phosphor-icons/react';
-import { getDomain, setDomain, getJobs, setJob, addAuditLog } from '@/lib/data';
-import { checkCNAME, generateTXTChallengeValue } from '@/lib/dns';
+import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
+import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
 import type { Domain, Job } from '@/types';
 import { toast } from 'sonner';
@@ -24,8 +24,6 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
   const [domain, setDomainState] = useState<Domain | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isChecking, setIsChecking] = useState(false);
-  const [isIssuing, setIsIssuing] = useState(false);
-  const [txtChallenge, setTxtChallenge] = useState<string>('');
 
   useEffect(() => {
     loadDomain();
@@ -41,7 +39,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     }
   };
 
-  const handleSyncStatus = async () => {
+  const handleCheckDNS = async () => {
     if (!domain || !user || !currentOrg) return;
 
     setIsChecking(true);
@@ -62,14 +60,6 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
       await setJob(job);
 
       if (result.success) {
-        const updatedDomain = {
-          ...domain,
-          status: 'issuing' as const,
-          updatedAt: new Date().toISOString(),
-        };
-        await setDomain(updatedDomain);
-        setDomainState(updatedDomain);
-
         await addAuditLog({
           id: await generateId(),
           orgId: currentOrg.id,
@@ -81,7 +71,9 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
           createdAt: new Date().toISOString(),
         });
 
-        toast.success('DNS verified successfully! Ready to issue certificate.');
+        // Trigger sync with Cloudflare
+        await syncDomain(domain.id);
+        toast.success('DNS verified! Cloudflare is now validating.');
       } else {
         toast.error(result.error || 'DNS verification failed');
       }
@@ -94,111 +86,17 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     }
   };
 
-  const handleStartIssuance = async () => {
-    if (!domain || !user || !currentOrg) return;
-
-    setIsIssuing(true);
+  const handleRefreshStatus = async () => {
+    if (!domain) return;
+    setIsChecking(true);
     try {
-      const challenge = generateTXTChallengeValue();
-      setTxtChallenge(challenge);
-
-      const job: Job = {
-        id: await generateId(),
-        type: 'start_issuance',
-        domainId: domain.id,
-        status: 'running',
-        attempts: 1,
-        result: { txtChallenge: challenge },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await setJob(job);
-
-      await addAuditLog({
-        id: await generateId(),
-        orgId: currentOrg.id,
-        userId: user.id,
-        action: 'domain.issuance_started',
-        entityType: 'domain',
-        entityId: domain.id,
-        details: { jobId: job.id },
-        createdAt: new Date().toISOString(),
-      });
-
-      toast.success('Issuance started! TXT challenge generated.');
+      await syncDomain(domain.id);
+      toast.success('Status refreshed from Cloudflare');
       await loadDomain();
     } catch (error) {
-      toast.error('Failed to start issuance');
+      toast.error('Failed to refresh status');
     } finally {
-      setIsIssuing(false);
-    }
-  };
-
-  const handleSimulateVerify = async () => {
-    if (!domain || !user || !currentOrg) return;
-
-    try {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 90);
-
-      const updatedDomain: Domain = {
-        ...domain,
-        status: 'active',
-        lastIssuedAt: new Date().toISOString(),
-        expiresAt: expiresAt.toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await setDomain(updatedDomain);
-      setDomainState(updatedDomain);
-
-      await addAuditLog({
-        id: await generateId(),
-        orgId: currentOrg.id,
-        userId: user.id,
-        action: 'domain.certificate_issued',
-        entityType: 'domain',
-        entityId: domain.id,
-        details: { expiresAt: expiresAt.toISOString() },
-        createdAt: new Date().toISOString(),
-      });
-
-      toast.success('Certificate issued successfully!');
-      await loadDomain();
-    } catch (error) {
-      toast.error('Failed to issue certificate');
-    }
-  };
-
-  const handleRenew = async () => {
-    if (!domain || !user || !currentOrg) return;
-
-    try {
-      const job: Job = {
-        id: await generateId(),
-        type: 'renewal',
-        domainId: domain.id,
-        status: 'queued',
-        attempts: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await setJob(job);
-
-      await addAuditLog({
-        id: await generateId(),
-        orgId: currentOrg.id,
-        userId: user.id,
-        action: 'domain.renewal_queued',
-        entityType: 'domain',
-        entityId: domain.id,
-        details: { jobId: job.id },
-        createdAt: new Date().toISOString(),
-      });
-
-      toast.success('Renewal job queued');
-      await loadDomain();
-    } catch (error) {
-      toast.error('Failed to queue renewal');
+      setIsChecking(false);
     }
   };
 
@@ -257,7 +155,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   cnameTarget={domain.cnameTarget}
                 />
                 <Button
-                  onClick={handleSyncStatus}
+                  onClick={handleCheckDNS}
                   disabled={isChecking}
                   className="w-full"
                 >
@@ -266,30 +164,22 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
               </Card>
             )}
 
-            {domain.status === 'issuing' && (
-              <Card className="p-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Step 2: Start Certificate Issuance
-                </h3>
-                <p className="text-muted-foreground">
-                  DNS verification successful. Ready to issue certificate.
-                </p>
-                {txtChallenge && (
-                  <div className="space-y-4">
-                    <div className="bg-muted p-4 rounded">
-                      <p className="text-sm font-medium text-foreground mb-2">
-                        TXT Challenge Value (Production):
-                      </p>
-                      <code className="text-xs font-mono break-all">
-                        {txtChallenge}
-                      </code>
-                    </div>
+            {(domain.status === 'issuing' || domain.status === 'pending_validation') && (
+              <Card className="p-6 border-blue-200 bg-blue-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Verification in Progress</h3>
                     <p className="text-sm text-muted-foreground">
-                      In production, this value is automatically published to our DNS zone.
-                      For demo, click below to simulate CA verification.
+                      Cloudflare is validating your DNS configuration. This process is automatic.
                     </p>
                   </div>
-                )}
+                </div>
+                <div className="mt-4">
+                    <Button onClick={handleRefreshStatus} variant="outline" size="sm" disabled={isChecking}>
+                        {isChecking ? 'Refreshing...' : 'Refresh Status'}
+                    </Button>
+                </div>
               </Card>
             )}
 
@@ -303,32 +193,32 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   <div>
                     <p className="text-sm text-muted-foreground">Issued</p>
                     <p className="font-medium text-foreground">
-                      {domain.lastIssuedAt && format(new Date(domain.lastIssuedAt), 'PPP')}
+                      {domain.updatedAt && format(new Date(domain.updatedAt), 'PPP')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Expires</p>
+                    <p className="text-sm text-muted-foreground">Status</p>
                     <p className="font-medium text-foreground">
-                      {domain.expiresAt && format(new Date(domain.expiresAt), 'PPP')}
+                      Active (Auto-Renewing)
                     </p>
                   </div>
                 </div>
-                <Button onClick={handleRenew} variant="outline" className="w-full">
+                <Button onClick={handleRefreshStatus} variant="outline" className="w-full" disabled={isChecking}>
                   <ArrowsClockwise size={20} weight="bold" className="mr-2" />
-                  Renew Now
+                  Refresh Status
                 </Button>
               </Card>
             )}
 
-            {domain.status === 'error' && domain.errorMessage && (
+            {domain.status === 'error' && (
               <Card className="p-6 border-destructive">
                 <h3 className="text-lg font-semibold text-destructive mb-2">
                   Error
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {domain.errorMessage}
+                  {domain.cfVerificationErrors ? JSON.stringify(domain.cfVerificationErrors) : (domain.errorMessage || 'Unknown error')}
                 </p>
-                <Button onClick={handleSyncStatus} variant="outline" className="mt-4">
+                <Button onClick={handleCheckDNS} variant="outline" className="mt-4">
                   Retry DNS Check
                 </Button>
               </Card>

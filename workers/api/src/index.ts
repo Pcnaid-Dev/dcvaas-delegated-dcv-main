@@ -49,16 +49,6 @@ export default {
         }
       }
 
-      // POST /api/domains/:id/verify  (sync status)
-      {
-        const m = url.pathname.match(/^\/api\/domains\/([^/]+)\/verify$/);
-        if (m && method === 'POST') {
-          const domainId = decodeURIComponent(m[1]);
-          const domain = await forceRecheck(env, auth.orgId, domainId);
-          if (!domain) return withCors(req, env, notFound());
-          return withCors(req, env, json({ domain }));
-        }
-      }
 
       // POST /api/domains/:id/sync (no recheck, just refresh)
       {

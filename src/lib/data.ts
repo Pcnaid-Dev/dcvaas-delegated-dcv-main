@@ -234,9 +234,16 @@ export async function createDomain(domainName: string): Promise<Domain> {
 export const addDomain = createDomain;
 
 export async function verifyDomain(domainId: string): Promise<void> {
-  await api(`/api/domains/${encodeURIComponent(domainId)}/verify`, {
+  await api(`/api/domains/${encodeURIComponent(domainId)}/sync`, {
     method: 'POST',
   });
+}
+
+export async function syncDomain(domainId: string): Promise<Domain> {
+  const res = await api<{ domain: Domain }>(`/api/domains/${encodeURIComponent(domainId)}/sync`, {
+    method: 'POST',
+  });
+  return res.domain;
 }
 
 export async function getDomainsExpiringBefore(isoDate: string): Promise<Domain[]> {
