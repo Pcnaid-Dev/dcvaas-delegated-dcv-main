@@ -1,4 +1,6 @@
 -- Organizations
+-- Note: This schema is designed for Cloudflare D1 (SQLite)
+-- For SQL Server compatibility, replace IF NOT EXISTS checks with conditional logic
 CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,

@@ -28,7 +28,7 @@ export async function listDomains(env: Env, orgId: string) {
   // Helper to show the target they need to CNAME to
   const cnameTarget = env.SAAS_CNAME_TARGET; 
 
-  return results.map((d) => ({
+return results.map((d: DomainRow) => ({
     id: d.id,
     orgId: d.org_id,
     domainName: d.domain_name,

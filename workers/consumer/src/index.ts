@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import type { JobMessage } from './lib/types';
 import { handleSyncStatus } from './handlers/sync-status';
+import { MessageBatch } from '@cloudflare/workers-types';
 
 export default {
   async queue(batch: MessageBatch<JobMessage>, env: Env): Promise<void> {

@@ -30,14 +30,22 @@ export type Membership = {
   createdAt: string;
 };
 
-export type DomainStatus = 'pending_cname' | 'issuing' | 'active' | 'error';
+export type DomainStatus = 'pending_cname' | 'issuing' | 'pending_validation' | 'active' | 'error';
 
+// 2. Update the Domain interface
 export type Domain = {
   id: string;
   orgId: string;
   domainName: string;
   status: DomainStatus;
   cnameTarget: string;
+  
+  // Add these missing Cloudflare fields:
+  cfCustomHostnameId?: string;
+  cfStatus?: string;
+  cfSslStatus?: string;
+  cfVerificationErrors?: any[]; // Using any[] to safely handle the JSON array
+  
   lastIssuedAt?: string;
   expiresAt?: string;
   errorMessage?: string;
