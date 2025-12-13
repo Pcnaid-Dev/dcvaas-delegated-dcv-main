@@ -2,19 +2,21 @@ name = "dcvaas-api"
 main = "src/index.ts"
 compatibility_date = "2025-12-03"
 
-# Route just the API + health on your custom domain
-routes = [
-  { pattern = "dcv.pcnaid.com/api/*", zone_name = "pcnaid.com" },
-  { pattern = "dcv.pcnaid.com/health", zone_name = "pcnaid.com" }
-]
+[[routes]]
+pattern = "dcv.pcnaid.com/api/*"
+zone_name = "pcnaid.com"
+
+[[routes]]
+pattern = "dcv.pcnaid.com/health"
+zone_name = "pcnaid.com"
 
 [vars]
 # Your SaaS Fallback origin (e.g., proxy.dcvaas.com)
 SAAS_CNAME_TARGET = "dcv.pcnaid.com"
-CLOUDFLARE_ZONE_ID = "82684ace8215d30a8156c5a8dc5edb1a"
+CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
 
 # Comma-separated list for CORS
-CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com"
+CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com,https://cert.pcnaid.com"
 
 [[d1_databases]]
 binding = "DB"

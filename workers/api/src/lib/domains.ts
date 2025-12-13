@@ -123,6 +123,13 @@ export async function syncDomain(env: Env, orgId: string, domainId: string) {
   // Get latest status from Cloudflare
   const cf = await getCustomHostname(env, domain.cfCustomHostnameId);
   
+  // --- ADD THIS LOGGING ---
+  console.log(`[Sync] Domain: ${domain.domainName}`);
+  console.log(`[Sync] Cloudflare Status: ${cf.status}`);
+  console.log(`[Sync] SSL Status: ${cf.ssl?.status}`);
+  console.log(`[Sync] Full CF Response:`, JSON.stringify(cf));
+  // ------------------------
+  
   let internalStatus = 'pending_cname';
   if (cf.status === 'active') internalStatus = 'active';
   else if (cf.ssl.status === 'validation_failed') internalStatus = 'error';

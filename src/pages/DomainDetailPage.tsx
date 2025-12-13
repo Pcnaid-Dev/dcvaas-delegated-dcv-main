@@ -44,43 +44,20 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
 
     setIsChecking(true);
     try {
-      const result = await checkCNAME(domain.domainName, domain.cnameTarget);
-
-      const job: Job = {
-        id: await generateId(),
-        type: 'dns_check',
-        domainId: domain.id,
-        status: result.success ? 'succeeded' : 'failed',
-        attempts: 1,
-        lastError: result.error,
-        result,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await setJob(job);
-
-      if (result.success) {
-        await addAuditLog({
-          id: await generateId(),
-          orgId: currentOrg.id,
-          userId: user.id,
-          action: 'domain.dns_verified',
-          entityType: 'domain',
-          entityId: domain.id,
-          details: { result },
-          createdAt: new Date().toISOString(),
-        });
-
-        // Trigger sync with Cloudflare
-        await syncDomain(domain.id);
-        toast.success('DNS verified! Cloudflare is now validating.');
-      } else {
-        toast.error(result.error || 'DNS verification failed');
-      }
-
+      // 1. Client-side check (optional, but good for immediate feedback)
+      // We can skip this if we trust Cloudflare, but let's keep it light.
+      // Actually, let's just ask Cloudflare directly.
+      
+      // 2. Call the Sync endpoint on the API
+      await syncDomain(domain.id);
+      
+      toast.success('Synced status with Cloudflare');
+      
+      // 3. Reload local state
       await loadDomain();
     } catch (error) {
-      toast.error('Failed to check DNS');
+      toast.error('Failed to sync status');
+      console.error(error);
     } finally {
       setIsChecking(false);
     }

@@ -12,6 +12,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@auth0/auth0-react": "^2.10.0",
         "@github/spark": "^0.39.0",
         "@heroicons/react": "^2.2.0",
         "@hookform/resolvers": "^4.1.3",

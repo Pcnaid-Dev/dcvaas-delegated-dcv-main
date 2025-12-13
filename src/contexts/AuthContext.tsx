@@ -1,7 +1,9 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { User, Organization, Membership } from '@/types';
-import { getUser, setUser, getUserOrganizations } from '@/lib/data';
-import { generateId } from '@/lib/crypto';
+// src/contexts/AuthContext.tsx
+import { createContext, useContext, ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import type { User, Organization } from '@/types';
+import { getUserOrganizations } from '@/lib/data';
+import { useState, useEffect, useMemo } from 'react';
 
 type AuthContextType = {
   user: User | null;
@@ -10,111 +12,65 @@ type AuthContextType = {
   setCurrentOrg: (org: Organization | null) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signOut: () => void;
+  loginWithRedirect: () => Promise<void>;
+  logout: () => void; // Changed signature to match usage
+  getAccessToken: () => Promise<string>;
   refreshOrganizations: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(null);
+  const {
+    user: auth0User,
+    isLoading,
+    isAuthenticated,
+    loginWithRedirect,
+    logout: auth0Logout,
+    getAccessTokenSilently,
+  } = useAuth0();
+
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Map Auth0 user to your app's User type
+  const user: User | null = useMemo(() => {
+    return isAuthenticated && auth0User ? {
+      id: auth0User.sub!,
+      email: auth0User.email!,
+      login: auth0User.nickname || auth0User.name || 'User',
+      avatarUrl: auth0User.picture || '',
+      createdAt: new Date().toISOString(),
+    } : null;
+  }, [isAuthenticated, auth0User]); // Dependencies
+  
+  // Load organizations when user is authenticated
+  useEffect(() => {
+    async function loadOrgs() {
+      if (user) {
+        // For now, we still use the stub/local logic for orgs until the API is fully migrated
+        const orgs = await getUserOrganizations(); 
+        setOrganizations(orgs);
+        if (orgs.length > 0 && !currentOrg) {
+          setCurrentOrg(orgs[0]);
+        }
+      }
+    }
+    loadOrgs();
+  }, [user?.id]);
+
+  const handleLogout = () => {
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  };
+
+  const getAccessToken = async () => {
+    return await getAccessTokenSilently();
+  };
 
   const refreshOrganizations = async () => {
-    if (!user) return;
-    const orgs = await getUserOrganizations();
-    const completeOrgs: Organization[] = orgs.map(org => ({
-      ...org,
-      ownerId: org.ownerId || user.id,
-      subscriptionTier: org.subscriptionTier || 'free',
-      createdAt: org.createdAt || new Date().toISOString(),
-    }));
-    setOrganizations(completeOrgs);
-    
-    if (!currentOrg && completeOrgs.length > 0) {
-      setCurrentOrg(completeOrgs[0]);
-    } else if (currentOrg) {
-      const updated = completeOrgs.find(o => o.id === currentOrg.id);
-      if (updated) {
-        setCurrentOrg(updated);
-      }
-    }
-  };
-
-  useEffect(() => {
-    async function initAuth() {
-      try {
-        let sparkUser;
-        
-        // CHECK IF SPARK EXISTS (Localhost fallback)
-        if (typeof window.spark !== 'undefined') {
-            sparkUser = await window.spark.user();
-        } else {
-            console.log("Running locally (No Spark), using mock user.");
-            sparkUser = {
-                id: "dev-user-1",
-                email: "dev@local",
-                login: "DevUser",
-                avatarUrl: "",
-                isOwner: true
-            };
-        }
-        
-        let existingUser = await getUser();
-        
-        let completeUser: User;
-        if (!existingUser) {
-          completeUser = {
-            id: sparkUser.id,
-            email: sparkUser.email,
-            login: sparkUser.login,
-            avatarUrl: sparkUser.avatarUrl,
-            createdAt: new Date().toISOString(),
-          };
-          await setUser(completeUser);
-        } else {
-          // Ensure existingUser has all required User properties
-          completeUser = {
-            id: existingUser.id,
-            email: existingUser.email,
-            login: existingUser.login || sparkUser.login,
-            avatarUrl: existingUser.avatarUrl || sparkUser.avatarUrl,
-            createdAt: existingUser.createdAt || new Date().toISOString(),
-          };
-          await setUser(completeUser);
-        }
-        
-        setUserState(completeUser);
-        
-        const orgs = await getUserOrganizations();
-        const completeOrgs: Organization[] = orgs.map(org => ({
-          ...org,
-          ownerId: org.ownerId || completeUser.id,
-          subscriptionTier: org.subscriptionTier || 'free',
-          createdAt: org.createdAt || new Date().toISOString(),
-        }));
-        setOrganizations(completeOrgs);
-        
-        if (completeOrgs.length > 0) {
-          setCurrentOrg(completeOrgs[0]);
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    initAuth();
-  }, []);
-
-  const signOut = () => {
-    setUserState(null);
-    setOrganizations([]);
-    setCurrentOrg(null);
-  };
+     const orgs = await getUserOrganizations();
+     setOrganizations(orgs);
+  }
 
   return (
     <AuthContext.Provider
@@ -124,9 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentOrg,
         setCurrentOrg,
         isLoading,
-        isAuthenticated: !!user,
-        signOut,
-        refreshOrganizations,
+        isAuthenticated,
+        loginWithRedirect,
+        logout: handleLogout,
+        getAccessToken,
+        refreshOrganizations
       }}
     >
       {children}

@@ -13,4 +13,4 @@ max_batch_size = 10
 max_batch_timeout = 5
 
 [vars]
-CLOUDFLARE_ZONE_ID = "82684ace8215d30a8156c5a8dc5edb1a"
+CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"

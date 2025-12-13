@@ -1,5 +1,8 @@
+// src/pages/LandingPage.tsx
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
+import { useAuth0 } from '@auth0/auth0-react'; // <--- Ensure this is imported
 import {
   Certificate,
   Shield,
@@ -13,7 +16,16 @@ type LandingPageProps = {
 };
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
-  return (
+  const { loginWithRedirect, isAuthenticated } = useAuth0(); // <--- USE THE HOOK
+
+  // If already logged in, go to dashboard
+  if (isAuthenticated) {
+     onNavigate('dashboard');
+     return null;
+  }
+
+
+    return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -23,27 +35,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               <span className="text-xl font-bold text-foreground">DCVaaS</span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => onNavigate('home')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => onNavigate('pricing')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Pricing
-              </button>
-              <button
-                onClick={() => onNavigate('docs')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Docs
-              </button>
+              <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
+              <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
+              <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
             </nav>
-            <Button onClick={() => onNavigate('dashboard')}>
-              Sign In with GitHub
+            {/* Login Button */}
+            <Button onClick={() => loginWithRedirect()}>
+              Log In
             </Button>
           </div>
         </div>
@@ -62,14 +60,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               for the era of 47-day certificates.
             </p>
             <div className="flex items-center justify-center gap-4">
-              <Button size="lg" onClick={() => onNavigate('dashboard')}>
+              {/* Sign Up Button */}
+              <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
                 Get Started Free
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => onNavigate('docs')}
-              >
+              <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
                 Read Documentation
               </Button>
             </div>

@@ -3,6 +3,8 @@
 // - Domains & jobs: talk to the Cloudflare Worker API.
 // - Users/orgs/tokens/audit: localStorage stubs for now so the UI never crashes.
 
+import type { Organization, User, Domain, Job, AuditLog, APIToken } from '@/types'; 
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://dcv.pcnaid.com').replace(/\/+$/, '');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
@@ -68,14 +70,6 @@ export type User = {
   [key: string]: any;
 };
 
-export type Organization = {
-  id: string;
-  name: string;
-  slug?: string | null;
-  plan?: string | null;
-  [key: string]: any;
-};
-
 export type Membership = any;
 
 // ===== Default objects so the UI never crashes =====
@@ -91,8 +85,9 @@ const DEFAULT_USER: User = {
 const DEFAULT_ORG: Organization = {
   id: 'org_1',
   name: 'Pcnaid Default Org',
-  slug: 'pcnaid',
-  plan: 'dev',
+  ownerId: 'user_1',       // <--- Added this
+  subscriptionTier: 'free', // <--- Added this (was 'plan')
+  createdAt: new Date().toISOString(), // <--- Added this
 };
 
 // ===== LocalStorage keys =====
@@ -242,6 +237,7 @@ export async function verifyDomain(domainId: string): Promise<void> {
 }
 
 export async function syncDomain(domainId: string): Promise<Domain> {
+  // Use the sync endpoint we created in the API
   const res = await api<{ domain: Domain }>(`/api/domains/${encodeURIComponent(domainId)}/sync`, {
     method: 'POST',
   });
