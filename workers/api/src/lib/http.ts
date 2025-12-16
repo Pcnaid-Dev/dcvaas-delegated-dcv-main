@@ -16,15 +16,18 @@ export function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   });
 }
 
-// Simple hash function for ETag generation
+// Better hash function for ETag generation using FNV-1a algorithm
+// This provides much better distribution and lower collision rate than simple hash
 function hashString(str: string): string {
-  let hash = 0;
+  let hash = 2166136261; // FNV offset basis
+  
   for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash ^= str.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
   }
-  return Math.abs(hash).toString(36);
+  
+  // Convert to unsigned 32-bit integer and then to base36 for compact representation
+  return (hash >>> 0).toString(36);
 }
 
 export function withCors(req: Request, env: Env, res: Response): Response {

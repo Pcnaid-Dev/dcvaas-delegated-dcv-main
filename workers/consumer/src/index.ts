@@ -26,7 +26,18 @@ export default {
       }
     });
 
-    // Wait for all messages to be processed
-    await Promise.allSettled(promises);
+    // Wait for all messages to be processed and log any failures
+    const results = await Promise.allSettled(promises);
+    
+    // Check for any failures and log them
+    const failures = results.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.error(`Batch processing completed with ${failures.length} failures out of ${results.length} messages`);
+      failures.forEach((failure, idx) => {
+        if (failure.status === 'rejected') {
+          console.error(`Message ${idx} failed:`, failure.reason);
+        }
+      });
+    }
   },
 };
