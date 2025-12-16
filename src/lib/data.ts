@@ -3,7 +3,25 @@
 // - Domains & jobs: talk to the Cloudflare Worker API.
 // - Users/orgs/tokens/audit: localStorage stubs for now so the UI never crashes.
 
-import type { Organization, User, Domain, Job, AuditLog, APIToken } from '@/types'; 
+import type { Organization, User, Domain, Job, AuditLog, APIToken, Membership } from '@/types'; 
+
+// Define default user for fallback/mocking
+const DEFAULT_USER: User = {
+  id: 'user_1',
+  email: 'admin@pcnaid.com',
+  login: 'Admin',
+  avatarUrl: '',
+  createdAt: new Date().toISOString(),
+};
+
+// Define default organization for fallback/mocking
+const DEFAULT_ORG: Organization = {
+  id: 'org_1',
+  name: 'Pcnaid Default Org',
+  ownerId: 'user_1',
+  subscriptionTier: 'agency',
+  createdAt: new Date().toISOString(),
+};
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://dcv.pcnaid.com').replace(/\/+$/, '');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
@@ -58,37 +76,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // ===== Very loose types =====
 
-export type Domain = any;
-export type Job = any;
-export type AuditLog = any;
-export type APIToken = any;
 
-export type User = {
-  id: string;
-  email: string;
-  name?: string | null;
-  [key: string]: any;
-};
-
-export type Membership = any;
-
-// ===== Default objects so the UI never crashes =====
-
-const DEFAULT_USER: User = {
-  id: 'user_1',
-  email: 'admin@pcnaid.com',
-  name: 'Admin',
-  login: 'Admin',
-  avatarUrl: '',
-};
-
-const DEFAULT_ORG: Organization = {
-  id: 'org_1',
-  name: 'Pcnaid Default Org',
-  ownerId: 'user_1',       // <--- Added this
-  subscriptionTier: 'free', // <--- Added this (was 'plan')
-  createdAt: new Date().toISOString(), // <--- Added this
-};
 
 // ===== LocalStorage keys =====
 

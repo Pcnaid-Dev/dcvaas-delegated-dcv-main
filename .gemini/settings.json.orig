@@ -1,0 +1,6 @@
+{
+  "showLineNumbers": true,
+  "tools": {
+    "useRipgrep": true
+  }
+}
