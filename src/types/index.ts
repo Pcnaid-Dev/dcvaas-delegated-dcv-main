@@ -24,10 +24,14 @@ export type Organization = {
 export type MemberRole = 'owner' | 'admin' | 'member';
 
 export type Membership = {
+  id: string;
   userId: string;
   orgId: string;
+  email: string;
   role: MemberRole;
+  status: 'active' | 'invited' | 'suspended';
   createdAt: string;
+  updatedAt: string;
 };
 
 export type DomainStatus = 'pending_cname' | 'issuing' | 'pending_validation' | 'active' | 'error';

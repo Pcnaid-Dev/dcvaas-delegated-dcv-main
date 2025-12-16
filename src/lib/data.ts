@@ -318,3 +318,37 @@ export async function addAuditLog(entry: AuditLog): Promise<void> {
   });
   localStorage.setItem(LOCAL_AUDIT_KEY, JSON.stringify(list));
 }
+
+// ===== TEAM MEMBERS (real API) =====
+
+export async function getOrgMembers(orgId: string): Promise<Membership[]> {
+  try {
+    const res = await api<{ members: Membership[] }>(`/api/orgs/${encodeURIComponent(orgId)}/members`);
+    return res?.members ?? [];
+  } catch (err) {
+    console.warn('getOrgMembers failed', err);
+    return [];
+  }
+}
+
+export async function inviteOrgMember(orgId: string, email: string, role: 'owner' | 'admin' | 'member' = 'member'): Promise<Membership> {
+  const res = await api<{ member: Membership }>(`/api/orgs/${encodeURIComponent(orgId)}/members/invite`, {
+    method: 'POST',
+    body: JSON.stringify({ email, role }),
+  });
+  return res.member;
+}
+
+export async function removeOrgMember(orgId: string, userId: string): Promise<void> {
+  await api(`/api/orgs/${encodeURIComponent(orgId)}/members/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function updateOrgMemberRole(orgId: string, userId: string, role: 'owner' | 'admin' | 'member'): Promise<Membership> {
+  const res = await api<{ member: Membership }>(`/api/orgs/${encodeURIComponent(orgId)}/members/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+  return res.member;
+}
