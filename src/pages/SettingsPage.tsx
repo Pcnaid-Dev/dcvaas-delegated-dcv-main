@@ -88,6 +88,24 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
 
   const handleSaveBranding = async () => {
     if (!currentOrg) return;
+    
+    // Validate hex color format
+    const hexColorRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    if (brandColor && !hexColorRegex.test(brandColor)) {
+      toast.error('Invalid color format. Please use hex format (e.g., #2563eb)');
+      return;
+    }
+    
+    // Validate URL format
+    if (logoUrl.trim()) {
+      try {
+        new URL(logoUrl.trim());
+      } catch {
+        toast.error('Invalid logo URL. Please enter a valid URL');
+        return;
+      }
+    }
+    
     try {
       const updated: Organization = {
         ...currentOrg,
