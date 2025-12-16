@@ -1,13 +1,30 @@
 import type { Env } from '../env';
 
 export function json(data: unknown, status = 200, headers: HeadersInit = {}) {
-  return new Response(JSON.stringify(data), {
+  const body = JSON.stringify(data);
+  
+  return new Response(body, {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      // Add ETag for caching
+      'ETag': `"${hashString(body)}"`,
+      // Add cache control for GET requests (can be overridden by caller)
+      'Cache-Control': status === 200 ? 'public, max-age=10, stale-while-revalidate=30' : 'no-cache',
       ...headers,
     },
   });
+}
+
+// Simple hash function for ETag generation
+function hashString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 export function withCors(req: Request, env: Env, res: Response): Response {

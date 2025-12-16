@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,17 +14,14 @@ type AuditLogsPageProps = {
 
 export function AuditLogsPage({ onNavigate }: AuditLogsPageProps) {
   const { currentOrg } = useAuth();
-  const [logs, setLogs] = useState<AuditLog[]>([]);
 
-  useEffect(() => {
-    loadLogs();
-  }, [currentOrg]);
-
-  const loadLogs = async () => {
-    if (!currentOrg) return;
-    const orgLogs = await getOrgAuditLogs(currentOrg.id);
-    setLogs(orgLogs);
-  };
+  // Fetch audit logs with React Query
+  const { data: logs = [] } = useQuery({
+    queryKey: ['auditLogs', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgAuditLogs(currentOrg.id) : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 30000, // 30 seconds - audit logs don't change frequently
+  });
 
   if (!currentOrg) return null;
 

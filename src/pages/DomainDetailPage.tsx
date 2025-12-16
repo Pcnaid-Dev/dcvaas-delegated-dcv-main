@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
@@ -21,60 +22,45 @@ type DomainDetailPageProps = {
 
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
-  const [domain, setDomainState] = useState<Domain | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isChecking, setIsChecking] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadDomain();
-  }, [domainId]);
+  // Fetch domain with React Query
+  const { data: domain, isLoading: isDomainLoading } = useQuery({
+    queryKey: ['domain', domainId],
+    queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
+    enabled: !!domainId,
+    staleTime: 5000,
+  });
 
-  const loadDomain = async () => {
-    if (!domainId) return;
-    const d = await getDomain(domainId);
-    if (d) {
-      setDomainState(d);
-      const domainJobs = await getJobs(d.id);
-      setJobs(domainJobs);
-    }
-  };
+  // Fetch jobs for this domain
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs', domainId],
+    queryFn: () => domainId ? getJobs(domainId) : Promise.resolve([]),
+    enabled: !!domainId,
+    staleTime: 5000,
+  });
+
+  // Mutation for syncing domain
+  const syncMutation = useMutation({
+    mutationFn: (domainId: string) => syncDomain(domainId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domain', domainId] });
+      queryClient.invalidateQueries({ queryKey: ['domains'] });
+      toast.success('Status refreshed from Cloudflare');
+    },
+    onError: () => {
+      toast.error('Failed to refresh status');
+    },
+  });
 
   const handleCheckDNS = async () => {
     if (!domain || !user || !currentOrg) return;
-
-    setIsChecking(true);
-    try {
-      // 1. Client-side check (optional, but good for immediate feedback)
-      // We can skip this if we trust Cloudflare, but let's keep it light.
-      // Actually, let's just ask Cloudflare directly.
-      
-      // 2. Call the Sync endpoint on the API
-      await syncDomain(domain.id);
-      
-      toast.success('Synced status with Cloudflare');
-      
-      // 3. Reload local state
-      await loadDomain();
-    } catch (error) {
-      toast.error('Failed to sync status');
-      console.error(error);
-    } finally {
-      setIsChecking(false);
-    }
+    syncMutation.mutate(domain.id);
   };
 
   const handleRefreshStatus = async () => {
     if (!domain) return;
-    setIsChecking(true);
-    try {
-      await syncDomain(domain.id);
-      toast.success('Status refreshed from Cloudflare');
-      await loadDomain();
-    } catch (error) {
-      toast.error('Failed to refresh status');
-    } finally {
-      setIsChecking(false);
-    }
+    syncMutation.mutate(domain.id);
   };
 
   if (!domain) {
@@ -133,10 +119,10 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                 />
                 <Button
                   onClick={handleCheckDNS}
-                  disabled={isChecking}
+                  disabled={syncMutation.isPending}
                   className="w-full"
                 >
-                  {isChecking ? 'Checking DNS...' : 'Check DNS Now'}
+                  {syncMutation.isPending ? 'Checking DNS...' : 'Check DNS Now'}
                 </Button>
               </Card>
             )}
@@ -153,8 +139,8 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   </div>
                 </div>
                 <div className="mt-4">
-                    <Button onClick={handleRefreshStatus} variant="outline" size="sm" disabled={isChecking}>
-                        {isChecking ? 'Refreshing...' : 'Refresh Status'}
+                    <Button onClick={handleRefreshStatus} variant="outline" size="sm" disabled={syncMutation.isPending}>
+                        {syncMutation.isPending ? 'Refreshing...' : 'Refresh Status'}
                     </Button>
                 </div>
               </Card>
@@ -180,7 +166,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                     </p>
                   </div>
                 </div>
-                <Button onClick={handleRefreshStatus} variant="outline" className="w-full" disabled={isChecking}>
+                <Button onClick={handleRefreshStatus} variant="outline" className="w-full" disabled={syncMutation.isPending}>
                   <ArrowsClockwise size={20} weight="bold" className="mr-2" />
                   Refresh Status
                 </Button>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
 import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -13,27 +14,39 @@ type JobsPageProps = {
 
 export function JobsPage({ onNavigate }: JobsPageProps) {
   const { currentOrg } = useAuth();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [domains, setDomains] = useState<Domain[]>([]);
 
-  useEffect(() => {
-    loadData();
-  }, [currentOrg]);
+  // Fetch jobs with React Query
+  const { data: allJobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: getAllJobs,
+    staleTime: 10000,
+  });
 
-  const loadData = async () => {
-    if (!currentOrg) return;
-    const allJobs = await getAllJobs();
-    const orgDomains = await getOrgDomains(currentOrg.id);
-    const orgDomainIds = new Set(orgDomains.map(d => d.id));
-    const orgJobs = allJobs.filter(j => orgDomainIds.has(j.domainId));
-    setJobs(orgJobs.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ));
-    setDomains(orgDomains);
-  };
+  // Fetch domains with React Query
+  const { data: domains = [] } = useQuery({
+    queryKey: ['domains', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgDomains(currentOrg.id) : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 10000,
+  });
+
+  // Memoize domain ID set and filtered/sorted jobs
+  const { orgDomainIds, jobs } = useMemo(() => {
+    const orgDomainIds = new Set(domains.map(d => d.id));
+    const orgJobs = allJobs
+      .filter(j => orgDomainIds.has(j.domainId))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return { orgDomainIds, jobs: orgJobs };
+  }, [allJobs, domains]);
+
+  // Memoize domain lookup map for O(1) access
+  const domainMap = useMemo(() => {
+    return new Map(domains.map(d => [d.id, d.domainName]));
+  }, [domains]);
 
   const getDomainName = (domainId: string) => {
-    return domains.find(d => d.id === domainId)?.domainName || 'Unknown';
+    return domainMap.get(domainId) || 'Unknown';
   };
 
   return (

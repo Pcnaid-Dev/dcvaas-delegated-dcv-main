@@ -41,7 +41,16 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
         const domains = await listDomains(env, auth.orgId);
-        return withCors(req, env, json({ domains }));
+        const response = json({ domains });
+        
+        // Check If-None-Match header for ETag support
+        const ifNoneMatch = req.headers.get('If-None-Match');
+        const etag = response.headers.get('ETag');
+        if (ifNoneMatch && etag && ifNoneMatch === etag) {
+          return withCors(req, env, new Response(null, { status: 304, headers: { 'ETag': etag } }));
+        }
+        
+        return withCors(req, env, response);
       }
 
       // POST /api/domains

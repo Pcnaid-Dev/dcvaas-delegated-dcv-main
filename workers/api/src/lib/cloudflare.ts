@@ -33,7 +33,7 @@ export async function createCustomHostname(env: Env, domain: string): Promise<Cu
     }
   };
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
@@ -49,10 +49,38 @@ export async function createCustomHostname(env: Env, domain: string): Promise<Cu
   return data.result;
 }
 
+// Helper function for retry with exponential backoff
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // If rate limited, wait and retry
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get('Retry-After') || '5', 10);
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Failed to fetch after retries');
+}
+
 export async function getCustomHostname(env: Env, hostnameId: string): Promise<CustomHostname> {
   const url = `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${hostnameId}`;
   
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       'Content-Type': 'application/json'

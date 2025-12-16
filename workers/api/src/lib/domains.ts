@@ -19,10 +19,10 @@ export type DomainRow = {
 
 // --- READ Functions ---
 
-export async function listDomains(env: Env, orgId: string) {
+export async function listDomains(env: Env, orgId: string, limit = 100, offset = 0) {
   const { results } = await env.DB
-    .prepare(`SELECT * FROM domains WHERE org_id = ? ORDER BY created_at DESC`)
-    .bind(orgId)
+    .prepare(`SELECT * FROM domains WHERE org_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    .bind(orgId, limit, offset)
     .all<DomainRow>();
 
   // Helper to show the target they need to CNAME to
