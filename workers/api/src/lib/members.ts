@@ -61,8 +61,8 @@ export async function inviteMember(
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   
-  // Use email as temporary user_id until they accept the invite
-  const tempUserId = `pending_${email}`;
+  // Use UUID-based temporary user_id for pending invitations
+  const tempUserId = `pending_${crypto.randomUUID()}`;
 
   // Check if already invited or active
   const existing = await env.DB
@@ -111,18 +111,29 @@ export async function acceptInvitation(env: Env, userId: string, email: string):
 }
 
 /**
- * Remove a member from an organization
+ * Get count of active owners in an organization
  */
-export async function removeMember(env: Env, orgId: string, userId: string): Promise<void> {
-  // Don't allow removing the last owner
-  const ownerCount = await env.DB
+async function getActiveOwnerCount(env: Env, orgId: string): Promise<number> {
+  const result = await env.DB
     .prepare(`SELECT COUNT(*) as count FROM organization_members WHERE org_id = ? AND role = 'owner' AND status = 'active'`)
     .bind(orgId)
     .first<{ count: number }>();
+  
+  return result?.count ?? 0;
+}
 
+/**
+ * Remove a member from an organization
+ */
+export async function removeMember(env: Env, orgId: string, userId: string): Promise<void> {
   const member = await getMember(env, orgId, userId);
-  if (member?.role === 'owner' && ownerCount && ownerCount.count <= 1) {
-    throw new Error('Cannot remove the last owner');
+  
+  // Don't allow removing the last owner
+  if (member?.role === 'owner') {
+    const ownerCount = await getActiveOwnerCount(env, orgId);
+    if (ownerCount <= 1) {
+      throw new Error('Cannot remove the last owner');
+    }
   }
 
   await env.DB
@@ -144,12 +155,8 @@ export async function updateMemberRole(
   if (newRole !== 'owner') {
     const member = await getMember(env, orgId, userId);
     if (member?.role === 'owner') {
-      const ownerCount = await env.DB
-        .prepare(`SELECT COUNT(*) as count FROM organization_members WHERE org_id = ? AND role = 'owner' AND status = 'active'`)
-        .bind(orgId)
-        .first<{ count: number }>();
-      
-      if (ownerCount && ownerCount.count <= 1) {
+      const ownerCount = await getActiveOwnerCount(env, orgId);
+      if (ownerCount <= 1) {
         throw new Error('Cannot change role of the last owner');
       }
     }

@@ -137,7 +137,7 @@ export default {
           if (orgId !== auth.orgId) return withCors(req, env, forbidden());
           
           // Only owners can change roles
-          if (auth.role !== 'owner') {
+          if (!auth.role || auth.role !== 'owner') {
             return withCors(req, env, forbidden('Only owners can change member roles'));
           }
 
