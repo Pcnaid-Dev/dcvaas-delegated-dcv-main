@@ -66,7 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function loadRole() {
       if (user && currentOrg) {
         try {
-          const members = await import('@/lib/data').then(m => m.getOrgMembers(currentOrg.id));
+          const { getOrgMembers } = await import('@/lib/data');
+          const members = await getOrgMembers(currentOrg.id);
           const member = members.find(m => m.userId === user.id || m.email === user.email);
           setUserRole(member?.role || null);
         } catch (err) {
