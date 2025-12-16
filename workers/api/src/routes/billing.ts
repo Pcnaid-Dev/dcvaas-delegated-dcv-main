@@ -110,10 +110,23 @@ export async function handleStripeWebhook(
         });
       }
 
-      // Determine the subscription tier based on the price
-      // In production, you'd look up the price ID to determine the tier
-      // For now, we'll use metadata or default to 'pro'
-      const tier = session.metadata?.tier || 'pro';
+      // Determine the subscription tier based on the price ID or metadata
+      let tier: 'free' | 'pro' | 'agency' = 'pro'; // default
+      
+      // First check metadata for explicit tier
+      if (session.metadata?.tier && ['free', 'pro', 'agency'].includes(session.metadata.tier)) {
+        tier = session.metadata.tier as 'free' | 'pro' | 'agency';
+      } else if (session.mode === 'subscription' && session.subscription) {
+        // Try to map price ID to tier
+        // Note: In production, retrieve the subscription and check line items
+        // For now, we'll use a simple price ID mapping
+        const priceId = session.line_items?.data?.[0]?.price?.id;
+        if (priceId?.includes('agency')) {
+          tier = 'agency';
+        } else if (priceId?.includes('pro')) {
+          tier = 'pro';
+        }
+      }
 
       // Update the organization's subscription tier in the database
       try {
