@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -99,8 +100,10 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
-      <Toaster />
+      <ThemeProvider>
+        <AppContent />
+        <Toaster />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
