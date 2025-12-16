@@ -16,14 +16,17 @@ export function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   });
 }
 
-// Better hash function for ETag generation using FNV-1a algorithm
-// This provides much better distribution and lower collision rate than simple hash
+// FNV-1a hash function for ETag generation
+// This provides good distribution and low collision rate for cache keys
 function hashString(str: string): string {
-  let hash = 2166136261; // FNV offset basis
+  const FNV_OFFSET_BASIS = 2166136261;
+  const FNV_PRIME = 16777619;
+  
+  let hash = FNV_OFFSET_BASIS;
   
   for (let i = 0; i < str.length; i++) {
     hash ^= str.charCodeAt(i);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    hash = Math.imul(hash, FNV_PRIME); // Use Math.imul for proper 32-bit multiplication
   }
   
   // Convert to unsigned 32-bit integer and then to base36 for compact representation

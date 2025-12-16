@@ -34,9 +34,7 @@ export default {
     if (failures.length > 0) {
       console.error(`Batch processing completed with ${failures.length} failures out of ${results.length} messages`);
       failures.forEach((failure, idx) => {
-        if (failure.status === 'rejected') {
-          console.error(`Message ${idx} failed:`, failure.reason);
-        }
+        console.error(`Message ${idx} failed:`, failure.reason);
       });
     }
   },

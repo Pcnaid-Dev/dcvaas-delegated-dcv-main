@@ -51,6 +51,7 @@ export async function createCustomHostname(env: Env, domain: string): Promise<Cu
 
 // Helper function for retry with exponential backoff
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  const MAX_DELAY = 30000; // Cap at 30 seconds
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -68,8 +69,9 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
     } catch (error) {
       lastError = error as Error;
       if (attempt < maxRetries - 1) {
-        // Exponential backoff: 1s, 2s, 4s
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        // Exponential backoff with cap: 1s, 2s, 4s (max 30s)
+        const delay = Math.min(Math.pow(2, attempt) * 1000, MAX_DELAY);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }

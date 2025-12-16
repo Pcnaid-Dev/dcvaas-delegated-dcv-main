@@ -63,6 +63,19 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     syncMutation.mutate(domain.id);
   };
 
+  // Show loading state while fetching domain
+  if (isDomainLoading) {
+    return (
+      <AppShell onNavigate={onNavigate}>
+        <div className="text-center py-16">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading domain...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Show error state if domain not found
   if (!domain) {
     return (
       <AppShell onNavigate={onNavigate}>
