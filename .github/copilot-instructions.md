@@ -17,9 +17,9 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
 ## Key Patterns & Conventions
 - **"Buy" Strategy**: Do NOT implement custom ACME clients or key generation. Use `workers/api/src/lib/cloudflare.ts` to interact with Cloudflare's Custom Hostname API.
 - **Status Sync Loop**:
-  1. User adds domain -> API creates in CF (status: `pending`).
-  2. Cron finds pending domains -> Pushes to Queue.
-  3. Consumer checks CF API -> Updates D1 status (`active`, `moved`, `error`).
+  1. User adds domain -> API creates in CF (initial status: `pending_cname`).
+  2. Cron finds non-active domains -> Pushes to Queue.
+  3. Consumer checks CF API -> Updates D1 status (`active`, `issuing`, `error`, etc.).
 - **Frontend Data**: Always use `src/lib/data.ts` for data fetching. Do not fetch directly in components unless necessary.
 - **Routing**: API routes are defined in `workers/api/src/index.ts`.
 
@@ -145,8 +145,8 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
 
 This is the core async processing pattern in DCVaaS:
 
-1. **User adds domain** → API Worker creates Custom Hostname in Cloudflare → Saves `cf_custom_hostname_id` to D1 with status `pending`
-2. **Cron Worker** (every 5 min) → Queries D1 for domains where `status IN ('pending_cname', 'issuing')` → Sends job to Queue
+1. **User adds domain** → API Worker creates Custom Hostname in Cloudflare → Saves `cf_custom_hostname_id` to D1 with status `pending_cname`
+2. **Cron Worker** (every 5 min) → Queries D1 for domains where `status != 'active'` → Sends job to Queue
 3. **Consumer Worker** → Receives job → Calls Cloudflare API → Maps CF status to internal status → Updates D1
 4. **Frontend** → Polls or user clicks "Refresh" → Sees updated status
 
