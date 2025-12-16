@@ -24,4 +24,5 @@ export interface Env {
   ENCRYPTION_KEY: string;
   SECONDARY_CA: string;
   INTERNAL_ADMIN_TOKEN: string;
+  STRIPE_SECRET_KEY: string;
 }

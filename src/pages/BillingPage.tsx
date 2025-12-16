@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle } from '@phosphor-icons/react';
 import { PLAN_LIMITS } from '@/types';
+import { createStripeCheckoutSession } from '@/lib/data';
+import { useState } from 'react';
 
 type BillingPageProps = {
   onNavigate: (page: string) => void;
@@ -12,13 +14,27 @@ type BillingPageProps = {
 
 export function BillingPage({ onNavigate }: BillingPageProps) {
   const { currentOrg } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   if (!currentOrg) return null;
 
+  const handleUpgrade = async (tier: string) => {
+    setLoading(true);
+    try {
+      const priceId = tier === 'pro' ? 'price_pro_monthly' : 'price_agency_monthly';
+      const { url } = await createStripeCheckoutSession(priceId);
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to create checkout session:', error);
+      alert('Failed to start checkout. Please try again.');
+      setLoading(false);
+    }
+  };
+
   const plans = [
-    { tier: 'free', name: 'Free', price: '$0/mo' },
-    { tier: 'pro', name: 'Pro', price: '$29/mo' },
-    { tier: 'agency', name: 'Agency', price: '$99/mo' },
+    { tier: 'free', name: 'Free', price: '$0/mo', priceId: '' },
+    { tier: 'pro', name: 'Pro', price: '$29/mo', priceId: 'price_pro_monthly' },
+    { tier: 'agency', name: 'Agency', price: '$99/mo', priceId: 'price_agency_monthly' },
   ];
 
   return (
@@ -76,7 +92,38 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
             </div>
 
             <div className="pt-4 border-t border-border">
-              <Button variant="outline">Change Plan</Button>
+              {currentOrg.subscriptionTier === 'free' && (
+                <div className="space-x-2">
+                  <Button 
+                    variant="default" 
+                    onClick={() => handleUpgrade('pro')}
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Upgrade to Pro'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleUpgrade('agency')}
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Upgrade to Agency'}
+                  </Button>
+                </div>
+              )}
+              {currentOrg.subscriptionTier === 'pro' && (
+                <Button 
+                  variant="default" 
+                  onClick={() => handleUpgrade('agency')}
+                  disabled={loading}
+                >
+                  {loading ? 'Loading...' : 'Upgrade to Agency'}
+                </Button>
+              )}
+              {currentOrg.subscriptionTier === 'agency' && (
+                <Button variant="outline" disabled>
+                  Current Plan
+                </Button>
+              )}
             </div>
           </div>
         </Card>

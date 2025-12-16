@@ -3,6 +3,7 @@ import { authenticate, isOwnerOrAdmin, hasRole } from './middleware/auth';
 import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidden } from './lib/http';
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
+import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -21,8 +22,21 @@ export default {
         return withCors(req, env, notFound());
       }
 
-      const auth = await authenticate(req, env);
-      if (!auth) return withCors(req, env, unauthorized());
+      // Stripe webhook - no authentication required
+      if (method === 'POST' && url.pathname === '/api/webhooks/stripe') {
+        const response = await handleStripeWebhook(req, env);
+        return withCors(req, env, response);
+      }
+
+// 1. Ensure this auth check exists first
+const auth = await authenticate(req, env);
+if (!auth) return withCors(req, env, unauthorized());
+
+// 2. Add the Stripe route block here
+if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
+  const response = await createCheckoutSession(req, env, auth as any);
+  return withCors(req, env, response);
+}
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
