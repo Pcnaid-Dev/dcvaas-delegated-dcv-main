@@ -2,13 +2,17 @@ import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle } from '@phosphor-icons/react';
+import { CheckCircle, CreditCard } from '@phosphor-icons/react';
 import { PLAN_LIMITS } from '@/types';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/common';
+import { useQuery } from '@tanstack/react-query';
+import { getOrgDomains } from '@/lib/data';
 
 type BillingPageProps = {
   onNavigate: (page: string) => void;
@@ -18,7 +22,17 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
   const { currentOrg } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  // Fetch domains for usage stats
+  const { data: domains = [] } = useQuery({
+    queryKey: ['domains', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgDomains(currentOrg.id) : Promise.resolve([]),
+    enabled: !!currentOrg,
+  });
+
   if (!currentOrg) return null;
+
+  const currentLimit = PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains;
+  const usagePercentage = (domains.length / currentLimit) * 100;
 
   const handleUpgrade = async (tier: 'pro' | 'agency') => {
     setLoading(true);
@@ -49,32 +63,49 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
 
   return (
     <AppShell onNavigate={onNavigate} currentPage="billing">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Billing</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your subscription and payment details
-          </p>
+      <PageHeader
+        title="Billing"
+        description="Manage your subscription and payment details"
+      />
+
+      {/* Current Plan Card */}
+      <Card className="p-6 mb-6">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">
+              Current Plan
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              You are on the{' '}
+              <span className="font-semibold capitalize">
+                {currentOrg.subscriptionTier}
+              </span>{' '}
+              plan
+            </p>
+          </div>
+          <Badge
+            variant={currentOrg.subscriptionTier === 'free' ? 'outline' : 'default'}
+            className="text-lg px-4 py-2"
+          >
+            {plans.find(p => p.tier === currentOrg.subscriptionTier)?.name}
+          </Badge>
         </div>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Current Plan
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                You are on the{' '}
-                <span className="font-semibold capitalize">
-                  {currentOrg.subscriptionTier}
-                </span>{' '}
-                plan
-              </p>
-            </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">
-              {plans.find(p => p.tier === currentOrg.subscriptionTier)?.name}
-            </Badge>
+        {/* Usage Progress */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">Domain Usage</span>
+            <span className="text-sm text-muted-foreground">
+              {domains.length} / {currentLimit} domains
+            </span>
           </div>
+          <Progress value={usagePercentage} className="h-2" />
+          {usagePercentage >= 80 && (
+            <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+              You're approaching your domain limit. Consider upgrading your plan.
+            </p>
+          )}
+        </div>
 
           <div className="space-y-4">
             <div>
@@ -138,18 +169,19 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
           </div>
         </Card>
 
-        <Card className="p-6 bg-muted/30">
-          <h3 className="font-semibold text-foreground mb-4">
-            Payment Method
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Add a payment method to upgrade your plan
-          </p>
-          <Button variant="outline" size="sm">
-            Add Payment Method
-          </Button>
-        </Card>
-      </div>
+      {/* Payment Method Card */}
+      <Card className="p-6 bg-muted/30">
+        <div className="flex items-center gap-3 mb-4">
+          <CreditCard size={24} className="text-muted-foreground" />
+          <h3 className="font-semibold text-foreground">Payment Method</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Add a payment method to upgrade your plan
+        </p>
+        <Button variant="outline" size="sm">
+          Add Payment Method
+        </Button>
+      </Card>
     </AppShell>
   );
 }
