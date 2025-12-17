@@ -125,7 +125,7 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
   ```typescript
   const { data: domains = [] } = useQuery({
     queryKey: ['domains', currentOrg?.id],
-    queryFn: () => currentOrg ? getOrgDomains(currentOrg.id) : Promise.resolve([]),
+    queryFn: () => getOrgDomains(currentOrg!.id),
     enabled: !!currentOrg,
     staleTime: 10000,
   });
