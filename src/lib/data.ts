@@ -307,6 +307,40 @@ export async function deleteAPIToken(id: string): Promise<void> {
   });
 }
 
+// ===== WEBHOOKS (real API) =====
+
+export async function getOrgWebhooks(): Promise<WebhookEndpoint[]> {
+  try {
+    const res = await api<{ webhooks: WebhookEndpoint[] }>(`/api/webhooks`);
+    return res?.webhooks ?? [];
+  } catch (err) {
+    console.warn('getOrgWebhooks failed', err);
+    return [];
+  }
+}
+
+export async function createWebhook(url: string, events: string[]): Promise<WebhookEndpoint> {
+  const res = await api<{ webhook: WebhookEndpoint }>(`/api/webhooks`, {
+    method: 'POST',
+    body: JSON.stringify({ url, events }),
+  });
+  return res.webhook;
+}
+
+export async function updateWebhook(id: string, updates: Partial<{ url: string; events: string[]; enabled: boolean }>): Promise<WebhookEndpoint> {
+  const res = await api<{ webhook: WebhookEndpoint }>(`/api/webhooks/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  return res.webhook;
+}
+
+export async function deleteWebhook(id: string): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 // ===== AUDIT LOGS (local stub for now) =====
 
 export async function getOrgAuditLogs(): Promise<AuditLog[]> {

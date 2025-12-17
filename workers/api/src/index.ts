@@ -5,6 +5,7 @@ import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from '
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
+import { listWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint, deleteWebhookEndpoint } from './lib/webhooks';
 import { logAudit } from './lib/audit';
 
 // Helper function to normalize ETags for comparison
@@ -291,6 +292,116 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             action: 'token.deleted',
             entity_type: 'api_token',
             entity_id: tokenId,
+          });
+          
+          return withCors(req, env, json({ success: true }));
+        }
+      }
+
+      // GET /api/webhooks - List webhook endpoints
+      if (method === 'GET' && url.pathname === '/api/webhooks') {
+        const webhooks = await listWebhookEndpoints(env, auth.orgId);
+        return withCors(req, env, json({ webhooks }));
+      }
+
+      // POST /api/webhooks - Create webhook endpoint
+      if (method === 'POST' && url.pathname === '/api/webhooks') {
+        // Only owners and admins can create webhooks
+        if (!isOwnerOrAdmin(auth)) {
+          return withCors(req, env, forbidden('Only owners and admins can create webhooks'));
+        }
+
+        const body = await req.json().catch(() => ({} as any));
+        const url_input = String(body.url ?? '').trim();
+        const events = Array.isArray(body.events) ? body.events : [];
+        
+        if (!url_input) return withCors(req, env, badRequest('url is required'));
+        if (events.length === 0) return withCors(req, env, badRequest('at least one event is required'));
+        
+        // Validate URL format
+        try {
+          new URL(url_input);
+        } catch {
+          return withCors(req, env, badRequest('Invalid URL format'));
+        }
+        
+        const webhook = await createWebhookEndpoint(env, auth.orgId, url_input, events);
+        
+        // Log audit event
+        await logAudit(env, {
+          org_id: auth.orgId,
+          user_id: auth.userId || null,
+          action: 'webhook.created',
+          entity_type: 'webhook_endpoint',
+          entity_id: webhook.id,
+          details: { url: url_input, events },
+        });
+        
+        return withCors(req, env, json({ webhook }, 201));
+      }
+
+      // PATCH /api/webhooks/:id - Update webhook endpoint
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'PATCH') {
+          const webhookId = decodeURIComponent(m[1]);
+          
+          // Only owners and admins can update webhooks
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can update webhooks'));
+          }
+          
+          const body = await req.json().catch(() => ({} as any));
+          const url_input = body.url !== undefined ? String(body.url).trim() : undefined;
+          const events = body.events !== undefined ? (Array.isArray(body.events) ? body.events : []) : undefined;
+          const enabled = body.enabled !== undefined ? Boolean(body.enabled) : undefined;
+          
+          // Validate URL if provided
+          if (url_input !== undefined) {
+            try {
+              new URL(url_input);
+            } catch {
+              return withCors(req, env, badRequest('Invalid URL format'));
+            }
+          }
+          
+          const webhook = await updateWebhookEndpoint(env, auth.orgId, webhookId, url_input, events, enabled);
+          if (!webhook) return withCors(req, env, notFound());
+          
+          // Log audit event
+          await logAudit(env, {
+            org_id: auth.orgId,
+            user_id: auth.userId || null,
+            action: 'webhook.updated',
+            entity_type: 'webhook_endpoint',
+            entity_id: webhookId,
+            details: { url: url_input, events, enabled },
+          });
+          
+          return withCors(req, env, json({ webhook }));
+        }
+      }
+
+      // DELETE /api/webhooks/:id - Delete webhook endpoint
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const webhookId = decodeURIComponent(m[1]);
+          
+          // Only owners and admins can delete webhooks
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can delete webhooks'));
+          }
+          
+          await deleteWebhookEndpoint(env, auth.orgId, webhookId);
+          
+          // Log audit event
+          await logAudit(env, {
+            org_id: auth.orgId,
+            user_id: auth.userId || null,
+            action: 'webhook.deleted',
+            entity_type: 'webhook_endpoint',
+            entity_id: webhookId,
           });
           
           return withCors(req, env, json({ success: true }));

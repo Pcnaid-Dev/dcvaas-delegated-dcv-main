@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,8 +33,7 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useKV } from '@github/spark/hooks';
-import { generateWebhookSecret } from '@/lib/crypto';
+import { getOrgWebhooks, createWebhook, updateWebhook, deleteWebhook } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -96,7 +96,7 @@ const AVAILABLE_EVENTS = [
 
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
-  const [webhooks, setWebhooks] = useKV<WebhookEndpoint[]>('webhooks', []);
+  const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -104,10 +104,62 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     url: '',
     events: [] as string[],
   });
+  const [newlyCreatedSecret, setNewlyCreatedSecret] = useState<string | null>(null);
 
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
-  const orgWebhooks = (webhooks || []).filter((wh) => wh.orgId === currentOrg?.id);
+  // Fetch webhooks with React Query
+  const { data: webhooks = [] } = useQuery({
+    queryKey: ['webhooks', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 30000,
+  });
+
+  // Mutation for creating webhooks
+  const createWebhookMutation = useMutation({
+    mutationFn: (data: { url: string; events: string[] }) => createWebhook(data.url, data.events),
+    onSuccess: (webhook) => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setIsCreateOpen(false);
+      setNewWebhook({ url: '', events: [] });
+      setNewlyCreatedSecret(webhook.secret);
+      toast.success('Webhook endpoint created');
+      setTimeout(() => {
+        toast.info('Save your webhook secret securely - it will only be shown once', {
+          duration: 8000,
+        });
+      }, 500);
+    },
+    onError: () => {
+      toast.error('Failed to create webhook');
+    },
+  });
+
+  // Mutation for updating webhooks
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<{ url: string; events: string[]; enabled: boolean }> }) => 
+      updateWebhook(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+    },
+    onError: () => {
+      toast.error('Failed to update webhook');
+    },
+  });
+
+  // Mutation for deleting webhooks
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (id: string) => deleteWebhook(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setDeleteWebhookId(null);
+      toast.success('Webhook deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete webhook');
+    },
+  });
 
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
@@ -127,54 +179,17 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       return;
     }
 
-    try {
-      const secret = generateWebhookSecret();
-      const webhook: WebhookEndpoint = {
-        id: crypto.randomUUID(),
-        orgId: currentOrg.id,
-        url: newWebhook.url,
-        events: newWebhook.events,
-        secret,
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      setWebhooks((current) => [...(current || []), webhook]);
-      setIsCreateOpen(false);
-      setNewWebhook({ url: '', events: [] });
-      toast.success('Webhook endpoint created');
-
-      setTimeout(() => {
-        toast.info('Save your webhook secret securely - it will only be shown once', {
-          duration: 8000,
-        });
-      }, 500);
-    } catch (error) {
-      toast.error('Failed to create webhook');
-    }
+    createWebhookMutation.mutate({ url: newWebhook.url, events: newWebhook.events });
   };
 
   const handleDeleteWebhook = async () => {
     if (!deleteWebhookId) return;
-
-    try {
-      setWebhooks((current) => (current || []).filter((wh) => wh.id !== deleteWebhookId));
-      setDeleteWebhookId(null);
-      toast.success('Webhook deleted');
-    } catch (error) {
-      toast.error('Failed to delete webhook');
-    }
+    deleteWebhookMutation.mutate(deleteWebhookId);
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
-    try {
-      setWebhooks((current) =>
-        (current || []).map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-      );
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-    } catch (error) {
-      toast.error('Failed to update webhook');
-    }
+    updateWebhookMutation.mutate({ id: webhookId, updates: { enabled } });
+    toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
   };
 
   const toggleEventSelection = (eventName: string) => {
