@@ -6,8 +6,19 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Trash } from '@phosphor-icons/react';
+import { Plus, Trash, Eye, EyeSlash } from '@phosphor-icons/react';
 import { getOrgAPITokens, addAPIToken, deleteAPIToken } from '@/lib/data';
 import { generateId, hashToken, generateToken } from '@/lib/crypto';
 import { toast } from 'sonner';
@@ -25,6 +36,7 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [tokenName, setTokenName] = useState('');
   const [newToken, setNewToken] = useState<string | null>(null);
+  const [revealedTokens, setRevealedTokens] = useState<Set<string>>(new Set());
 
   // Fetch tokens with React Query
   const { data: tokens = [] } = useQuery({
@@ -84,6 +96,23 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
   const handleDelete = async (tokenId: string) => {
     if (!currentOrg) return;
     deleteTokenMutation.mutate(tokenId);
+  };
+
+  const toggleReveal = (tokenId: string) => {
+    setRevealedTokens(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tokenId)) {
+        newSet.delete(tokenId);
+      } else {
+        newSet.add(tokenId);
+      }
+      return newSet;
+    });
+  };
+
+  const maskToken = (tokenHash: string) => {
+    // Show first 8 chars and mask the rest
+    return `dcv_${tokenHash.substring(0, 8)}${'•'.repeat(32)}`;
   };
 
   if (!currentOrg) return null;
@@ -182,25 +211,63 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {tokens.map((token) => (
                     <div
                       key={token.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                     >
-                      <div>
-                        <p className="font-medium text-foreground">{token.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground mb-1">{token.name}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <code className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
+                            {revealedTokens.has(token.id) ? token.tokenHash : maskToken(token.tokenHash)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleReveal(token.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {revealedTokens.has(token.id) ? (
+                              <EyeSlash size={16} className="text-muted-foreground" />
+                            ) : (
+                              <Eye size={16} className="text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
                           Created {new Date(token.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(token.id)}
-                      >
-                        <Trash size={18} className="text-destructive" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash size={18} />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete API Token</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{token.name}"? This action cannot be undone and any applications using this token will stop working immediately.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(token.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Token
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   ))}
                 </div>
@@ -218,6 +285,22 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                 View API Docs
               </Button>
             </Card>
+
+            {/* Danger Zone */}
+            {tokens.length > 0 && (
+              <Card className="p-6 border-2 border-destructive/50 bg-destructive/5">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-destructive mb-2">
+                      Danger Zone
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Deleting API tokens is permanent and cannot be undone. Make sure to remove the token from all applications before deletion.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
           </>
         )}
       </div>

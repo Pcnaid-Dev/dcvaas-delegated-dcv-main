@@ -15,13 +15,18 @@ type StatusBadgeProps = {
 
 export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
   const config = getStatusConfig(status);
+  const isPending = status === 'pending_cname' || status === 'issuing' || status === 'running';
 
   return (
     <Badge
       variant="outline"
-      className={`${config.className} inline-flex items-center gap-1`}
+      className={`${config.className} inline-flex items-center gap-1.5`}
     >
-      {showIcon && <config.icon size={14} weight="fill" />}
+      {showIcon && (
+        <span className="relative inline-flex">
+          <config.icon size={14} weight="fill" className={isPending ? 'animate-pulse' : ''} />
+        </span>
+      )}
       <span>{config.label}</span>
     </Badge>
   );

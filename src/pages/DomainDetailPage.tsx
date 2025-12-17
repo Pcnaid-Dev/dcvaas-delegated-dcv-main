@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowsClockwise, CheckCircle } from '@phosphor-icons/react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, ArrowsClockwise, CheckCircle, XCircle, Spinner } from '@phosphor-icons/react';
 import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
 import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
@@ -23,6 +24,7 @@ type DomainDetailPageProps = {
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
+  const [verificationResult, setVerificationResult] = React.useState<'success' | 'error' | null>(null);
 
   // Fetch domain with React Query
   const { data: domain, isLoading: isDomainLoading } = useQuery({
@@ -43,23 +45,40 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
   // Mutation for syncing domain
   const syncMutation = useMutation({
     mutationFn: (domainId: string) => syncDomain(domainId),
-    onSuccess: () => {
+    onSuccess: (updatedDomain) => {
       queryClient.invalidateQueries({ queryKey: ['domain', domainId] });
       queryClient.invalidateQueries({ queryKey: ['domains'] });
-      toast.success('Status refreshed from Cloudflare');
+      
+      // Set verification result based on updated status
+      if (updatedDomain && updatedDomain.status === 'active') {
+        setVerificationResult('success');
+        toast.success('Status refreshed from Cloudflare');
+      } else if (updatedDomain && updatedDomain.status === 'error') {
+        setVerificationResult('error');
+        toast.error('Verification failed');
+      } else {
+        toast.success('Status refreshed from Cloudflare');
+      }
+      
+      // Clear result after 5 seconds
+      setTimeout(() => setVerificationResult(null), 5000);
     },
     onError: () => {
+      setVerificationResult('error');
       toast.error('Failed to refresh status');
+      setTimeout(() => setVerificationResult(null), 5000);
     },
   });
 
   const handleCheckDNS = async () => {
     if (!domain || !user || !currentOrg) return;
+    setVerificationResult(null);
     syncMutation.mutate(domain.id);
   };
 
   const handleRefreshStatus = async () => {
     if (!domain) return;
+    setVerificationResult(null);
     syncMutation.mutate(domain.id);
   };
 
@@ -133,10 +152,39 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                 <Button
                   onClick={handleCheckDNS}
                   disabled={syncMutation.isPending}
-                  className="w-full"
+                  className="w-full gap-2"
+                  size="lg"
                 >
-                  {syncMutation.isPending ? 'Checking DNS...' : 'Check DNS Now'}
+                  {syncMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                      Checking DNS...
+                    </>
+                  ) : (
+                    'Check DNS Now'
+                  )}
                 </Button>
+                
+                {/* Verification Result Alerts */}
+                {verificationResult === 'success' && (
+                  <Alert variant="default" className="border-success bg-success/10">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <AlertTitle className="text-success">DNS Verified!</AlertTitle>
+                    <AlertDescription className="text-success/90">
+                      Your DNS configuration is correct. Certificate issuance in progress.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {verificationResult === 'error' && (
+                  <Alert variant="destructive">
+                    <XCircle size={16} weight="fill" />
+                    <AlertTitle>Verification Failed</AlertTitle>
+                    <AlertDescription>
+                      DNS records not found or incorrect. Please verify your CNAME record and try again.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </Card>
             )}
 

@@ -12,6 +12,7 @@ import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { getOrgDomains, createDomain, addAuditLog } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
+import { EmptyState } from '@/components/EmptyState';
 import type { Domain } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -174,11 +175,21 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
           </div>
 
           {filteredDomains.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {search ? 'No domains found matching your search.' : 'No domains yet. Add your first domain to get started.'}
-              </p>
-            </div>
+            search ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No domains found matching your search.
+                </p>
+              </div>
+            ) : domains.length === 0 ? (
+              <EmptyState onAddDomain={() => setIsAddOpen(true)} />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No domains found matching your search.
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-2">
               {filteredDomains.map((domain) => (
