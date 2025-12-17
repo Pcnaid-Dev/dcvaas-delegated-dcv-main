@@ -107,14 +107,14 @@ export async function inviteMember(
  * Accept an invitation (called during login)
  * Updates pending invitations with the user's actual ID
  */
-export async function acceptInvitation(env: Env, userId: string, email: string): Promise<void> {
+export async function acceptInvitation(env: Env, orgId: string, userId: string, email: string): Promise<void> {
   await env.DB
     .prepare(
       `UPDATE organization_members 
        SET user_id = ?, status = 'active', updated_at = datetime('now')
-       WHERE email = ? AND status = 'invited'`
+       WHERE org_id = ? AND email = ? AND status = 'invited'`
     )
-    .bind(userId, email)
+    .bind(userId, orgId, email)
     .run();
 }
 
