@@ -157,7 +157,7 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
                   </p>
                 </div>
                 <Button
-                  className="w-full active:scale-95 transition-transform"
+                  className="w-full"
                   onClick={handleAddDomain}
                   disabled={addDomainMutation.isPending}
                 >
