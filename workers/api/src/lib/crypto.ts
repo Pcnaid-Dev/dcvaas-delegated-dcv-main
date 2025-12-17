@@ -52,8 +52,12 @@ export async function encryptAES(plaintext: string, encryptionKey: string): Prom
   combined.set(iv, salt.length);
   combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
 
-  // Convert to base64
-  return btoa(String.fromCharCode(...combined));
+  // Convert to base64 using chunked approach to avoid stack overflow
+  let binary = '';
+  for (let i = 0; i < combined.length; i++) {
+    binary += String.fromCharCode(combined[i]);
+  }
+  return btoa(binary);
 }
 
 /**

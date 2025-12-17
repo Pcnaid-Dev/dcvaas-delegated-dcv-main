@@ -6,6 +6,20 @@ import type { Env } from '../env';
 import { encryptAES, decryptAES } from './crypto';
 import { exchangeOAuthToken } from './oauth-providers';
 
+/**
+ * Provider configuration map for OAuth credentials
+ */
+const PROVIDER_CONFIG = {
+  cloudflare: {
+    clientIdKey: 'CLOUDFLARE_CLIENT_ID',
+    clientSecretKey: 'CLOUDFLARE_CLIENT_SECRET',
+  },
+  godaddy: {
+    clientIdKey: 'GODADDY_CLIENT_ID',
+    clientSecretKey: 'GODADDY_CLIENT_SECRET',
+  },
+} as const;
+
 export interface OAuthConnection {
   id: string;
   org_id: string;
@@ -39,9 +53,15 @@ export async function createOAuthConnection(
   code: string,
   redirectUri: string
 ): Promise<OAuthConnection> {
+  // Get provider configuration
+  const providerConfig = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG];
+  if (!providerConfig) {
+    throw new Error(`Unsupported OAuth provider: ${provider}`);
+  }
+
   // Get OAuth client credentials from environment
-  const clientId = env[`${provider.toUpperCase()}_CLIENT_ID` as keyof Env] as string;
-  const clientSecret = env[`${provider.toUpperCase()}_CLIENT_SECRET` as keyof Env] as string;
+  const clientId = env[providerConfig.clientIdKey as keyof Env] as string;
+  const clientSecret = env[providerConfig.clientSecretKey as keyof Env] as string;
 
   if (!clientId || !clientSecret) {
     throw new Error(`OAuth credentials not configured for provider: ${provider}`);
