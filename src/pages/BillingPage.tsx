@@ -26,7 +26,13 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
       window.location.href = url;
     } catch (error) {
       console.error('Failed to create checkout session:', error);
-      alert('Failed to start checkout. Please try again.');
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : 'Unknown error';
+      alert(`Failed to start checkout. ${errorMessage ? 'Error: ' + errorMessage : 'Please try again.'}`);
       setLoading(false);
     }
   };
