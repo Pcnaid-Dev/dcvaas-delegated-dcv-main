@@ -5,6 +5,7 @@ import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from '
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 import { getOrganization } from './lib/organizations';
+import { snakeToCamel } from './lib/utils';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -52,13 +53,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         
         // Transform snake_case from DB to camelCase for frontend
         const response = json({
-          organization: {
-            id: org.id,
-            name: org.name,
-            ownerId: org.owner_id,
-            subscriptionTier: org.subscription_tier,
-            createdAt: org.created_at,
-          }
+          organization: snakeToCamel(org)
         });
         return withCors(req, env, response);
       }

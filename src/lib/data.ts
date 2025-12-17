@@ -180,13 +180,7 @@ export async function getUserOrganizations(): Promise<Organization[]> {
 }
 
 export async function getOrganization(): Promise<Organization> {
-  if (!isBrowser()) return DEFAULT_ORG;
-
-  // Try to fetch from API first
-  const orgFromAPI = await fetchOrganizationFromAPI();
-  if (orgFromAPI) return orgFromAPI;
-
-  // Fallback to localStorage
+  // Rely solely on getUserOrganizations() which already handles API fetch and fallback
   const orgs = await getUserOrganizations();
   return orgs[0] ?? DEFAULT_ORG;
 }
