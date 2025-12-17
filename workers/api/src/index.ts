@@ -5,6 +5,12 @@ import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from '
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 
+// Helper function to normalize ETags for comparison
+// Removes W/ prefix (weak ETag indicator) and quotes
+function normalizeETag(etag: string): string {
+  return etag.replace(/^W\//, '').replace(/"/g, '');
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const pf = preflight(req, env);
@@ -48,21 +54,16 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         });
         
         // Check If-None-Match header for ETag support
-        // Normalize ETags by removing W/ prefix and quotes for comparison
         const ifNoneMatch = req.headers.get('If-None-Match');
         const etag = response.headers.get('ETag');
-        if (ifNoneMatch && etag) {
-          const normalizedIfNoneMatch = ifNoneMatch.replace(/^W\//, '').replace(/"/g, '');
-          const normalizedEtag = etag.replace(/^W\//, '').replace(/"/g, '');
-          if (normalizedIfNoneMatch === normalizedEtag) {
-            return withCors(req, env, new Response(null, { 
-              status: 304, 
-              headers: { 
-                'ETag': etag,
-                'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
-              } 
-            }));
-          }
+        if (ifNoneMatch && etag && normalizeETag(ifNoneMatch) === normalizeETag(etag)) {
+          return withCors(req, env, new Response(null, { 
+            status: 304, 
+            headers: { 
+              'ETag': etag,
+              'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
+            } 
+          }));
         }
         
         return withCors(req, env, response);

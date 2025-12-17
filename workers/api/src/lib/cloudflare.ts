@@ -49,12 +49,14 @@ export async function createCustomHostname(env: Env, domain: string): Promise<Cu
   return data.result;
 }
 
+// Configuration constants for retry logic
+const MAX_DELAY = 30000; // Cap at 30 seconds
+const MAX_RATE_LIMIT_RETRIES = 3; // Maximum retries for rate limit responses
+
 // Helper function for retry with exponential backoff
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
-  const MAX_DELAY = 30000; // Cap at 30 seconds
   let lastError: Error | null = null;
   let rateLimitRetries = 0;
-  const MAX_RATE_LIMIT_RETRIES = 3;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
