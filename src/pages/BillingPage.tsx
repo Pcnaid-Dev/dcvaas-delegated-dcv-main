@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle } from '@phosphor-icons/react';
 import { PLAN_LIMITS } from '@/types';
 import { createStripeCheckoutSession } from '@/lib/data';
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
 
 type BillingPageProps = {
@@ -18,10 +19,10 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
 
   if (!currentOrg) return null;
 
-  const handleUpgrade = async (tier: string) => {
+  const handleUpgrade = async (tier: 'pro' | 'agency') => {
     setLoading(true);
     try {
-      const priceId = tier === 'pro' ? 'price_pro_monthly' : 'price_agency_monthly';
+      const priceId = STRIPE_PRICE_IDS[tier];
       const { url } = await createStripeCheckoutSession(priceId);
       window.location.href = url;
     } catch (error) {
@@ -39,8 +40,8 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
 
   const plans = [
     { tier: 'free', name: 'Free', price: '$0/mo', priceId: '' },
-    { tier: 'pro', name: 'Pro', price: '$29/mo', priceId: 'price_pro_monthly' },
-    { tier: 'agency', name: 'Agency', price: '$99/mo', priceId: 'price_agency_monthly' },
+    { tier: 'pro', name: 'Pro', price: '$29/mo', priceId: STRIPE_PRICE_IDS.pro },
+    { tier: 'agency', name: 'Agency', price: '$99/mo', priceId: STRIPE_PRICE_IDS.agency },
   ];
 
   return (

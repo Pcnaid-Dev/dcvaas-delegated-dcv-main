@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Certificate } from '@phosphor-icons/react';
 import { createStripeCheckoutSession } from '@/lib/data';
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
 
 type PricingPageProps = {
@@ -66,7 +67,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       ],
       cta: 'Start Trial',
       highlighted: true,
-      priceId: 'price_pro_monthly',
+      priceId: STRIPE_PRICE_IDS.pro,
     },
     {
       name: 'Agency',
@@ -85,7 +86,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       ],
       cta: 'Contact Sales',
       highlighted: false,
-      priceId: 'price_agency_monthly',
+      priceId: STRIPE_PRICE_IDS.agency,
     },
   ];
 
