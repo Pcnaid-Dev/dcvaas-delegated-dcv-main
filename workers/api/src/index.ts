@@ -4,6 +4,7 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { listTokens, createToken, deleteToken } from './lib/tokens';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -228,6 +229,46 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           try {
             const { acceptInvitation } = await import('./lib/members');
             await acceptInvitation(env, orgId, userId, email);
+            return withCors(req, env, json({ success: true }));
+          } catch (err: any) {
+            return withCors(req, env, badRequest(err.message));
+          }
+        }
+      }
+
+      // GET /api/tokens - List API tokens (masked)
+      if (method === 'GET' && url.pathname === '/api/tokens') {
+        const tokens = await listTokens(env, auth.orgId);
+        return withCors(req, env, json({ tokens }));
+      }
+
+      // POST /api/tokens - Create new API token
+      if (method === 'POST' && url.pathname === '/api/tokens') {
+        const body = await req.json().catch(() => ({} as any));
+        const name = String(body.name ?? '').trim();
+        
+        if (!name) {
+          return withCors(req, env, badRequest('name is required'));
+        }
+
+        const expiresAt = body.expiresAt ? String(body.expiresAt) : undefined;
+        
+        try {
+          const token = await createToken(env, auth.orgId, name, expiresAt, auth.userId);
+          return withCors(req, env, json({ token }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // DELETE /api/tokens/:id - Revoke API token
+      {
+        const m = url.pathname.match(/^\/api\/tokens\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const tokenId = decodeURIComponent(m[1]);
+          
+          try {
+            await deleteToken(env, auth.orgId, tokenId, auth.userId);
             return withCors(req, env, json({ success: true }));
           } catch (err: any) {
             return withCors(req, env, badRequest(err.message));
