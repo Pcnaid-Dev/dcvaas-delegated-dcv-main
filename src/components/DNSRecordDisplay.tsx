@@ -39,10 +39,10 @@ export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps)
           </div>
           
           <div className="pt-2 border-t border-slate-800">
-            <p className="text-xs font-mono text-slate-500">
-              # Point your domain to our edge network.<br />
-              # Cloudflare will automatically validate and issue your certificate.
-            </p>
+            <pre className="text-xs font-mono text-slate-500">
+# Point your domain to our edge network.
+# Cloudflare will automatically validate and issue your certificate.
+            </pre>
           </div>
         </div>
       </div>
