@@ -31,9 +31,9 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
 - **Prerequisites**: Ensure you have Node.js installed and run `npm install` before starting
 
 ### Building & Testing
-- **Build Frontend**: `npm run build` - Runs `tsc -b --noCheck && vite build`
-  - `tsc -b --noCheck`: Builds TypeScript project without type checking (for speed)
-  - `vite build`: Bundles the app to `dist/`
+- **Build Frontend**: `npm run build` - Runs `tsc --noEmit && vite build`
+  - `tsc --noEmit`: Performs type checking on the project.
+  - `vite build`: Bundles the app to `dist/`.
 - **Lint**: `npm run lint` - Runs ESLint on the codebase (ESLint is installed as a devDependency)
 - **Type Checking**: For explicit type checking, run `tsc --noEmit` (tsconfig.json has `noEmit: true`)
 - **No Tests**: This repository currently does not have a test suite configured
