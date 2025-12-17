@@ -43,7 +43,8 @@ export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
 
   // Define all navigation items with role requirements
   const allNavItems = [
-    { id: 'dashboard', label: 'Domains', icon: Globe, roles: ['owner', 'admin', 'member'] },
+    { id: 'dashboard', label: 'Overview', icon: Certificate, roles: ['owner', 'admin', 'member'] },
+    { id: 'domains', label: 'Domains', icon: Globe, roles: ['owner', 'admin', 'member'] },
     { id: 'jobs', label: 'Jobs', icon: Queue, roles: ['owner', 'admin', 'member'] },
     { id: 'team', label: 'Team', icon: Users, roles: ['owner', 'admin', 'member'] },
     { id: 'api-tokens', label: 'API', icon: Code, roles: ['owner', 'admin'] },
@@ -57,7 +58,7 @@ export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
   const navItems = allNavItems.filter(item => {
     if (!userRole) {
       // Show only basic items during loading
-      return ['dashboard', 'jobs', 'team'].includes(item.id);
+      return ['dashboard', 'domains', 'jobs', 'team'].includes(item.id);
     }
     return item.roles.includes(userRole);
   });
