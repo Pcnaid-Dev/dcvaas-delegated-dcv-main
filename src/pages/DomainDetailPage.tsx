@@ -20,6 +20,9 @@ type DomainDetailPageProps = {
   onNavigate: (page: string) => void;
 };
 
+// Auto-poll interval in milliseconds
+const AUTO_POLL_INTERVAL_MS = 12000; // 12 seconds
+
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
@@ -31,7 +34,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
     enabled: !!domainId,
     staleTime: 5000,
-    // Auto-poll every 12 seconds when domain is in pending or issuing state
+    // Auto-poll when domain is in pending or issuing state
     refetchInterval: (query) => {
       const domain = query.state.data;
       if (!domain) return false;
@@ -40,7 +43,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                          domain.status === 'issuing' || 
                          domain.status === 'pending_validation';
       
-      return shouldPoll ? 12000 : false; // 12 seconds
+      return shouldPoll ? AUTO_POLL_INTERVAL_MS : false;
     },
     refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
@@ -70,7 +73,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     if (domain) {
       setPreviousStatus(domain.status);
     }
-  }, [domain?.status, domain?.domainName]);
+  }, [domain?.status]);
 
   // Mutation for syncing domain
   const syncMutation = useMutation({
@@ -185,7 +188,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       • If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
                     </p>
                     <p>
-                      • The system automatically checks your DNS every 12 seconds
+                      • The system automatically checks your DNS every {AUTO_POLL_INTERVAL_MS / 1000} seconds
                     </p>
                     <p>
                       • If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
@@ -205,7 +208,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       Cloudflare is validating your DNS configuration. This process is automatic and typically completes within 5-15 minutes.
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Status updates automatically every 12 seconds
+                      Status updates automatically every {AUTO_POLL_INTERVAL_MS / 1000} seconds
                     </p>
                   </div>
                 </div>
