@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import type { JobMessage } from './lib/types';
 import { handleSyncStatus } from './handlers/sync-status';
+import { handleSendEmail } from './handlers/send-email';
 import { MessageBatch } from '@cloudflare/workers-types';
 
 export default {
@@ -13,11 +14,14 @@ export default {
           case 'sync_status':
             await handleSyncStatus(job, env);
             break;
+          case 'send_email':
+            await handleSendEmail(job, env);
+            break;
           // case 'dns_check':
           //   await handleDnsCheck(job, env);
           //   break;
           default:
-            console.warn(`Unknown job type: ${job.type}`);
+            console.warn(`Unknown job type: ${(job as any).type}`);
         }
         message.ack();
       } catch (error) {
