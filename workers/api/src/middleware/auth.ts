@@ -38,7 +38,7 @@ export async function authenticate(req: Request, env: Env): Promise<Auth | null>
     .run()
     .catch(() => {});
 
-  return { orgId: row.org_id, tokenId: row.id };
+  return { orgId: row.org_id, tokenId: row.id, role: 'owner' };
 }
 
 /**
