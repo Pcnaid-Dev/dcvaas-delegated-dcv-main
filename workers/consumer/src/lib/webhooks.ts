@@ -1,3 +1,12 @@
+/**
+ * Webhook dispatch functionality for the consumer worker.
+ * 
+ * NOTE: This is a necessary duplicate of workers/api/src/lib/webhooks.ts
+ * because Cloudflare Workers are deployed as isolated units and cannot
+ * import from each other at runtime. The API worker's version is the
+ * source of truth - any changes should be synchronized between both files.
+ */
+
 import type { Env } from '../env';
 
 interface WebhookEndpointRow {

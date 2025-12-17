@@ -270,28 +270,27 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
       }
 
       // DELETE /api/webhooks/:id - Delete a webhook endpoint
-      {
-        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
-        if (m && method === 'DELETE') {
-          const webhookId = decodeURIComponent(m[1]);
-          await deleteWebhook(env, auth.orgId, webhookId);
-          return withCors(req, env, json({ success: true }));
-        }
-      }
-
       // PATCH /api/webhooks/:id - Update webhook enabled status
       {
         const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
-        if (m && method === 'PATCH') {
+        if (m) {
           const webhookId = decodeURIComponent(m[1]);
-          const body = await req.json().catch(() => ({} as any));
           
-          if (typeof body.enabled !== 'boolean') {
-            return withCors(req, env, badRequest('enabled field is required and must be a boolean'));
+          if (method === 'DELETE') {
+            await deleteWebhook(env, auth.orgId, webhookId);
+            return withCors(req, env, json({ success: true }));
           }
+          
+          if (method === 'PATCH') {
+            const body = await req.json().catch(() => ({} as any));
+            
+            if (typeof body.enabled !== 'boolean') {
+              return withCors(req, env, badRequest('enabled field is required and must be a boolean'));
+            }
 
-          await updateWebhookEnabled(env, auth.orgId, webhookId, body.enabled);
-          return withCors(req, env, json({ success: true }));
+            await updateWebhookEnabled(env, auth.orgId, webhookId, body.enabled);
+            return withCors(req, env, json({ success: true }));
+          }
         }
       }
 

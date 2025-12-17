@@ -182,14 +182,19 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
+    // Optimistic UI update: update state immediately
+    const previousWebhooks = webhooks;
+    setWebhooks((current) =>
+      current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
+    );
+    toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+
     try {
       await apiUpdateWebhookEnabled(webhookId, enabled);
-      setWebhooks((current) =>
-        current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-      );
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
     } catch (error) {
+      // Revert on error
       console.error('Failed to update webhook:', error);
+      setWebhooks(previousWebhooks);
       toast.error('Failed to update webhook');
     }
   };
