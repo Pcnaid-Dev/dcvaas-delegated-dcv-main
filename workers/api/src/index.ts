@@ -4,6 +4,7 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { getOrganization } from './lib/organizations';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -43,6 +44,24 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
   const response = await createCheckoutSession(req, env, auth as any);
   return withCors(req, env, response);
 }
+
+      // GET /api/organizations - Get current organization
+      if (method === 'GET' && url.pathname === '/api/organizations') {
+        const org = await getOrganization(env, auth.orgId);
+        if (!org) return withCors(req, env, notFound());
+        
+        // Transform snake_case from DB to camelCase for frontend
+        const response = json({
+          organization: {
+            id: org.id,
+            name: org.name,
+            ownerId: org.owner_id,
+            subscriptionTier: org.subscription_tier,
+            createdAt: org.created_at,
+          }
+        });
+        return withCors(req, env, response);
+      }
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {

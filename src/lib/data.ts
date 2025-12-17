@@ -125,6 +125,22 @@ export async function setUser(user: User | null): Promise<void> {
 export async function getUserOrganizations(): Promise<Organization[]> {
   if (!isBrowser()) return [DEFAULT_ORG];
 
+  // Try to fetch from API first if we have a token
+  if (API_TOKEN) {
+    try {
+      const res = await api<{ organization: Organization }>('/api/organizations');
+      const org = res.organization;
+      
+      // Cache in localStorage
+      localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
+      localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
+      
+      return [org];
+    } catch (err) {
+      console.warn('Failed to fetch organization from API, falling back to localStorage', err);
+    }
+  }
+
   // Try explicit list first
   const rawList = localStorage.getItem(LOCAL_ORG_LIST_KEY);
   if (rawList) {
@@ -154,6 +170,25 @@ export async function getUserOrganizations(): Promise<Organization[]> {
 }
 
 export async function getOrganization(): Promise<Organization> {
+  if (!isBrowser()) return DEFAULT_ORG;
+
+  // Try to fetch from API first
+  if (API_TOKEN) {
+    try {
+      const res = await api<{ organization: Organization }>('/api/organizations');
+      const org = res.organization;
+      
+      // Cache in localStorage
+      localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
+      localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
+      
+      return org;
+    } catch (err) {
+      console.warn('Failed to fetch organization from API, falling back to localStorage', err);
+    }
+  }
+
+  // Fallback to localStorage
   const orgs = await getUserOrganizations();
   return orgs[0] ?? DEFAULT_ORG;
 }
