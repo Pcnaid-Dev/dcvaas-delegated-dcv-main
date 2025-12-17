@@ -1,10 +1,12 @@
-import { D1Database } from "@cloudflare/workers-types";
+import { D1Database, Queue } from "@cloudflare/workers-types";
 
 export type Env = {
   DB: D1Database;
+  QUEUE?: Queue;
 
-  // Wrangler secret
+  // Wrangler secrets
   CLOUDFLARE_API_TOKEN: string;
+  ENCRYPTION_KEY: string;          // AES-GCM encryption key for OAuth tokens
 
   // Wrangler vars
   CLOUDFLARE_ZONE_ID: string;      // pcnaid.com zone id

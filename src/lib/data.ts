@@ -275,28 +275,37 @@ export function setJob(_job: Job): void {
   // no-op
 }
 
-// ===== API TOKENS (local stub for now) =====
+// ===== API TOKENS (real API) =====
 
 export async function getOrgAPITokens(): Promise<APIToken[]> {
-  if (!isBrowser()) return [];
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  return raw ? (JSON.parse(raw) as APIToken[]) : [];
+  try {
+    const res = await api<{ tokens: APIToken[] }>('/api/tokens');
+    return res?.tokens ?? [];
+  } catch (err) {
+    console.warn('getOrgAPITokens failed', err);
+    return [];
+  }
 }
 
+export async function createAPIToken(name: string, expiresAt?: string | null): Promise<{ token: string; tokenMeta: APIToken }> {
+  const res = await api<{ token: string; tokenMeta: APIToken }>('/api/tokens', {
+    method: 'POST',
+    body: JSON.stringify({ name, expiresAt }),
+  });
+  return res;
+}
+
+// Deprecated: Use createAPIToken instead
 export async function addAPIToken(token: APIToken): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  list.push(token);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(list));
+  // This is a no-op for backward compatibility
+  // New code should use createAPIToken
+  console.warn('addAPIToken is deprecated, use createAPIToken instead');
 }
 
 export async function deleteAPIToken(id: string): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  const filtered = list.filter((t: any) => t.id !== id);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(filtered));
+  await api(`/api/tokens/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
 
 // ===== AUDIT LOGS (local stub for now) =====
@@ -359,6 +368,62 @@ export async function acceptOrgInvitation(orgId: string, userId: string, email: 
     body: JSON.stringify({ userId, email }),
   });
 }
+// ===== WEBHOOKS (real API) =====
+
+export async function getOrgWebhooks(): Promise<WebhookEndpoint[]> {
+  try {
+    const res = await api<{ webhooks: WebhookEndpoint[] }>('/api/webhooks');
+    return res?.webhooks ?? [];
+  } catch (err) {
+    console.warn('getOrgWebhooks failed', err);
+    return [];
+  }
+}
+
+export async function createWebhook(url: string, events: string[]): Promise<{ webhook: WebhookEndpoint; secret: string }> {
+  const res = await api<{ webhook: WebhookEndpoint & { secret: string } }>('/api/webhooks', {
+    method: 'POST',
+    body: JSON.stringify({ url, events }),
+  });
+  return {
+    webhook: res.webhook,
+    secret: res.webhook.secret,
+  };
+}
+
+export async function updateWebhook(id: string, updates: { url?: string; events?: string[]; enabled?: boolean }): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteWebhook(id: string): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+// ===== OAUTH CONNECTIONS (real API) =====
+
+export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<any> {
+  const res = await api('/api/oauth/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ provider, code, redirectUri }),
+  });
+  return res;
+}
+
+export async function getOAuthConnections(): Promise<any[]> {
+  try {
+    const res = await api<{ connections: any[] }>('/api/oauth/connections');
+    return res?.connections ?? [];
+  } catch (err) {
+    console.warn('getOAuthConnections failed', err);
+    return [];
+  }
+}
+
 // ===== BILLING / STRIPE =====
 
 export async function createStripeCheckoutSession(priceId: string): Promise<{ url: string }> {

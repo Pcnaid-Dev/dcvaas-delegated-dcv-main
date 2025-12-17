@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,8 +33,7 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useKV } from '@github/spark/hooks';
-import { generateWebhookSecret } from '@/lib/crypto';
+import { getOrgWebhooks, createWebhook, updateWebhook, deleteWebhook } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -96,10 +96,11 @@ const AVAILABLE_EVENTS = [
 
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
-  const [webhooks, setWebhooks] = useKV<WebhookEndpoint[]>('webhooks', []);
+  const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
+  const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
   const [newWebhook, setNewWebhook] = useState({
     url: '',
     events: [] as string[],
@@ -107,7 +108,31 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
 
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
-  const orgWebhooks = (webhooks || []).filter((wh) => wh.orgId === currentOrg?.id);
+  // Fetch webhooks with React Query
+  const { data: orgWebhooks = [] } = useQuery({
+    queryKey: ['webhooks', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 30000,
+  });
+
+  // Mutation for creating webhooks
+  const createWebhookMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentOrg) throw new Error('No organization');
+      return createWebhook(newWebhook.url, newWebhook.events);
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setNewWebhookSecret(result.secret);
+      setNewWebhook({ url: '', events: [] });
+      setIsCreateOpen(false);
+      toast.success('Webhook endpoint created');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to create webhook');
+    },
+  });
 
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
@@ -127,54 +152,42 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       return;
     }
 
-    try {
-      const secret = generateWebhookSecret();
-      const webhook: WebhookEndpoint = {
-        id: crypto.randomUUID(),
-        orgId: currentOrg.id,
-        url: newWebhook.url,
-        events: newWebhook.events,
-        secret,
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      setWebhooks((current) => [...(current || []), webhook]);
-      setIsCreateOpen(false);
-      setNewWebhook({ url: '', events: [] });
-      toast.success('Webhook endpoint created');
-
-      setTimeout(() => {
-        toast.info('Save your webhook secret securely - it will only be shown once', {
-          duration: 8000,
-        });
-      }, 500);
-    } catch (error) {
-      toast.error('Failed to create webhook');
-    }
+    createWebhookMutation.mutate();
   };
+
+  // Mutation for deleting webhooks
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (webhookId: string) => deleteWebhook(webhookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setDeleteWebhookId(null);
+      toast.success('Webhook deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete webhook');
+    },
+  });
+
+  // Mutation for toggling webhook enabled status
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) =>
+      updateWebhook(webhookId, { enabled }),
+    onSuccess: (_, { enabled }) => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+    },
+    onError: () => {
+      toast.error('Failed to update webhook');
+    },
+  });
 
   const handleDeleteWebhook = async () => {
     if (!deleteWebhookId) return;
-
-    try {
-      setWebhooks((current) => (current || []).filter((wh) => wh.id !== deleteWebhookId));
-      setDeleteWebhookId(null);
-      toast.success('Webhook deleted');
-    } catch (error) {
-      toast.error('Failed to delete webhook');
-    }
+    deleteWebhookMutation.mutate(deleteWebhookId);
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
-    try {
-      setWebhooks((current) =>
-        (current || []).map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-      );
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-    } catch (error) {
-      toast.error('Failed to update webhook');
-    }
+    updateWebhookMutation.mutate({ webhookId, enabled });
   };
 
   const toggleEventSelection = (eventName: string) => {
@@ -331,6 +344,39 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
                   Cancel
                 </Button>
                 <Button onClick={handleCreateWebhook}>Create Endpoint</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Secret Display Dialog */}
+          <Dialog open={!!newWebhookSecret} onOpenChange={() => setNewWebhookSecret(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Webhook Secret</DialogTitle>
+                <DialogDescription>
+                  Save this secret securely - it will only be shown once.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Alert>
+                  <AlertDescription>
+                    Use this secret to verify webhook signatures in your application.
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2">
+                  <Label>Signing Secret</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={newWebhookSecret || ''}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <CopyButton text={newWebhookSecret || ''} />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setNewWebhookSecret(null)}>Done</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

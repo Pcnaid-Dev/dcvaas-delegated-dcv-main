@@ -15,6 +15,9 @@ export interface CustomHostname {
         value: string;
         type: string; 
     };
+    // Certificate information
+    expires_on?: string;  // ISO 8601 date when certificate expires
+    issued_on?: string;   // ISO 8601 date when certificate was issued
   };
 }
 

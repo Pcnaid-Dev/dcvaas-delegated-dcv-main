@@ -4,6 +4,9 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
+import { listWebhooks, createWebhook, updateWebhook, deleteWebhook } from './lib/webhooks';
+import { exchangeOAuthCode, listOAuthConnections } from './lib/oauth';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -233,6 +236,120 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             return withCors(req, env, badRequest(err.message));
           }
         }
+      }
+
+      // GET /api/tokens - List API tokens
+      if (method === 'GET' && url.pathname === '/api/tokens') {
+        const tokens = await listAPITokens(env, auth.orgId);
+        return withCors(req, env, json({ tokens }));
+      }
+
+      // POST /api/tokens - Create API token
+      if (method === 'POST' && url.pathname === '/api/tokens') {
+        const body = await req.json().catch(() => ({} as any));
+        const name = String(body.name ?? '').trim();
+        const expiresAt = body.expiresAt ? String(body.expiresAt) : null;
+
+        if (!name) {
+          return withCors(req, env, badRequest('name is required'));
+        }
+
+        try {
+          const result = await createAPIToken(env, auth.orgId, name, expiresAt);
+          return withCors(req, env, json(result, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // DELETE /api/tokens/:id - Delete API token
+      {
+        const m = url.pathname.match(/^\/api\/tokens\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const tokenId = decodeURIComponent(m[1]);
+          await deleteAPIToken(env, auth.orgId, tokenId);
+          return withCors(req, env, new Response(null, { status: 204 }));
+        }
+      }
+
+      // GET /api/webhooks - List webhooks
+      if (method === 'GET' && url.pathname === '/api/webhooks') {
+        const webhooks = await listWebhooks(env, auth.orgId);
+        return withCors(req, env, json({ webhooks }));
+      }
+
+      // POST /api/webhooks - Create webhook
+      if (method === 'POST' && url.pathname === '/api/webhooks') {
+        const body = await req.json().catch(() => ({} as any));
+        const url_value = String(body.url ?? '').trim();
+        const events = body.events;
+
+        if (!url_value || !events || !Array.isArray(events)) {
+          return withCors(req, env, badRequest('url and events array are required'));
+        }
+
+        try {
+          const webhook = await createWebhook(env, auth.orgId, url_value, events);
+          return withCors(req, env, json({ webhook }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // PATCH /api/webhooks/:id - Update webhook
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'PATCH') {
+          const webhookId = decodeURIComponent(m[1]);
+          const body = await req.json().catch(() => ({} as any));
+
+          try {
+            await updateWebhook(env, auth.orgId, webhookId, body);
+            return withCors(req, env, json({ success: true }));
+          } catch (err: any) {
+            return withCors(req, env, badRequest(err.message));
+          }
+        }
+      }
+
+      // DELETE /api/webhooks/:id - Delete webhook
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const webhookId = decodeURIComponent(m[1]);
+          await deleteWebhook(env, auth.orgId, webhookId);
+          return withCors(req, env, new Response(null, { status: 204 }));
+        }
+      }
+
+      // POST /api/oauth/exchange - Exchange OAuth code
+      if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
+        const body = await req.json().catch(() => ({} as any));
+        const provider = String(body.provider ?? '').trim();
+        const code = String(body.code ?? '').trim();
+        const redirectUri = String(body.redirectUri ?? '').trim();
+
+        if (!provider || !code || !redirectUri) {
+          return withCors(req, env, badRequest('provider, code, and redirectUri are required'));
+        }
+
+        const validProviders = ['cloudflare', 'godaddy', 'route53', 'other'];
+        if (!validProviders.includes(provider)) {
+          return withCors(req, env, badRequest('Invalid provider'));
+        }
+
+        try {
+          const result = await exchangeOAuthCode(env, auth.orgId, provider as any, code, redirectUri);
+          return withCors(req, env, json(result, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // GET /api/oauth/connections - List OAuth connections
+      if (method === 'GET' && url.pathname === '/api/oauth/connections') {
+        const connections = await listOAuthConnections(env, auth.orgId);
+        return withCors(req, env, json({ connections }));
       }
 
       return withCors(req, env, notFound());
