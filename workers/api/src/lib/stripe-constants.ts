@@ -20,7 +20,13 @@ export const PRICE_ID_TO_TIER: Record<string, 'free' | 'pro' | 'agency'> = {
 
 /**
  * Get tier from price ID
+ * Defaults to 'pro' for unknown price IDs
  */
 export function getTierFromPriceId(priceId: string): 'free' | 'pro' | 'agency' {
-  return PRICE_ID_TO_TIER[priceId] || 'pro';
+  const tier = PRICE_ID_TO_TIER[priceId];
+  if (!tier) {
+    console.warn(`Unknown Stripe price ID: ${priceId}. Defaulting to 'pro' tier.`);
+    return 'pro';
+  }
+  return tier;
 }
