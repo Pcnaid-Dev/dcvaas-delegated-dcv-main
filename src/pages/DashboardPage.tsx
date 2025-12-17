@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass, Globe, CheckCircle, ArrowsClockwise, Warning, Shield } from '@phosphor-icons/react';
 import { getOrgDomains, createDomain, addAuditLog } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
@@ -115,6 +115,12 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
     );
   }
 
+  // Calculate metrics
+  const totalDomains = domains.length;
+  const activeCertificates = domains.filter(d => d.status === 'active').length;
+  const pendingChallenges = domains.filter(d => d.status === 'issuing' || d.status === 'pending_validation').length;
+  const errorsCount = domains.filter(d => d.status === 'error').length;
+
   return (
     <AppShell onNavigate={onNavigate} currentPage="dashboard">
       <div className="space-y-8">
@@ -127,7 +133,7 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
           </div>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="active:scale-95 transition-transform">
                 <Plus size={20} weight="bold" className="mr-2" />
                 Add Domain
               </Button>
@@ -151,7 +157,7 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
                   </p>
                 </div>
                 <Button
-                  className="w-full"
+                  className="w-full active:scale-95 transition-transform"
                   onClick={handleAddDomain}
                   disabled={addDomainMutation.isPending}
                 >
@@ -160,6 +166,57 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
               </div>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Summary Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Domains</p>
+                <p className="text-3xl font-bold text-foreground">{totalDomains}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Globe size={24} className="text-primary" weight="fill" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Active Certificates</p>
+                <p className="text-3xl font-bold text-success">{activeCertificates}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
+                <CheckCircle size={24} className="text-success" weight="fill" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Pending Challenges</p>
+                <p className="text-3xl font-bold text-primary">{pendingChallenges}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ArrowsClockwise size={24} className="text-primary" weight="fill" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Errors/Action Needed</p>
+                <p className="text-3xl font-bold text-destructive">{errorsCount}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Warning size={24} className="text-destructive" weight="fill" />
+              </div>
+            </div>
+          </Card>
         </div>
 
         <Card className="p-4">
@@ -174,22 +231,61 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
           </div>
 
           {filteredDomains.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {search ? 'No domains found matching your search.' : 'No domains yet. Add your first domain to get started.'}
-              </p>
+            <div className="text-center py-16">
+              {search ? (
+                <p className="text-muted-foreground">
+                  No domains found matching your search.
+                </p>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Shield size={40} className="text-primary" weight="fill" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      No domains yet
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Add your first domain to get started with automated certificate management.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setIsAddOpen(true)}
+                    className="active:scale-95 transition-transform"
+                  >
+                    <Plus size={20} weight="bold" className="mr-2" />
+                    Add Domain
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
               {filteredDomains.map((domain) => (
                 <div
                   key={domain.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => {
                     onSelectDomain(domain.id);
                     onNavigate('domain-detail');
                   }}
                 >
+                  {/* Favicon */}
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${domain.domainName}&sz=32`}
+                    alt=""
+                    className="w-8 h-8 rounded"
+                    onError={(e) => {
+                      // Fallback to Globe icon on error
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling;
+                      if (fallback) fallback.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center hidden">
+                    <Globe size={20} className="text-muted-foreground" />
+                  </div>
+                  
                   <div className="flex-1">
                     <div className="font-semibold text-foreground">
                       {domain.domainName}

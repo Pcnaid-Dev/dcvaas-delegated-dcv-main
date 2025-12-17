@@ -101,16 +101,118 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
             <ArrowLeft size={20} className="mr-2" />
             Back to Domains
           </Button>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {domain.domainName}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Added {formatDistanceToNow(new Date(domain.createdAt), { addSuffix: true })}
-              </p>
+          <div>
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  {domain.domainName}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Added {formatDistanceToNow(new Date(domain.createdAt), { addSuffix: true })}
+                </p>
+              </div>
+              <StatusBadge status={domain.status} />
             </div>
-            <StatusBadge status={domain.status} />
+
+            {/* Lifecycle Stepper */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                {/* Step 1: Setup CNAME */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    domain.status === 'pending_cname' 
+                      ? 'bg-primary/20 border-2 border-primary' 
+                      : 'bg-success border-2 border-success'
+                  }`}>
+                    {domain.status === 'pending_cname' ? (
+                      <div className="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+                    ) : (
+                      <CheckCircle size={20} className="text-white" weight="fill" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">Setup CNAME</div>
+                    <div className="text-xs text-muted-foreground">Configure DNS</div>
+                  </div>
+                </div>
+
+                {/* Connector */}
+                <div className={`h-0.5 w-16 mx-2 ${
+                  domain.status !== 'pending_cname' ? 'bg-success' : 'bg-border'
+                }`}></div>
+
+                {/* Step 2: Verifying DNS */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    domain.status === 'issuing' || domain.status === 'pending_validation'
+                      ? 'bg-primary/20 border-2 border-primary' 
+                      : domain.status === 'active'
+                      ? 'bg-success border-2 border-success'
+                      : 'bg-muted border-2 border-border'
+                  }`}>
+                    {domain.status === 'issuing' || domain.status === 'pending_validation' ? (
+                      <div className="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+                    ) : domain.status === 'active' ? (
+                      <CheckCircle size={20} className="text-white" weight="fill" />
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">2</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">Verifying DNS</div>
+                    <div className="text-xs text-muted-foreground">Cloudflare validation</div>
+                  </div>
+                </div>
+
+                {/* Connector */}
+                <div className={`h-0.5 w-16 mx-2 ${
+                  domain.status === 'active' ? 'bg-success' : 'bg-border'
+                }`}></div>
+
+                {/* Step 3: Issuing Certificate */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    domain.status === 'active'
+                      ? 'bg-success/20 border-2 border-success' 
+                      : 'bg-muted border-2 border-border'
+                  }`}>
+                    {domain.status === 'active' ? (
+                      <div className="w-3 h-3 rounded-full bg-success animate-pulse"></div>
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">3</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">Issuing Certificate</div>
+                    <div className="text-xs text-muted-foreground">SSL/TLS provisioning</div>
+                  </div>
+                </div>
+
+                {/* Connector */}
+                <div className={`h-0.5 w-16 mx-2 ${
+                  domain.status === 'active' ? 'bg-success' : 'bg-border'
+                }`}></div>
+
+                {/* Step 4: Active */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    domain.status === 'active'
+                      ? 'bg-success border-2 border-success' 
+                      : 'bg-muted border-2 border-border'
+                  }`}>
+                    {domain.status === 'active' ? (
+                      <CheckCircle size={20} className="text-white" weight="fill" />
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">4</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">Active</div>
+                    <div className="text-xs text-muted-foreground">Auto-renewing</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
 
