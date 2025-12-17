@@ -17,6 +17,7 @@ export interface Env {
   // Config / env vars
   VALIDATION_ROOT: string;         // "dcv.pcnaid.com"
   CLOUDFLARE_ACCOUNT_ID: string;   // your account ID
+  APP_BASE_URL?: string;           // Base URL for the frontend app (optional, falls back to req.url)
 
   // These are set as *secrets* in Wrangler (not hard-coded in wrangler.toml)
   CLOUDFLARE_API_TOKEN: string;
@@ -25,4 +26,5 @@ export interface Env {
   SECONDARY_CA: string;
   INTERNAL_ADMIN_TOKEN: string;
   STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
 }

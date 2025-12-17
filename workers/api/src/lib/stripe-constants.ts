@@ -5,6 +5,8 @@
  * from your Stripe dashboard before deploying to production.
  */
 
+export const STRIPE_API_VERSION = '2024-12-18.acacia' as const;
+
 export const STRIPE_PRICE_IDS = {
   pro: 'price_pro_monthly',
   agency: 'price_agency_monthly',

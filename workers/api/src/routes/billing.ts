@@ -1,6 +1,6 @@
 import type { Env } from '../env';
 import Stripe from 'stripe';
-import { getTierFromPriceId, PRICE_ID_TO_TIER } from '../lib/stripe-constants';
+import { getTierFromPriceId, PRICE_ID_TO_TIER, STRIPE_API_VERSION } from '../lib/stripe-constants';
 
 export interface AuthInfo {
   tokenId: string;
@@ -29,7 +29,7 @@ export async function createCheckoutSession(
     }
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: STRIPE_API_VERSION,
     });
 
     // Determine tier from price ID for metadata
@@ -45,8 +45,8 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      success_url: `${new URL(req.url).origin}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${new URL(req.url).origin}/billing?checkout=cancel`,
+      success_url: `${env.APP_BASE_URL || new URL(req.url).origin}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.APP_BASE_URL || new URL(req.url).origin}/billing?checkout=cancel`,
       client_reference_id: auth.orgId,
       metadata: {
         orgId: auth.orgId,
@@ -86,6 +86,9 @@ export async function handleStripeWebhook(
     }
 
     const body = await req.text();
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: STRIPE_API_VERSION,
+    });
 
     // You must verify the webhook signature to ensure the request is from Stripe.
     // The webhook secret must be set as an environment variable.
