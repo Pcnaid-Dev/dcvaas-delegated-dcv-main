@@ -146,7 +146,7 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
 This is the core async processing pattern in DCVaaS:
 
 1. **User adds domain** → API Worker creates Custom Hostname in Cloudflare → Saves `cf_custom_hostname_id` to D1 with status `pending_cname`
-2. **Cron Worker** (every 5 min) → Queries D1 for domains where `status != 'active'` → Sends job to Queue
+2. **Cron Worker** (every 5 min) → Queries D1 for domains where `status` is `pending_cname` or `issuing` → Sends job to Queue
 3. **Consumer Worker** → Receives job → Calls Cloudflare API → Maps CF status to internal status → Updates D1
 4. **Frontend** → Polls or user clicks "Refresh" → Sees updated status
 
