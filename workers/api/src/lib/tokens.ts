@@ -101,10 +101,8 @@ export async function listAPITokens(env: Env, orgId: string): Promise<APITokenDT
     ORDER BY created_at DESC
   `).bind(orgId).all<APITokenRow>();
 
-  return (result.results || []).map((row) => ({
-    ...rowToDTO(row),
-    maskedToken: maskToken('dcv_live_' + '0'.repeat(32)), // Generic mask since we don't store plaintext
-  }));
+  // Don't include maskedToken for listed tokens since we don't store plaintext
+  return (result.results || []).map(rowToDTO);
 }
 
 /**

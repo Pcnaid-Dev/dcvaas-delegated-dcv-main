@@ -51,10 +51,15 @@ async function encrypt(plaintext: string, key: string): Promise<string> {
     ['deriveKey']
   );
   
+  // Generate a deterministic salt from the key itself for consistency
+  // This allows decryption with the same key while still being unpredictable
+  const saltSource = await crypto.subtle.digest('SHA-256', encoder.encode(key));
+  const salt = new Uint8Array(saltSource).slice(0, 16);
+  
   const cryptoKey = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode('dcvaas-oauth-salt'),
+      salt: salt,
       iterations: 100000,
       hash: 'SHA-256',
     },
@@ -137,7 +142,10 @@ export async function exchangeOAuthCode(
   const tokens = await exchangeCodeWithProvider(provider, code, redirectUri, env);
   
   // Get encryption key from environment
-  const encryptionKey = env.OAUTH_ENCRYPTION_KEY || 'default-key-change-in-production';
+  if (!env.OAUTH_ENCRYPTION_KEY) {
+    throw new Error('OAUTH_ENCRYPTION_KEY environment variable must be set for OAuth connections');
+  }
+  const encryptionKey = env.OAUTH_ENCRYPTION_KEY;
   
   // Encrypt tokens
   const encryptedAccessToken = await encrypt(tokens.accessToken, encryptionKey);

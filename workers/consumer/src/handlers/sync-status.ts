@@ -20,20 +20,37 @@ export async function handleSyncStatus(job: JobMessage, env: Env) {
   }
 
   // Extract expires_at from Cloudflare data if available
-  const expiresAt = cfData.ssl?.expires_on || domain.expires_at;
+  // Only update if Cloudflare provides a value to avoid perpetuating stale data
+  const expiresAt = cfData.ssl?.expires_on;
 
-  await env.DB.prepare(`
-    UPDATE domains
-    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
-    WHERE id = ?
-  `).bind(
-    internalStatus,
-    cfData.status,
-    cfData.ssl.status,
-    JSON.stringify(cfData.ssl.validation_errors || []),
-    expiresAt,
-    domain.id
-  ).run();
+  // Update domain with new status and optionally expires_at
+  if (expiresAt) {
+    await env.DB.prepare(`
+      UPDATE domains
+      SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      internalStatus,
+      cfData.status,
+      cfData.ssl.status,
+      JSON.stringify(cfData.ssl.validation_errors || []),
+      expiresAt,
+      domain.id
+    ).run();
+  } else {
+    // Don't update expires_at if not provided by Cloudflare
+    await env.DB.prepare(`
+      UPDATE domains
+      SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      internalStatus,
+      cfData.status,
+      cfData.ssl.status,
+      JSON.stringify(cfData.ssl.validation_errors || []),
+      domain.id
+    ).run();
+  }
 
   // Dispatch webhook if status changed to 'active'
   if (internalStatus === 'active' && previousStatus !== 'active') {
