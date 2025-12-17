@@ -115,18 +115,25 @@ export async function handleStripeWebhook(
       // Determine the subscription tier based on the price ID or metadata
       let tier: 'free' | 'pro' | 'agency' = 'pro'; // default
       
+      // Explicit mapping from Stripe price IDs to tiers
+      const PRICE_ID_TO_TIER: Record<string, 'free' | 'pro' | 'agency'> = {
+        // Replace these with your actual Stripe price IDs
+        'price_123_PRO': 'pro',
+        'price_456_AGENCY': 'agency',
+        'price_789_FREE': 'free',
+      };
+
       // First check metadata for explicit tier
       if (session.metadata?.tier && ['free', 'pro', 'agency'].includes(session.metadata.tier)) {
         tier = session.metadata.tier as 'free' | 'pro' | 'agency';
       } else if (session.mode === 'subscription' && session.subscription) {
-        // Try to map price ID to tier
-        // Note: In production, retrieve the subscription and check line items
-        // For now, we'll use a simple price ID mapping
+        // Try to map price ID to tier using explicit mapping
         const priceId = session.line_items?.data?.[0]?.price?.id;
-        if (priceId?.includes('agency')) {
-          tier = 'agency';
-        } else if (priceId?.includes('pro')) {
-          tier = 'pro';
+        if (priceId && PRICE_ID_TO_TIER[priceId]) {
+          tier = PRICE_ID_TO_TIER[priceId];
+        } else {
+          // Optionally log or handle unknown priceId
+          console.warn(`Unknown priceId: ${priceId}, defaulting to 'pro'`);
         }
       }
 
