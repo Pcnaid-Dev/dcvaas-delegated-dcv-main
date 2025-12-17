@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
+import { OverviewPage } from './pages/OverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PricingPage } from './pages/PricingPage';
 import { DocsPage } from './pages/DocsPage';
@@ -63,6 +64,13 @@ function AppContent() {
 
   const renderPage = () => {
     switch (currentPage) {
+      case 'overview':
+        return (
+          <OverviewPage
+            onNavigate={setCurrentPage}
+            onSelectDomain={setSelectedDomainId}
+          />
+        );
       case 'dashboard':
         return (
           <DashboardPage
@@ -99,7 +107,7 @@ function AppContent() {
         return <DocsPage onNavigate={setCurrentPage} />;
       default:
         return (
-          <DashboardPage
+          <OverviewPage
             onNavigate={setCurrentPage}
             onSelectDomain={setSelectedDomainId}
           />

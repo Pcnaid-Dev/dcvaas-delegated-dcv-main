@@ -36,6 +36,7 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
 
   // Define all navigation items with role requirements
   const allNavItems = [
+    { id: 'overview', label: 'Overview', icon: Certificate, roles: ['owner', 'admin', 'member'] },
     { id: 'dashboard', label: 'Domains', icon: Globe, roles: ['owner', 'admin', 'member'] },
     { id: 'jobs', label: 'Jobs', icon: Queue, roles: ['owner', 'admin', 'member'] },
     { id: 'team', label: 'Team', icon: Users, roles: ['owner', 'admin', 'member'] },
@@ -50,7 +51,7 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
   const navItems = allNavItems.filter(item => {
     if (!userRole) {
       // Show only basic items during loading
-      return ['dashboard', 'jobs', 'team'].includes(item.id);
+      return ['overview', 'dashboard', 'jobs', 'team'].includes(item.id);
     }
     return item.roles.includes(userRole);
   });
@@ -61,7 +62,7 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
             <button
-              onClick={() => onNavigate('dashboard')}
+              onClick={() => onNavigate('overview')}
               className="flex items-center gap-2"
             >
               <Certificate size={28} weight="bold" className="text-primary" />
