@@ -291,8 +291,8 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
           {domain.status === 'error' && (
             <>
               <Callout variant="error" title="Validation Error">
-                {domain.cfVerificationErrors
-                  ? JSON.stringify(domain.cfVerificationErrors)
+                {domain.cfVerificationErrors && domain.cfVerificationErrors.length > 0
+                  ? domain.cfVerificationErrors.map(e => e.message || String(e)).join(', ')
                   : domain.errorMessage || 'Unknown error occurred during validation'}
               </Callout>
               <Card className="p-6">
