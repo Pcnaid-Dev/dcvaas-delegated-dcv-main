@@ -46,8 +46,9 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
-        const limit = parseInt(url.searchParams.get('limit') || '100', 10);
-        const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+        // Parse and validate pagination parameters
+        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 1000));
+        const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
         const domains = await listDomains(env, auth.orgId, limit, offset);
         const response = json({ domains }, 200, {
           'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',

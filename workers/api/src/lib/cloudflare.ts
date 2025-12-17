@@ -65,7 +65,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       // If rate limited, wait and retry (but count against a separate budget)
       if (response.status === 429) {
         if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
-          throw new Error('Rate limit retry budget exhausted');
+          throw new Error(`Rate limit retry budget exhausted (${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES} attempts)`);
         }
         rateLimitRetries++;
         const retryAfter = parseInt(response.headers.get('Retry-After') || '5', 10);
@@ -74,7 +74,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       }
       
       // Check for client errors (4xx) that shouldn't be retried
-      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+      if (response.status >= 400 && response.status < 500) {
         // Client errors like 400, 401, 403, 404 won't resolve with retries
         return response;
       }

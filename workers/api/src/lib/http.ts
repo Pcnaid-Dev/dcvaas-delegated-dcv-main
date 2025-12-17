@@ -7,9 +7,9 @@ export function json(data: unknown, status = 200, headers: HeadersInit = {}) {
     'content-type': 'application/json; charset=utf-8',
   };
   
-  // Only add caching headers for successful GET responses (200 OK)
-  // POST/PUT/DELETE operations should not have public cache headers
-  if (status === 200) {
+  // Only add ETags for successful responses (2xx)
+  // This enables caching for GET responses while avoiding cache issues for mutations
+  if (status >= 200 && status < 300) {
     responseHeaders['ETag'] = `"${hashString(body)}"`;
   }
   
