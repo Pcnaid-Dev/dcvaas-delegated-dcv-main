@@ -16,8 +16,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       // Apply custom brand color
       root.style.setProperty('--primary-color', currentOrg.brandColor);
     } else {
-      // Revert to default
-      root.style.setProperty('--primary-color', '#2563eb');
+      // Revert to default by removing the inline style
+      root.style.removeProperty('--primary-color');
     }
   }, [currentOrg?.brandColor]);
 
