@@ -34,6 +34,7 @@ Manual renewals become impossible at scale. DCVaaS provides:
 - ✅ **Automated Renewals**: Native handling by Cloudflare; app monitors status for reporting.
 - ✅ **Job Queue**: Async processing for status synchronization and error handling.
 - ✅ **Audit Logging**: Immutable audit trail for compliance and forensics.
+- ✅ **Email Notifications**: Transactional emails via Resend for certificate lifecycle events.
 
 ### SaaS Features
 - ✅ **Multi-Tenancy**: Organizations with team management and RBAC.
@@ -97,6 +98,18 @@ Visit `http://localhost:5173` and sign in with GitHub.
 | **Agency** | 50+ | ✓ | ✓ | ✓ | Priority | $99/mo |
 
 See [`docs/PRICING.md`](https://www.google.com/search?q=docs/PRICING.md) for detailed feature matrix.
+
+## Email Notifications
+
+DCVaaS sends automated email notifications for important events:
+
+- 🎉 **Certificate Issued**: When a domain's SSL/TLS certificate becomes active
+- ⏰ **Certificate Expiring**: 7-day warning before expiration
+- ❌ **Job Failed**: Admin notifications when background jobs fail
+
+All emails are sent asynchronously via [Resend](https://resend.com) using Cloudflare Queues.
+
+**Setup**: See [`docs/EMAIL_SETUP.md`](docs/EMAIL_SETUP.md) for configuration instructions.
 
 ## License
 

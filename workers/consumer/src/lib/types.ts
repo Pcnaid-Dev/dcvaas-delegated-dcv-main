@@ -1,6 +1,24 @@
-export interface JobMessage {
+export interface SendEmailParams {
+  to: string | string[];
+  subject: string;
+  html: string;
+  from?: string;
+}
+
+export interface BaseJobMessage {
   id: string;
-  type: 'sync_status' | 'dns_check';
-  domain_id: string;
   attempts: number;
 }
+
+export interface SyncStatusJob extends BaseJobMessage {
+  type: 'sync_status';
+  domain_id: string;
+}
+
+export interface SendEmailJob extends BaseJobMessage {
+  type: 'send_email';
+  emailParams: SendEmailParams;
+  isDLQNotification?: boolean; // Flag to prevent infinite retry loops for DLQ notifications
+}
+
+export type JobMessage = SyncStatusJob | SendEmailJob;
