@@ -85,16 +85,18 @@ export async function handleStripeWebhook(
       apiVersion: '2024-12-18.acacia',
     });
 
-    // In production, you should set STRIPE_WEBHOOK_SECRET and verify the signature
-    // For now, we'll parse the event without verification (stub mode)
+    // You must verify the webhook signature to ensure the request is from Stripe.
+    // The webhook secret must be set as an environment variable.
     let event: Stripe.Event;
     try {
-      event = JSON.parse(body) as Stripe.Event;
-    } catch (err) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid JSON payload' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      event = await stripe.webhooks.constructEventAsync(
+        body,
+        signature,
+        env.STRIPE_WEBHOOK_SECRET
       );
+    } catch (err: any) {
+      console.error(`Webhook signature verification failed:`, err.message);
+      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
     }
 
     // Handle checkout.session.completed event
