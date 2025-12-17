@@ -122,7 +122,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     loadWebhooks();
   }, [hasApiAccess]);
 
-  const orgWebhooks = (webhooks || []).filter((wh) => wh.orgId === currentOrg?.id);
+  const orgWebhooks = webhooks || [];
 
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
