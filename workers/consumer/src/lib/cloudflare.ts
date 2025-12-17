@@ -1,28 +1,11 @@
 import type { Env } from '../env';
-
-// Types based on Cloudflare API response
-export interface CustomHostname {
-  id: string;
-  hostname: string;
-  status: string;
-  ssl: {
-    status: string;
-    method: string;
-    type: string;
-    expires_on?: string;
-    validation_errors?: { message: string }[];
-    ownership_verification?: {
-        name: string;
-        value: string;
-        type: string; 
-    };
-  };
-}
+import type { CustomHostname } from '../../../shared/src/types';
+import { fetchWithRetry } from '../../../shared/src/cloudflare-fetch';
 
 export async function getCustomHostname(env: Env, hostnameId: string): Promise<CustomHostname> {
   const url = `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames/${hostnameId}`;
   
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       'Content-Type': 'application/json'
