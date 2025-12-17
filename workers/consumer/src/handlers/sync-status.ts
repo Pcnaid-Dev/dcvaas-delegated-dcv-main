@@ -1,7 +1,7 @@
 import type { Env } from '../env';
 import type { JobMessage } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
-import { dispatchWebhook } from '../lib/webhooks';
+import { dispatchWebhook } from '../../../api/src/lib/webhooks';
 
 export async function handleSyncStatus(job: JobMessage, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
