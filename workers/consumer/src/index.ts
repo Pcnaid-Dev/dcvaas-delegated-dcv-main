@@ -28,7 +28,7 @@ export default {
         console.error(`Failed to process job ${job.id}:`, error);
         
         // If this is a DLQ notification email that failed, just ack it to prevent infinite loops
-        if (job.type === 'send_email' && (job as any).isDLQNotification) {
+        if (job.type === 'send_email' && job.isDLQNotification) {
           console.error('DLQ notification email failed - acknowledging to prevent infinite loop');
           message.ack();
         } else {

@@ -39,9 +39,7 @@ echo "$CLOUDFLARE_API_TOKEN" | wrangler secret put CLOUDFLARE_API_TOKEN
 echo "$RESEND_API_KEY" | wrangler secret put RESEND_API_KEY
 
 echo ""
-echo "Setting secrets for DLQ worker..."
-cd ../dlq
-echo "$RESEND_API_KEY" | wrangler secret put RESEND_API_KEY
+echo "Note: DLQ worker doesn't need secrets (it only queues jobs)"
 
 cd ../..
 

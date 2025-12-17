@@ -1,4 +1,3 @@
-import { Resend } from 'resend';
 import type { Env } from '../env';
 
 export interface SendEmailParams {
@@ -9,31 +8,8 @@ export interface SendEmailParams {
 }
 
 /**
- * Send an email using Resend API
- * This function is called from the queue consumer to send emails asynchronously
- */
-export async function sendEmail(env: Env, params: SendEmailParams): Promise<void> {
-  const resend = new Resend(env.RESEND_API_KEY);
-  
-  const from = params.from || 'DCVaaS <noreply@pcnaid.com>';
-  
-  try {
-    const response = await resend.emails.send({
-      from,
-      to: params.to,
-      subject: params.subject,
-      html: params.html,
-    });
-    
-    console.log('Email sent successfully:', response);
-  } catch (error) {
-    console.error('Failed to send email:', error);
-    throw error;
-  }
-}
-
-/**
  * Queue an email notification to be sent asynchronously
+ * The consumer worker will process this job and send the email via Resend
  */
 export async function queueEmailNotification(
   env: Env,
