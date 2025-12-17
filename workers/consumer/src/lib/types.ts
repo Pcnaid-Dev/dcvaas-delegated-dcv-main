@@ -18,6 +18,7 @@ export interface SyncStatusJob extends BaseJobMessage {
 export interface SendEmailJob extends BaseJobMessage {
   type: 'send_email';
   emailParams: SendEmailParams;
+  isDLQNotification?: boolean; // Flag to prevent infinite retry loops for DLQ notifications
 }
 
 export type JobMessage = SyncStatusJob | SendEmailJob;

@@ -112,6 +112,8 @@ async function sendJobFailedNotification(
     );
 
     // Queue email notification
+    // Note: We queue this with low priority to avoid infinite loops if email sending fails
+    // The consumer will process this as a normal email job
     await env.QUEUE.send({
       id: crypto.randomUUID(),
       type: 'send_email',
@@ -121,6 +123,8 @@ async function sendJobFailedNotification(
         html,
       },
       attempts: 0,
+      // Mark this as a DLQ notification so we can handle it specially if it fails
+      isDLQNotification: true,
     });
 
     console.log(`Queued DLQ notification for domain ${domain.domain_name} to ${emails.length} recipients`);
