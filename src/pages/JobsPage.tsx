@@ -31,13 +31,13 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
   });
 
   // Memoize domain ID set and filtered/sorted jobs
-  const { orgDomainIds, jobs } = useMemo(() => {
+  const { jobs } = useMemo(() => {
     const orgDomainIds = new Set(domains.map(d => d.id));
     const orgJobs = allJobs
       .filter(j => orgDomainIds.has(j.domainId))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-    return { orgDomainIds, jobs: orgJobs };
+    return { jobs: orgJobs };
   }, [allJobs, domains]);
 
   // Memoize domain lookup map for O(1) access
