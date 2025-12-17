@@ -43,13 +43,13 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
     },
     onSuccess: (plainToken) => {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
+      setTokenName('');
       if (plainToken) {
         setNewToken(plainToken);
+        toast.success('API token created');
       } else {
         toast.error('Token created but not returned by API');
       }
-      setTokenName('');
-      toast.success('API token created');
     },
     onError: () => {
       toast.error('Failed to create token');

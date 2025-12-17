@@ -253,6 +253,14 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
         const expiresAt = body.expiresAt ? String(body.expiresAt) : undefined;
         
+        // Validate expiresAt is a valid ISO date string
+        if (expiresAt) {
+          const date = new Date(expiresAt);
+          if (isNaN(date.getTime())) {
+            return withCors(req, env, badRequest('expiresAt must be a valid ISO date string'));
+          }
+        }
+        
         try {
           const token = await createToken(env, auth.orgId, name, expiresAt, auth.userId);
           return withCors(req, env, json({ token }, 201));
