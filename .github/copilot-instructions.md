@@ -234,7 +234,7 @@ This is the core async processing pattern in DCVaaS:
 
 ## Tech Stack
 - **Languages**: TypeScript (Strict mode)
-- **Frontend**: React 18, Vite, Tailwind CSS 4, Shadcn UI
+- **Frontend**: React 19, Vite, Tailwind CSS 4, Shadcn UI
 - **Backend**: Hono (for Workers), Cloudflare Workers Runtime
 - **Database**: Cloudflare D1 (SQLite)
 - **Infrastructure**: Cloudflare Workers, D1, Queues, SSL for SaaS
