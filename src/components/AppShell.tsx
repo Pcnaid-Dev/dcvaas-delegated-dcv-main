@@ -48,7 +48,7 @@ export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
   const navItems = allNavItems.filter(item => {
     if (!userRole) {
       // Show only basic items during loading
-      return ['dashboard', 'jobs'].includes(item.id);
+      return ['dashboard', 'jobs', 'team'].includes(item.id);
     }
     return item.roles.includes(userRole);
   });
