@@ -1,12 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllJobs, getOrgDomains } from '@/lib/data';
 import type { Job, Domain } from '@/types';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { Queue, Clock, ArrowsClockwise } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 type JobsPageProps = {
   onNavigate: (page: string) => void;
@@ -14,6 +25,7 @@ type JobsPageProps = {
 
 export function JobsPage({ onNavigate }: JobsPageProps) {
   const { currentOrg } = useAuth();
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   // Fetch jobs with React Query
   const { data: allJobs = [] } = useQuery({
@@ -49,56 +61,197 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
     return domainMap.get(domainId) || 'Unknown';
   };
 
-  return (
-    <AppShell onNavigate={onNavigate} currentPage="jobs">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Jobs</h1>
-          <p className="text-muted-foreground mt-1">
-            View all background jobs and their status
+  // Define table columns
+  const columns: Column<Job>[] = [
+    {
+      key: 'type',
+      header: 'Job Type',
+      sortable: true,
+      render: (job) => (
+        <span className="font-medium capitalize text-foreground">
+          {job.type.replace(/_/g, ' ')}
+        </span>
+      ),
+    },
+    {
+      key: 'domainId',
+      header: 'Domain',
+      render: (job) => (
+        <span className="text-sm text-foreground">{getDomainName(job.domainId)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (job) => <StatusBadge status={job.status} />,
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      sortable: true,
+      render: (job) => (
+        <div className="text-sm">
+          <p className="text-foreground">{format(new Date(job.createdAt), 'MMM d, yyyy')}</p>
+          <p className="text-muted-foreground">
+            {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
           </p>
         </div>
+      ),
+    },
+    {
+      key: 'attempts',
+      header: 'Attempts',
+      sortable: true,
+      render: (job) => (
+        <span className="text-sm text-foreground">{job.attempts}</span>
+      ),
+    },
+  ];
 
-        {jobs.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No jobs yet</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {jobs.map((job) => (
-              <Card key={job.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold text-foreground capitalize">
-                        {job.type.replace(/_/g, ' ')}
-                      </span>
-                      <StatusBadge status={job.status} />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Domain: {getDomainName(job.domainId)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(job.createdAt), 'PPpp')}
+  return (
+    <AppShell onNavigate={onNavigate} currentPage="jobs">
+      <div className="space-y-6">
+        <PageHeader
+          title="Background Jobs"
+          description="Monitor certificate issuance, DNS checks, and renewal jobs"
+        />
+
+        <DataTable
+          data={jobs}
+          columns={columns}
+          searchKey="type"
+          searchPlaceholder="Search jobs..."
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              options: [
+                { value: 'queued', label: 'Queued' },
+                { value: 'running', label: 'Running' },
+                { value: 'succeeded', label: 'Succeeded' },
+                { value: 'failed', label: 'Failed' },
+              ],
+            },
+          ]}
+          onRowClick={(job) => setSelectedJob(job)}
+          emptyState={
+            <EmptyState
+              icon={<Queue size={48} weight="thin" />}
+              title="No background jobs"
+              description="Background jobs for DNS checks, certificate issuance, and renewals will appear here once domains are added."
+            />
+          }
+        />
+      </div>
+
+      {/* Job Detail Sheet */}
+      <Sheet open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {selectedJob && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="capitalize">
+                  {selectedJob.type.replace(/_/g, ' ')}
+                </SheetTitle>
+                <SheetDescription>
+                  Job details and execution history
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-6">
+                {/* Status */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                    Status
+                  </h4>
+                  <StatusBadge status={selectedJob.status} />
+                </div>
+
+                {/* Domain */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                    Domain
+                  </h4>
+                  <p className="text-foreground">
+                    {getDomainName(selectedJob.domainId)}
+                  </p>
+                </div>
+
+                {/* Timing */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Created
+                    </h4>
+                    <p className="text-sm text-foreground">
+                      {format(new Date(selectedJob.createdAt), 'PPpp')}
                     </p>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Attempts: {job.attempts}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Updated
+                    </h4>
+                    <p className="text-sm text-foreground">
+                      {format(new Date(selectedJob.updatedAt), 'PPpp')}
+                    </p>
                   </div>
                 </div>
-                {job.lastError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded p-3">
-                    <p className="text-sm text-destructive font-medium mb-1">
-                      Error:
-                    </p>
-                    <p className="text-sm text-foreground">{job.lastError}</p>
+
+                {/* Attempts */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                    Attempts
+                  </h4>
+                  <p className="text-foreground">{selectedJob.attempts}</p>
+                </div>
+
+                {/* Error Details */}
+                {selectedJob.lastError && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Error Details
+                    </h4>
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded">
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {selectedJob.lastError}
+                      </p>
+                    </div>
                   </div>
                 )}
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+
+                {/* Result */}
+                {selectedJob.result && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Result
+                    </h4>
+                    <div className="p-3 bg-muted rounded">
+                      <pre className="text-xs text-foreground overflow-x-auto">
+                        {JSON.stringify(selectedJob.result, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                {selectedJob.status === 'failed' && (
+                  <div className="pt-4 border-t border-border">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled
+                    >
+                      <ArrowsClockwise size={20} className="mr-2" />
+                      Retry Job (Coming Soon)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </AppShell>
   );
 }
