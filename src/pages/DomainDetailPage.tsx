@@ -69,7 +69,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     if (domain) {
       setPreviousStatus(domain.status);
     }
-  }, [domain?.status]);
+  }, [domain?.status, previousStatus, domain?.domainName]);
 
   // Mutation for syncing domain
   const syncMutation = useMutation({
@@ -201,7 +201,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">Verification in Progress</h3>
                     <p className="text-sm text-muted-foreground">
-                      Cloudflare is validating your DNS configuration. This process is automatic and typically takes 1-5 minutes.
+                      Cloudflare is validating your DNS configuration. This process is automatic and typically completes within 5-15 minutes.
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Status updates automatically every 12 seconds
