@@ -323,7 +323,7 @@ curl -X POST https://dcv.pcnaid.com/api/oauth/exchange \
    - Dead letter queue for failed deliveries
    - Webhook delivery history/logs
 
-3. **API Token Expiration:** While the schema supports `expires_at`, the API doesn't enforce it yet. Add cron job to clean up expired tokens.
+3. **API Token Expiration:** API tokens with an `expires_at` date are correctly enforced at authentication time. However, there is no background job to automatically clean up expired tokens from the database yet.
 
 4. **Rate Limiting:** No rate limiting on API endpoints. Consider adding Cloudflare Rate Limiting rules or implement in middleware.
 
