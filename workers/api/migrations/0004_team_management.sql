@@ -14,13 +14,8 @@
 -- Note: This will produce an error if the column exists, but SQLite will continue
 ALTER TABLE organizations ADD COLUMN owner_id TEXT;
 
--- Add subscription_tier column if it doesn't exist
+-- Add subscription_tier column if it doesn't exist (required for Stripe integration)
 ALTER TABLE organizations ADD COLUMN subscription_tier TEXT DEFAULT 'free' CHECK(subscription_tier IN ('free', 'pro', 'agency'));
-
--- Add theme columns if they don't exist
-ALTER TABLE organizations ADD COLUMN theme_logo_url TEXT;
-ALTER TABLE organizations ADD COLUMN theme_primary_color TEXT;
-ALTER TABLE organizations ADD COLUMN theme_secondary_color TEXT;
 
 -- 2. Create organization_members table
 CREATE TABLE IF NOT EXISTS organization_members (

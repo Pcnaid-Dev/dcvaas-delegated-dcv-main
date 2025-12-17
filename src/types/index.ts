@@ -13,11 +13,6 @@ export type Organization = {
   name: string;
   ownerId: string;
   subscriptionTier: SubscriptionTier;
-  theme?: {
-    logoUrl?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-  };
   createdAt: string;
 };
 

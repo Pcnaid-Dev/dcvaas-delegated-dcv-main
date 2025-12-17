@@ -6,9 +6,6 @@ CREATE TABLE IF NOT EXISTS organizations (
   name TEXT NOT NULL,
   owner_id TEXT NOT NULL,
   subscription_tier TEXT NOT NULL CHECK(subscription_tier IN ('free', 'pro', 'agency')),
-  theme_logo_url TEXT,
-  theme_primary_color TEXT,
-  theme_secondary_color TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
