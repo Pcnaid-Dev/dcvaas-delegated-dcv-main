@@ -101,7 +101,7 @@ Expected: Returns JSON list of domains (or empty array if none exist)
 wrangler d1 execute dcvaas-db --remote --command="SELECT * FROM webhook_endpoints;"
 ```
 
-Expected: Shows webhook with URL, events JSON, secret hash, enabled=1
+Expected: Shows webhook with URL, events JSON, plaintext secret, enabled=1
 
 ### Toggle Webhook Status
 1. In UI, toggle the webhook to **Disabled**
