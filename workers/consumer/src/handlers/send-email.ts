@@ -9,7 +9,7 @@ export async function handleSendEmail(job: SendEmailJob, env: Env): Promise<void
   const resend = new Resend(env.RESEND_API_KEY);
   const { emailParams } = job;
   
-  const from = emailParams.from || 'DCVaaS <noreply@pcnaid.com>';
+  const from = env.EMAIL_FROM || emailParams.from || 'DCVaaS <noreply@pcnaid.com>';
   
   try {
     const response = await resend.emails.send({
