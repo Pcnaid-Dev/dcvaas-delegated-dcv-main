@@ -353,7 +353,16 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
           </Dialog>
         </div>
 
-        {orgWebhooks.length === 0 ? (
+        {isLoading ? (
+          <Card className="p-12">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <Bell size={32} className="text-muted-foreground animate-pulse" />
+              </div>
+              <p className="text-muted-foreground">Loading webhooks...</p>
+            </div>
+          </Card>
+        ) : orgWebhooks.length === 0 ? (
           <Card className="p-12">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">

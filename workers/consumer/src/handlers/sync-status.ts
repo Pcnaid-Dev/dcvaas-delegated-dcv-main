@@ -33,23 +33,23 @@ export async function handleSyncStatus(job: JobMessage, env: Env) {
     domain.id
   ).run();
 
-  // Dispatch webhook if domain became active
+  // Dispatch webhook if domain became active (fire and forget - don't await)
   if (oldStatus !== 'active' && internalStatus === 'active') {
-    await dispatchWebhook(env, domain.org_id, 'domain.active', {
+    dispatchWebhook(env, domain.org_id, 'domain.active', {
       domain_id: domain.id,
       domain_name: domain.domain_name,
       status: internalStatus,
       expires_at: domain.expires_at,
-    });
+    }).catch((err) => console.error('Failed to dispatch domain.active webhook:', err));
   }
 
-  // Dispatch webhook if domain went into error state
+  // Dispatch webhook if domain went into error state (fire and forget - don't await)
   if (oldStatus !== 'error' && internalStatus === 'error') {
-    await dispatchWebhook(env, domain.org_id, 'domain.error', {
+    dispatchWebhook(env, domain.org_id, 'domain.error', {
       domain_id: domain.id,
       domain_name: domain.domain_name,
       status: internalStatus,
       error_message: cfData.ssl.validation_errors?.[0] || 'Unknown error',
-    });
+    }).catch((err) => console.error('Failed to dispatch domain.error webhook:', err));
   }
 }

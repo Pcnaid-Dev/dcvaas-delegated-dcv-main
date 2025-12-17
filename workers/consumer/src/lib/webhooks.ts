@@ -49,10 +49,10 @@ export async function dispatchWebhook(
   }
 
   // Filter webhooks that are subscribed to this event
-  const subscribedWebhooks = webhooks.results.filter((wh) => {
-    const events = JSON.parse(wh.events);
-    return events.includes(event);
-  });
+  // Parse events once per webhook to avoid repeated parsing
+  const subscribedWebhooks = webhooks.results
+    .map((wh) => ({ ...wh, parsedEvents: JSON.parse(wh.events) }))
+    .filter((wh) => wh.parsedEvents.includes(event));
 
   if (subscribedWebhooks.length === 0) {
     return;
