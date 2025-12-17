@@ -10,6 +10,40 @@ export type Auth = {
   role?: MemberRole;
 };
 
+/**
+ * Update placeholder email with real email from auth token
+ * This fixes the issue where migrations create placeholder emails like owner@orgid.local
+ */
+async function updatePlaceholderEmail(env: Env, userId: string, orgId: string, realEmail: string): Promise<void> {
+  try {
+    // Check if user has a placeholder email pattern (owner@{orgid}.local)
+    const member = await env.DB
+      .prepare(
+        `SELECT email FROM organization_members 
+         WHERE user_id = ? AND org_id = ? AND email = 'owner@' || org_id || '.local'`
+      )
+      .bind(userId, orgId)
+      .first<{ email: string }>();
+
+    if (member) {
+      // Update with real email
+      await env.DB
+        .prepare(
+          `UPDATE organization_members 
+           SET email = ?, updated_at = datetime('now') 
+           WHERE user_id = ? AND org_id = ?`
+        )
+        .bind(realEmail, userId, orgId)
+        .run();
+      
+      console.log(`Updated placeholder email for user ${userId} in org ${orgId} to ${realEmail}`);
+    }
+  } catch (err) {
+    console.error('Failed to update placeholder email:', err);
+    // Non-fatal error, continue
+  }
+}
+
 export async function authenticate(req: Request, env: Env): Promise<Auth | null> {
   const header = req.headers.get('Authorization') || '';
   const m = header.match(/^Bearer\s+(.+)$/i);
@@ -46,8 +80,9 @@ export async function authenticate(req: Request, env: Env): Promise<Auth | null>
 /**
  * Authenticate with user-based auth (for Auth0 integration)
  * Checks if the user is a member of the organization
+ * Also updates placeholder emails with real emails from auth token
  */
-export async function authenticateUser(req: Request, env: Env, userId: string, orgId: string): Promise<Auth | null> {
+export async function authenticateUser(req: Request, env: Env, userId: string, orgId: string, userEmail?: string): Promise<Auth | null> {
   const member = await env.DB
     .prepare(
       `SELECT user_id, role, status
@@ -58,6 +93,15 @@ export async function authenticateUser(req: Request, env: Env, userId: string, o
     .first<{ user_id: string; role: MemberRole; status: string }>();
 
   if (!member) return null;
+
+  // Update placeholder email if real email is provided
+  if (userEmail) {
+    // Fire and forget - don't block auth on email update
+    // Errors are intentionally ignored as email update is a best-effort operation
+    updatePlaceholderEmail(env, userId, orgId, userEmail).catch((err) => {
+      console.error('Non-fatal error updating placeholder email:', err);
+    });
+  }
 
   return { 
     orgId, 

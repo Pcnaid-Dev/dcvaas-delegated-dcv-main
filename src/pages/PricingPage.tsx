@@ -1,12 +1,43 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Certificate } from '@phosphor-icons/react';
+import { createStripeCheckoutSession } from '@/lib/data';
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 type PricingPageProps = {
   onNavigate: (page: string) => void;
 };
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleSubscribe = async (planName: string, priceId: string) => {
+    if (planName === 'Free') {
+      onNavigate('dashboard');
+      return;
+    }
+
+    setLoading(planName);
+    try {
+      const { url } = await createStripeCheckoutSession(priceId);
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to create checkout session:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : 'Unknown error';
+      toast.error('Failed to start checkout', {
+        description: errorMessage,
+      });
+      setLoading(null);
+    }
+  };
+
   const plans = [
     {
       name: 'Free',
@@ -22,6 +53,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       ],
       cta: 'Get Started',
       highlighted: false,
+      priceId: '',
     },
     {
       name: 'Pro',
@@ -38,6 +70,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       ],
       cta: 'Start Trial',
       highlighted: true,
+      priceId: STRIPE_PRICE_IDS.pro,
     },
     {
       name: 'Agency',
@@ -56,6 +89,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       ],
       cta: 'Contact Sales',
       highlighted: false,
+      priceId: STRIPE_PRICE_IDS.agency,
     },
   ];
 
@@ -143,9 +177,10 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               <Button
                 className="w-full mb-6"
                 variant={plan.highlighted ? 'default' : 'outline'}
-                onClick={() => onNavigate('dashboard')}
+                onClick={() => handleSubscribe(plan.name, plan.priceId)}
+                disabled={loading === plan.name}
               >
-                {plan.cta}
+                {loading === plan.name ? 'Loading...' : plan.cta}
               </Button>
 
               <div className="space-y-3">

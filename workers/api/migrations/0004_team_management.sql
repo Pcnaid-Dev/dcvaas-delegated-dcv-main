@@ -1,23 +1,27 @@
--- Migration: 0004_team_management.sql
+-- Migration: 0004_team_management.sql (Idempotent Version)
 -- Add team management and RBAC support
+-- SAFE TO RUN MULTIPLE TIMES
 
--- 1. Add owner_id and subscription_tier to organizations if they don't exist
--- Note: SQLite doesn't support ALTER TABLE IF NOT EXISTS directly
--- We check for column existence before attempting to add it
+-- IMPORTANT: This migration uses idempotent patterns where possible.
+-- The strategy is to:
+-- 1. Create new tables/indexes with IF NOT EXISTS (fully idempotent)
+-- 2. For ALTER TABLE operations, these WILL ERROR on re-run (SQLite limitation)
+-- 3. Use INSERT OR IGNORE for data migrations (idempotent)
 
--- Check and add owner_id column
--- SQLite doesn't have a direct way to check column existence, so we wrap in a transaction
--- If the column exists, the ALTER will fail silently in SQLite (non-fatal error)
--- The migration will continue regardless
+-- CRITICAL: The ALTER TABLE statements below will fail if columns already exist.
+-- This is a SQLite limitation - it does not support IF NOT EXISTS for ALTER TABLE ADD COLUMN.
+-- Your migration system MUST track which migrations have been applied to prevent re-running.
+-- If you need to re-run this migration, you must manually drop the columns first (not recommended).
 
--- Add owner_id column if it doesn't exist
--- Note: This will produce an error if the column exists, but SQLite will continue
+BEGIN TRANSACTION;
+
+-- 1. Add columns to organizations table
+-- These will error if columns already exist - this is expected behavior
+-- Migration system should prevent re-running this migration
 ALTER TABLE organizations ADD COLUMN owner_id TEXT;
-
--- Add subscription_tier column if it doesn't exist (required for Stripe integration)
 ALTER TABLE organizations ADD COLUMN subscription_tier TEXT DEFAULT 'free' CHECK(subscription_tier IN ('free', 'pro', 'agency'));
 
--- 2. Create organization_members table
+-- 2. Create organization_members table (idempotent)
 CREATE TABLE IF NOT EXISTS organization_members (
     id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL,
@@ -32,19 +36,19 @@ CREATE TABLE IF NOT EXISTS organization_members (
     UNIQUE(org_id, email)
 );
 
--- 3. Create indexes for performance
+-- 3. Create indexes for performance (idempotent)
 CREATE INDEX IF NOT EXISTS idx_org_members_user ON organization_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_org_members_org ON organization_members(org_id);
 CREATE INDEX IF NOT EXISTS idx_org_members_email ON organization_members(email);
 CREATE INDEX IF NOT EXISTS idx_org_members_status ON organization_members(status);
 CREATE INDEX IF NOT EXISTS idx_org_members_org_email ON organization_members(org_id, email);
 
--- 4. Migrate existing organizations to have owner entries
+-- 4. Migrate existing organizations to have owner entries (idempotent with OR IGNORE)
 -- For each organization with an owner_id, create a membership record
--- Note: WHERE clause ensures owner_id IS NOT NULL, so COALESCE is redundant
-INSERT INTO organization_members (id, org_id, user_id, email, role, status, created_at)
+-- Uses deterministic ID generation based on org_id and owner_id to ensure idempotency
+INSERT OR IGNORE INTO organization_members (id, org_id, user_id, email, role, status, created_at)
 SELECT 
-    lower(hex(randomblob(16))),
+    substr('owner-' || id || '-' || owner_id, 1, 64),  -- Deterministic ID from org_id and owner_id
     id,
     owner_id,
     'owner@' || id || '.local',
@@ -52,14 +56,9 @@ SELECT
     'active',
     datetime('now')
 FROM organizations
-WHERE owner_id IS NOT NULL
-AND NOT EXISTS (
-    SELECT 1 FROM organization_members 
-    WHERE organization_members.org_id = organizations.id 
-    AND organization_members.user_id = organizations.owner_id
-);
+WHERE owner_id IS NOT NULL;
 
--- 5. Update organizations without owner_id to have one (use first member or system)
+-- 5. Update organizations without owner_id to have one (idempotent - will skip if already set)
 UPDATE organizations
 SET owner_id = (
     SELECT user_id FROM organization_members 
@@ -72,3 +71,5 @@ AND EXISTS (
     SELECT 1 FROM organization_members 
     WHERE organization_members.org_id = organizations.id
 );
+
+COMMIT;

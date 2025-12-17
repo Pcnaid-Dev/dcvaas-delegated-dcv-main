@@ -21,6 +21,7 @@ import {
   Queue,
   ShieldCheck,
   Bell,
+  SignOut,
 } from '@phosphor-icons/react';
 
 type AppShellProps = {
@@ -30,7 +31,8 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
-  const { user, currentOrg, organizations, setCurrentOrg, userRole } = useAuth();
+// ADD THIS ONE LINE
+const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = useAuth();
 
   // Define all navigation items with role requirements
   const allNavItems = [
@@ -129,6 +131,11 @@ export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
                   <DropdownMenuItem onClick={() => onNavigate('audit')}>
                     <ListBullets size={16} className="mr-2" />
                     Audit Logs
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <SignOut size={16} className="mr-2" />
+                    Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

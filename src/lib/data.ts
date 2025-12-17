@@ -359,3 +359,12 @@ export async function acceptOrgInvitation(orgId: string, userId: string, email: 
     body: JSON.stringify({ userId, email }),
   });
 }
+// ===== BILLING / STRIPE =====
+
+export async function createStripeCheckoutSession(priceId: string): Promise<{ url: string }> {
+  const res = await api<{ url: string }>('/api/create-checkout-session', {
+    method: 'POST',
+    body: JSON.stringify({ priceId }),
+  });
+  return res;
+}
