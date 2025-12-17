@@ -30,7 +30,7 @@ const POLLING_STATUSES: DomainStatus[] = ['pending_cname', 'issuing', 'pending_v
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const previousStatusRef = React.useRef<string | null>(null);
+  const previousStatusRef = React.useRef<DomainStatus | null>(null);
 
   // Fetch domain with React Query
   const { data: domain, isLoading: isDomainLoading } = useQuery({
