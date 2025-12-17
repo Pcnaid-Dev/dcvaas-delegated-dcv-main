@@ -89,6 +89,28 @@ const LOCAL_AUDIT_KEY = 'dcvaas_audit_logs';
 
 // ===== USERS & ORGS (used by AppShell/AuthContext) =====
 
+/**
+ * Helper function to fetch organization from API and cache in localStorage
+ * Returns null if fetch fails
+ */
+async function fetchOrganizationFromAPI(): Promise<Organization | null> {
+  if (!API_TOKEN) return null;
+  
+  try {
+    const res = await api<{ organization: Organization }>('/api/organizations');
+    const org = res.organization;
+    
+    // Cache in localStorage
+    localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
+    localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
+    
+    return org;
+  } catch (err) {
+    console.warn('Failed to fetch organization from API, falling back to localStorage', err);
+    return null;
+  }
+}
+
 // Always return a user object so code like user.name.substring() doesn't crash
 export async function getUser(): Promise<User> {
   if (!isBrowser()) return DEFAULT_USER;
@@ -125,21 +147,9 @@ export async function setUser(user: User | null): Promise<void> {
 export async function getUserOrganizations(): Promise<Organization[]> {
   if (!isBrowser()) return [DEFAULT_ORG];
 
-  // Try to fetch from API first if we have a token
-  if (API_TOKEN) {
-    try {
-      const res = await api<{ organization: Organization }>('/api/organizations');
-      const org = res.organization;
-      
-      // Cache in localStorage
-      localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
-      localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
-      
-      return [org];
-    } catch (err) {
-      console.warn('Failed to fetch organization from API, falling back to localStorage', err);
-    }
-  }
+  // Try to fetch from API first
+  const orgFromAPI = await fetchOrganizationFromAPI();
+  if (orgFromAPI) return [orgFromAPI];
 
   // Try explicit list first
   const rawList = localStorage.getItem(LOCAL_ORG_LIST_KEY);
@@ -173,20 +183,8 @@ export async function getOrganization(): Promise<Organization> {
   if (!isBrowser()) return DEFAULT_ORG;
 
   // Try to fetch from API first
-  if (API_TOKEN) {
-    try {
-      const res = await api<{ organization: Organization }>('/api/organizations');
-      const org = res.organization;
-      
-      // Cache in localStorage
-      localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
-      localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
-      
-      return org;
-    } catch (err) {
-      console.warn('Failed to fetch organization from API, falling back to localStorage', err);
-    }
-  }
+  const orgFromAPI = await fetchOrganizationFromAPI();
+  if (orgFromAPI) return orgFromAPI;
 
   // Fallback to localStorage
   const orgs = await getUserOrganizations();
