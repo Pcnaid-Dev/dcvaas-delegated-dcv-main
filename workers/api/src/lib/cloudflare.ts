@@ -53,16 +53,33 @@ export async function createCustomHostname(env: Env, domain: string): Promise<Cu
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
   const MAX_DELAY = 30000; // Cap at 30 seconds
   let lastError: Error | null = null;
+  let rateLimitRetries = 0;
+  const MAX_RATE_LIMIT_RETRIES = 3;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
       
-      // If rate limited, wait and retry
+      // If rate limited, wait and retry (but count against a separate budget)
       if (response.status === 429) {
+        if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
+          throw new Error('Rate limit retry budget exhausted');
+        }
+        rateLimitRetries++;
         const retryAfter = parseInt(response.headers.get('Retry-After') || '5', 10);
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
         continue;
+      }
+      
+      // Check for client errors (4xx) that shouldn't be retried
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        // Client errors like 400, 401, 403, 404 won't resolve with retries
+        return response;
+      }
+      
+      // Check for server errors (5xx) that should be retried
+      if (response.status >= 500) {
+        throw new Error(`Server error: ${response.status}`);
       }
       
       return response;

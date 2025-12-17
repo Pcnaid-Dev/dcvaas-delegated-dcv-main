@@ -40,14 +40,29 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
-        const domains = await listDomains(env, auth.orgId);
-        const response = json({ domains });
+        const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+        const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+        const domains = await listDomains(env, auth.orgId, limit, offset);
+        const response = json({ domains }, 200, {
+          'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
+        });
         
         // Check If-None-Match header for ETag support
+        // Normalize ETags by removing W/ prefix and quotes for comparison
         const ifNoneMatch = req.headers.get('If-None-Match');
         const etag = response.headers.get('ETag');
-        if (ifNoneMatch && etag && ifNoneMatch === etag) {
-          return withCors(req, env, new Response(null, { status: 304, headers: { 'ETag': etag } }));
+        if (ifNoneMatch && etag) {
+          const normalizedIfNoneMatch = ifNoneMatch.replace(/^W\//, '').replace(/"/g, '');
+          const normalizedEtag = etag.replace(/^W\//, '').replace(/"/g, '');
+          if (normalizedIfNoneMatch === normalizedEtag) {
+            return withCors(req, env, new Response(null, { 
+              status: 304, 
+              headers: { 
+                'ETag': etag,
+                'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
+              } 
+            }));
+          }
         }
         
         return withCors(req, env, response);

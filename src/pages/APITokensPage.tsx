@@ -29,7 +29,7 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
   // Fetch tokens with React Query
   const { data: tokens = [] } = useQuery({
     queryKey: ['apiTokens', currentOrg?.id],
-    queryFn: () => currentOrg ? getOrgAPITokens(currentOrg.id) : Promise.resolve([]),
+    queryFn: () => currentOrg ? getOrgAPITokens() : Promise.resolve([]),
     enabled: !!currentOrg,
     staleTime: 30000,
   });
@@ -62,7 +62,7 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
 
   // Mutation for deleting tokens
   const deleteTokenMutation = useMutation({
-    mutationFn: (tokenId: string) => deleteAPIToken(currentOrg?.id || '', tokenId),
+    mutationFn: (tokenId: string) => deleteAPIToken(tokenId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
       toast.success('Token deleted');

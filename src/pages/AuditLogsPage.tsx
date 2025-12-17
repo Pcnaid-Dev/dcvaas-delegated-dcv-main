@@ -18,7 +18,7 @@ export function AuditLogsPage({ onNavigate }: AuditLogsPageProps) {
   // Fetch audit logs with React Query
   const { data: logs = [] } = useQuery({
     queryKey: ['auditLogs', currentOrg?.id],
-    queryFn: () => currentOrg ? getOrgAuditLogs(currentOrg.id) : Promise.resolve([]),
+    queryFn: () => currentOrg ? getOrgAuditLogs() : Promise.resolve([]),
     enabled: !!currentOrg,
     staleTime: 30000, // 30 seconds - audit logs don't change frequently
   });

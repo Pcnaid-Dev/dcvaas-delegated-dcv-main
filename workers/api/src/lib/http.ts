@@ -3,14 +3,20 @@ import type { Env } from '../env';
 export function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   const body = JSON.stringify(data);
   
+  const responseHeaders: Record<string, string> = {
+    'content-type': 'application/json; charset=utf-8',
+  };
+  
+  // Only add caching headers for successful GET responses (200 OK)
+  // POST/PUT/DELETE operations should not have public cache headers
+  if (status === 200) {
+    responseHeaders['ETag'] = `"${hashString(body)}"`;
+  }
+  
   return new Response(body, {
     status,
     headers: {
-      'content-type': 'application/json; charset=utf-8',
-      // Add ETag for caching
-      'ETag': `"${hashString(body)}"`,
-      // Add cache control for GET requests (can be overridden by caller)
-      'Cache-Control': status === 200 ? 'public, max-age=10, stale-while-revalidate=30' : 'no-cache',
+      ...responseHeaders,
       ...headers,
     },
   });
