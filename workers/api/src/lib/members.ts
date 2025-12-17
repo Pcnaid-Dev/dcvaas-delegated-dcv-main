@@ -92,7 +92,8 @@ export async function inviteMember(
     .bind(id)
     .first<MemberRow>();
 
-  return rowToResponse(member!);
+  if (!member) throw new Error('Failed to create member invitation');
+  return rowToResponse(member);
 }
 
 /**
