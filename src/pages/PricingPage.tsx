@@ -23,7 +23,13 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       window.location.href = url;
     } catch (error) {
       console.error('Failed to create checkout session:', error);
-      alert('Failed to start checkout. Please try again.');
+      let errorMessage = 'Failed to start checkout. Please try again.';
+      if (error instanceof Error && error.message) {
+        errorMessage += `\n\nDetails: ${error.message}`;
+      } else if (typeof error === 'string') {
+        errorMessage += `\n\nDetails: ${error}`;
+      }
+      alert(errorMessage);
       setLoading(null);
     }
   };
