@@ -20,6 +20,33 @@ type DomainDetailPageProps = {
   onNavigate: (page: string) => void;
 };
 
+/**
+ * Formats verification errors for display in the UI.
+ * Handles arrays, strings, and objects with proper formatting.
+ */
+function formatVerificationErrors(errors: any, fallbackMessage?: string): React.ReactNode {
+  if (!errors) {
+    return fallbackMessage || 'Unknown error occurred during validation';
+  }
+
+  // Handle array of errors
+  if (Array.isArray(errors)) {
+    return errors.map((err: any, idx: number) => (
+      <div key={idx} className="mb-1">
+        • {typeof err === 'string' ? err : err.message || JSON.stringify(err)}
+      </div>
+    ));
+  }
+
+  // Handle string errors
+  if (typeof errors === 'string') {
+    return errors;
+  }
+
+  // Handle object errors - format as JSON
+  return JSON.stringify(errors, null, 2);
+}
+
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
@@ -251,18 +278,11 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                     </h3>
                     <div className="mb-4 p-3 bg-card rounded-lg border border-destructive/20">
                       <div className="text-sm text-foreground">
-                        {domain.cfVerificationErrors 
-                          ? (Array.isArray(domain.cfVerificationErrors) 
-                              ? domain.cfVerificationErrors.map((err: any, idx: number) => (
-                                  <div key={idx} className="mb-1">
-                                    • {typeof err === 'string' ? err : err.message || JSON.stringify(err)}
-                                  </div>
-                                ))
-                              : typeof domain.cfVerificationErrors === 'string'
-                                ? domain.cfVerificationErrors
-                                : JSON.stringify(domain.cfVerificationErrors, null, 2))
-                          : (domain.errorMessage || 'Unknown error occurred during validation')}
-                      </p>
+                        {formatVerificationErrors(
+                          domain.cfVerificationErrors,
+                          domain.errorMessage
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
                       Please verify your DNS configuration and try again. If the issue persists, check our documentation or contact support.
