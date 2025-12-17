@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserRole(member?.role || null);
         } catch (err) {
           console.warn('Failed to load user role', err);
-          // Default to owner for now if we can't load
-          setUserRole(currentOrg.ownerId === user.id ? 'owner' : 'member');
+          // Set role to null on failure to avoid assigning an incorrect role.
+          setUserRole(null);
         }
       } else {
         setUserRole(null);
