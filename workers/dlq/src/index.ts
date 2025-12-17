@@ -123,7 +123,9 @@ async function sendJobFailedNotification(
         html,
       },
       attempts: 0,
-      // Mark this as a DLQ notification so we can handle it specially if it fails
+      // CRITICAL: Mark this as a DLQ notification so we can handle it specially if it fails
+      // If this email itself fails, the consumer will acknowledge it instead of retrying,
+      // preventing an infinite loop where failed DLQ notifications generate more DLQ notifications
       isDLQNotification: true,
     });
 
