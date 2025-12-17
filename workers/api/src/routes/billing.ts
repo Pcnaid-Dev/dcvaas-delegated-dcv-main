@@ -81,9 +81,6 @@ export async function handleStripeWebhook(
     }
 
     const body = await req.text();
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-12-18.acacia',
-    });
 
     // You must verify the webhook signature to ensure the request is from Stripe.
     // The webhook secret must be set as an environment variable.
