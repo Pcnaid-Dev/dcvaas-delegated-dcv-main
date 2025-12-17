@@ -47,7 +47,7 @@ export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps)
             </div>
           </div>
           <div className="absolute top-2 right-2">
-            <CopyButton text={instruction} size="sm" variant="ghost" />
+            <CopyButton text={cnameTarget} size="sm" variant="ghost" />
           </div>
         </div>
         
