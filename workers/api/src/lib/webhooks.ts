@@ -110,23 +110,14 @@ export async function dispatchWebhook(
   payload: Record<string, any>
 ): Promise<void> {
   // Fetch enabled webhooks for this org that are subscribed to this event
-  const webhooks = await env.DB.prepare(
-    'SELECT * FROM webhook_endpoints WHERE org_id = ? AND enabled = 1'
+  // Fetch enabled webhooks for this org that are subscribed to this event
+  const { results: subscribedWebhooks } = await env.DB.prepare(
+    "SELECT * FROM webhook_endpoints WHERE org_id = ? AND enabled = 1 AND INSTR(events, ?)"
   )
-    .bind(orgId)
+    .bind(orgId, `\"${event}\"`)
     .all<WebhookEndpointRow>();
 
-  if (!webhooks.results || webhooks.results.length === 0) {
-    return;
-  }
-
-  // Filter webhooks that are subscribed to this event
-  // Parse events once per webhook to avoid repeated parsing
-  const subscribedWebhooks = webhooks.results
-    .map((wh) => ({ ...wh, parsedEvents: JSON.parse(wh.events) }))
-    .filter((wh) => wh.parsedEvents.includes(event));
-
-  if (subscribedWebhooks.length === 0) {
+  if (!subscribedWebhooks || subscribedWebhooks.length === 0) {
     return;
   }
 
