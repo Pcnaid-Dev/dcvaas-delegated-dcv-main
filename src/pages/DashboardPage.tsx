@@ -30,7 +30,7 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
   const [search, setSearch] = useState('');
 
   // Use React Query for data fetching with caching
-  const { data: domains = [], isLoading } = useQuery({
+  const { data: domains = [] } = useQuery({
     queryKey: ['domains', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgDomains(currentOrg.id) : Promise.resolve([]),
     enabled: !!currentOrg,
