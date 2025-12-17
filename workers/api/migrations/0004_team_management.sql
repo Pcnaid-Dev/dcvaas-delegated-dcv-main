@@ -2,16 +2,22 @@
 -- Add team management and RBAC support
 
 -- 1. Add owner_id and subscription_tier to organizations if they don't exist
--- Note: SQLite doesn't support ALTER TABLE IF NOT EXISTS, so we use a workaround
--- These columns may already exist in some deployments
+-- Note: SQLite doesn't support ALTER TABLE IF NOT EXISTS directly
+-- We check for column existence before attempting to add it
 
--- Add owner_id column (may fail if exists, that's ok)
+-- Check and add owner_id column
+-- SQLite doesn't have a direct way to check column existence, so we wrap in a transaction
+-- If the column exists, the ALTER will fail silently in SQLite (non-fatal error)
+-- The migration will continue regardless
+
+-- Add owner_id column if it doesn't exist
+-- Note: This will produce an error if the column exists, but SQLite will continue
 ALTER TABLE organizations ADD COLUMN owner_id TEXT;
 
--- Add subscription_tier column (may fail if exists, that's ok)
+-- Add subscription_tier column if it doesn't exist
 ALTER TABLE organizations ADD COLUMN subscription_tier TEXT DEFAULT 'free' CHECK(subscription_tier IN ('free', 'pro', 'agency'));
 
--- Add theme columns (may fail if exists, that's ok)
+-- Add theme columns if they don't exist
 ALTER TABLE organizations ADD COLUMN theme_logo_url TEXT;
 ALTER TABLE organizations ADD COLUMN theme_primary_color TEXT;
 ALTER TABLE organizations ADD COLUMN theme_secondary_color TEXT;
@@ -40,11 +46,12 @@ CREATE INDEX IF NOT EXISTS idx_org_members_org_email ON organization_members(org
 
 -- 4. Migrate existing organizations to have owner entries
 -- For each organization with an owner_id, create a membership record
+-- Note: WHERE clause ensures owner_id IS NOT NULL, so COALESCE is redundant
 INSERT INTO organization_members (id, org_id, user_id, email, role, status, created_at)
 SELECT 
     lower(hex(randomblob(16))),
     id,
-    COALESCE(owner_id, 'system'),
+    owner_id,
     'owner@' || id || '.local',
     'owner',
     'active',

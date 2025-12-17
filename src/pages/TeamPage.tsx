@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { PLAN_LIMITS, type Membership } from '@/types';
+import { PLAN_LIMITS, type Membership, type MemberRole } from '@/types';
 import { useState, useEffect } from 'react';
 import { getOrgMembers, inviteOrgMember, removeOrgMember } from '@/lib/data';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'owner' | 'admin' | 'member'>('member');
   const [inviting, setInviting] = useState(false);
+  const [accepting, setAccepting] = useState<string | null>(null);
 
   if (!currentOrg) return null;
 
@@ -97,11 +98,32 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
+  const handleAcceptInvitation = async (member: Membership) => {
+    if (!currentOrg || !user) return;
+    
+    setAccepting(member.id);
+    try {
+      const { acceptOrgInvitation } = await import('@/lib/data');
+      await acceptOrgInvitation(currentOrg.id, user.id, member.email);
+      
+      // Reload members to show updated status
+      const updatedMembers = await getOrgMembers(currentOrg.id);
+      setMembers(updatedMembers);
+      
+      toast.success('Invitation accepted! You are now an active member.');
+    } catch (err: any) {
+      console.error('Failed to accept invitation', err);
+      toast.error(err.message || 'Failed to accept invitation');
+    } finally {
+      setAccepting(null);
+    }
+  };
+
+  const getRoleBadgeVariant = (role: MemberRole): 'default' | 'secondary' | 'outline' => {
     switch (role) {
       case 'owner': return 'default';
       case 'admin': return 'secondary';
-      default: return 'outline';
+      case 'member': return 'outline';
     }
   };
 
@@ -160,9 +182,18 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={getRoleBadgeVariant(member.role) as any}>
+                      <Badge variant={getRoleBadgeVariant(member.role)}>
                         {member.role}
                       </Badge>
+                      {member.status === 'invited' && member.email === user?.email && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptInvitation(member)}
+                          disabled={accepting === member.id}
+                        >
+                          {accepting === member.id ? 'Accepting...' : 'Accept Invitation'}
+                        </Button>
+                      )}
                       {canInvite && member.userId !== user?.id && member.email !== user?.email && (
                         <Button
                           variant="ghost"
@@ -203,7 +234,7 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as MemberRole)}>
                 <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>

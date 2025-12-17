@@ -38,6 +38,8 @@ export async function authenticate(req: Request, env: Env): Promise<Auth | null>
     .run()
     .catch(() => {});
 
+  // API tokens are assumed to have full owner privileges for their organization
+  // This allows API token holders to perform all operations including member management
   return { orgId: row.org_id, tokenId: row.id, role: 'owner' };
 }
 

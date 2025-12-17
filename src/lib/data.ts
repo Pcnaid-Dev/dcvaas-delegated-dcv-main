@@ -352,3 +352,10 @@ export async function updateOrgMemberRole(orgId: string, userId: string, role: '
   });
   return res.member;
 }
+
+export async function acceptOrgInvitation(orgId: string, userId: string, email: string): Promise<void> {
+  await api(`/api/orgs/${encodeURIComponent(orgId)}/members/accept`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, email }),
+  });
+}

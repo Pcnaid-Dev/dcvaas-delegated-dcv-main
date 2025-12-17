@@ -169,6 +169,32 @@ export default {
         }
       }
 
+      // POST /api/orgs/:orgId/members/accept - Accept invitation
+      {
+        const m = url.pathname.match(/^\/api\/orgs\/([^/]+)\/members\/accept$/);
+        if (m && method === 'POST') {
+          const orgId = decodeURIComponent(m[1]);
+          
+          if (orgId !== auth.orgId) return withCors(req, env, forbidden());
+
+          const body = await req.json().catch(() => ({} as any));
+          const userId = String(body.userId ?? '').trim();
+          const email = String(body.email ?? '').trim();
+          
+          if (!userId || !email) {
+            return withCors(req, env, badRequest('userId and email are required'));
+          }
+
+          try {
+            const { acceptInvitation } = await import('./lib/members');
+            await acceptInvitation(env, orgId, userId, email);
+            return withCors(req, env, json({ success: true }));
+          } catch (err: any) {
+            return withCors(req, env, badRequest(err.message));
+          }
+        }
+      }
+
       return withCors(req, env, notFound());
     } catch (err: any) {
       const message = err?.message ? String(err.message) : 'Internal error';
