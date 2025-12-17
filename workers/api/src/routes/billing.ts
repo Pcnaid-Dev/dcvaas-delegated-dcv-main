@@ -148,6 +148,10 @@ export async function handleStripeWebhook(
         console.log(`Updated org ${orgId} to ${tier} tier`);
       } catch (dbError) {
         console.error('Failed to update organization tier:', dbError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to update organization tier', message: dbError instanceof Error ? dbError.message : String(dbError) }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
       }
     }
 
