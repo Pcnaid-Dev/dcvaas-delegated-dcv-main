@@ -45,10 +45,10 @@ CREATE INDEX IF NOT EXISTS idx_org_members_org_email ON organization_members(org
 
 -- 4. Migrate existing organizations to have owner entries (idempotent with OR IGNORE)
 -- For each organization with an owner_id, create a membership record
--- Uses deterministic ID generation to ensure idempotency
+-- Uses deterministic ID generation based on org_id and owner_id to ensure idempotency
 INSERT OR IGNORE INTO organization_members (id, org_id, user_id, email, role, status, created_at)
 SELECT 
-    lower(hex(substr(randomblob(8), 1, 8) || substr(owner_id, 1, 8))),  -- Deterministic ID from owner_id
+    substr('owner-' || id || '-' || owner_id, 1, 64),  -- Deterministic ID from org_id and owner_id
     id,
     owner_id,
     'owner@' || id || '.local',
