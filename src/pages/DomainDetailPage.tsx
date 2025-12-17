@@ -174,9 +174,8 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
         {domain.status === 'error' && (
           <Callout variant="error" title="Certificate Issuance Failed">
             <p className="mb-2">
-              {domain.cfVerificationErrors
-                ? JSON.stringify(domain.cfVerificationErrors)
-                : domain.errorMessage || 'Unknown error occurred'}
+                ? domain.cfVerificationErrors.map(e => typeof e === 'string' ? e : e.message).join(', ')
+
             </p>
             <Button onClick={handleCheckDNS} variant="outline" size="sm">
               Retry DNS Check
