@@ -2,15 +2,16 @@
 -- Add team management and RBAC support
 -- SAFE TO RUN MULTIPLE TIMES
 
--- IMPORTANT: This migration is idempotent. It can be run multiple times without errors.
+-- IMPORTANT: This migration uses idempotent patterns where possible.
 -- The strategy is to:
--- 1. Create new tables/indexes with IF NOT EXISTS
--- 2. For ALTER TABLE operations, we document that they may error on re-run (non-fatal)
--- 3. Use INSERT OR IGNORE for data migrations
+-- 1. Create new tables/indexes with IF NOT EXISTS (fully idempotent)
+-- 2. For ALTER TABLE operations, these WILL ERROR on re-run (SQLite limitation)
+-- 3. Use INSERT OR IGNORE for data migrations (idempotent)
 
--- Note on ALTER TABLE: SQLite in Cloudflare D1 doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN
--- If you run this migration twice, the ALTER TABLE statements will error, but this is expected and safe.
--- The migration system should track which migrations have been applied to avoid re-running them.
+-- CRITICAL: The ALTER TABLE statements below will fail if columns already exist.
+-- This is a SQLite limitation - it does not support IF NOT EXISTS for ALTER TABLE ADD COLUMN.
+-- Your migration system MUST track which migrations have been applied to prevent re-running.
+-- If you need to re-run this migration, you must manually drop the columns first (not recommended).
 
 BEGIN TRANSACTION;
 
@@ -44,9 +45,10 @@ CREATE INDEX IF NOT EXISTS idx_org_members_org_email ON organization_members(org
 
 -- 4. Migrate existing organizations to have owner entries (idempotent with OR IGNORE)
 -- For each organization with an owner_id, create a membership record
+-- Uses deterministic ID generation to ensure idempotency
 INSERT OR IGNORE INTO organization_members (id, org_id, user_id, email, role, status, created_at)
 SELECT 
-    lower(hex(randomblob(16))),
+    lower(hex(substr(randomblob(8), 1, 8) || substr(owner_id, 1, 8))),  -- Deterministic ID from owner_id
     id,
     owner_id,
     'owner@' || id || '.local',

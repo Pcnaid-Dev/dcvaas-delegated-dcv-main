@@ -16,11 +16,11 @@ export type Auth = {
  */
 async function updatePlaceholderEmail(env: Env, userId: string, orgId: string, realEmail: string): Promise<void> {
   try {
-    // Check if user has a placeholder email pattern
+    // Check if user has a placeholder email pattern (owner@{orgid}.local)
     const member = await env.DB
       .prepare(
         `SELECT email FROM organization_members 
-         WHERE user_id = ? AND org_id = ? AND email LIKE '%@%.local'`
+         WHERE user_id = ? AND org_id = ? AND email = 'owner@' || org_id || '.local'`
       )
       .bind(userId, orgId)
       .first<{ email: string }>();
@@ -97,7 +97,10 @@ export async function authenticateUser(req: Request, env: Env, userId: string, o
   // Update placeholder email if real email is provided
   if (userEmail) {
     // Fire and forget - don't block auth on email update
-    updatePlaceholderEmail(env, userId, orgId, userEmail).catch(() => {});
+    // Errors are intentionally ignored as email update is a best-effort operation
+    updatePlaceholderEmail(env, userId, orgId, userEmail).catch((err) => {
+      console.error('Non-fatal error updating placeholder email:', err);
+    });
   }
 
   return { 
