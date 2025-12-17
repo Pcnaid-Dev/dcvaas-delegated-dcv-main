@@ -38,11 +38,16 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
     mutationFn: async (name: string) => {
       if (!currentOrg) throw new Error('No organization');
       const result = await createAPIToken(name);
-      return result.token.token; // Extract the plaintext token from response
+      // API returns { token: { id, name, token, ... } }
+      return result.token.token;
     },
     onSuccess: (plainToken) => {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
-      setNewToken(plainToken || null);
+      if (plainToken) {
+        setNewToken(plainToken);
+      } else {
+        toast.error('Token created but not returned by API');
+      }
       setTokenName('');
       toast.success('API token created');
     },

@@ -61,7 +61,7 @@ export async function listTokens(env: Env, orgId: string): Promise<TokenResponse
     id: row.id,
     orgId: row.org_id,
     name: row.name,
-    maskedToken: maskToken(row.token_hash), // Mask the hash for display
+    maskedToken: 'dcv_••••••••••••••••', // Generic masked value since we don't store plaintext
     lastUsedAt: row.last_used_at,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
