@@ -40,12 +40,9 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     staleTime: 5000,
     // Auto-poll when domain is in pending or issuing state
     refetchInterval: (query) => {
-      const domain = query.state.data;
-      if (!domain) return false;
-      
-      const shouldPoll = POLLING_STATUSES.includes(domain.status);
-      
-      return shouldPoll ? AUTO_POLL_INTERVAL_MS : false;
+      return query.state.data?.status && POLLING_STATUSES.includes(query.state.data.status)
+        ? AUTO_POLL_INTERVAL_MS
+        : false;
     },
     refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
@@ -187,20 +184,20 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <span className="text-blue-600">💡</span> DNS Propagation Tips
                   </h4>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>
-                      • DNS propagation can take <strong>5-15 minutes</strong> after adding the CNAME record
-                    </p>
-                    <p>
-                      • If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
-                    </p>
-                    <p>
-                      • The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
-                    </p>
-                    <p>
-                      • If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
-                    </p>
-                  </div>
+                  <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                    <li>
+                      DNS propagation can take <strong>5-15 minutes</strong> after adding the CNAME record
+                    </li>
+                    <li>
+                      If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
+                    </li>
+                    <li>
+                      The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
+                    </li>
+                    <li>
+                      If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
+                    </li>
+                  </ul>
                 </Card>
               </>
             )}
