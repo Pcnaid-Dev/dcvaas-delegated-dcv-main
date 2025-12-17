@@ -92,7 +92,8 @@ export async function createAPIToken(
 }
 
 /**
- * List all tokens for an organization (with masked tokens)
+/**
+ * List all tokens for an organization
  */
 export async function listAPITokens(env: Env, orgId: string): Promise<APITokenDTO[]> {
   const result = await env.DB.prepare(`
@@ -101,8 +102,8 @@ export async function listAPITokens(env: Env, orgId: string): Promise<APITokenDT
     ORDER BY created_at DESC
   `).bind(orgId).all<APITokenRow>();
 
-  // Don't include maskedToken for listed tokens since we don't store plaintext
-  return (result.results || []).map(rowToDTO);
+  return (result.results || []).map(row => rowToDTO(row));
+}
 }
 
 /**
