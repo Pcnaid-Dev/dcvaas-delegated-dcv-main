@@ -117,17 +117,17 @@ export async function handleStripeWebhook(
       // Determine the subscription tier based on metadata or price ID
       let tier: 'free' | 'pro' | 'agency' = 'pro'; // default
       
-      // First check metadata for explicit tier (should always be present now)
+      // Primary method: Check metadata for explicit tier (always present in new sessions)
       if (session.metadata?.tier && ['free', 'pro', 'agency'].includes(session.metadata.tier)) {
         tier = session.metadata.tier as 'free' | 'pro' | 'agency';
-      } else if (session.mode === 'subscription' && session.subscription) {
-        // Fallback: Try to map price ID to tier using explicit mapping
-        const priceId = session.line_items?.data?.[0]?.price?.id;
-        if (priceId && PRICE_ID_TO_TIER[priceId]) {
-          tier = PRICE_ID_TO_TIER[priceId];
-        } else {
-          console.warn(`Unknown priceId: ${priceId}, defaulting to 'pro'`);
-        }
+      } else {
+        // Fallback for older sessions without tier metadata
+        // Note: line_items may not be expanded in webhook events by default
+        // If tier is missing from metadata, we log a warning and use the default
+        console.warn(
+          `Missing tier in session metadata for orgId: ${orgId}. ` +
+          `Defaulting to 'pro'. Session ID: ${session.id}`
+        );
       }
 
       // Update the organization's subscription tier in the database
