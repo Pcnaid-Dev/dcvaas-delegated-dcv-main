@@ -4,6 +4,9 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/ui/page-header';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -24,6 +28,7 @@ import { PLAN_LIMITS, type Membership, type MemberRole } from '@/types';
 import { useState, useEffect } from 'react';
 import { getOrgMembers, inviteOrgMember, removeOrgMember } from '@/lib/data';
 import { toast } from 'sonner';
+import { Users, UserPlus, CheckCircle, Clock, Crown } from '@phosphor-icons/react';
 
 type TeamPageProps = {
   onNavigate: (page: string) => void;
@@ -127,137 +132,212 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
     }
   };
 
+  // Define table columns
+  const columns: Column<Membership>[] = [
+    {
+      key: 'email',
+      header: 'Member',
+      sortable: true,
+      render: (member) => (
+        <div className="flex items-center gap-2">
+          <div>
+            <p className="font-medium text-foreground">{member.email}</p>
+            {(member.userId === user?.id || member.email === user?.email) && (
+              <p className="text-xs text-muted-foreground">(You)</p>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      sortable: true,
+      render: (member) => (
+        <div className="flex items-center gap-2">
+          {member.role === 'owner' && <Crown size={16} className="text-yellow-600" />}
+          <Badge variant={getRoleBadgeVariant(member.role)}>
+            {member.role}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (member) => (
+        <div className="flex items-center gap-2">
+          {member.status === 'active' ? (
+            <>
+              <CheckCircle size={16} className="text-green-600" />
+              <span className="text-sm text-foreground">Active</span>
+            </>
+          ) : (
+            <>
+              <Clock size={16} className="text-yellow-600" />
+              <span className="text-sm text-muted-foreground">Pending Invite</span>
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (member) => (
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {member.status === 'invited' && member.email === user?.email && (
+            <Button
+              size="sm"
+              onClick={() => handleAcceptInvitation(member)}
+              disabled={accepting === member.id}
+            >
+              {accepting === member.id ? 'Accepting...' : 'Accept'}
+            </Button>
+          )}
+          {canInvite && member.userId !== user?.id && member.email !== user?.email && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRemove(member)}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <AppShell onNavigate={onNavigate} currentPage="team">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Team</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage team members and permissions
-          </p>
-        </div>
-
-        {!hasAccess ? (
-          <Card className="p-8 text-center">
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Team Management (Agency Plan)
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Upgrade to Agency plan to invite team members with role-based access control.
-            </p>
-            <Button onClick={() => onNavigate('billing')}>
-              Upgrade to Agency
-            </Button>
-          </Card>
-        ) : (
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                Team Members ({members.length})
-              </h3>
-              {canInvite && (
-                <Button onClick={() => setInviteDialogOpen(true)}>
-                  Invite Member
-                </Button>
-              )}
-            </div>
-            
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading members...
-              </div>
-            ) : members.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No team members yet
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{member.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {member.status === 'invited' ? 'Invitation pending' : 'Active member'}
-                        {(member.userId === user?.id || member.email === user?.email) && ' (You)'}
-                      </p>
+      <div className="space-y-6">
+        <PageHeader
+          title="Team"
+          description="Manage team members and their permissions"
+          actions={
+            hasAccess && canInvite && (
+              <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus size={20} weight="bold" className="mr-2" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Team Member</DialogTitle>
+                    <DialogDescription>
+                      Send an invitation to join your organization
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="colleague@example.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getRoleBadgeVariant(member.role)}>
-                        {member.role}
-                      </Badge>
-                      {member.status === 'invited' && member.email === user?.email && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptInvitation(member)}
-                          disabled={accepting === member.id}
-                        >
-                          {accepting === member.id ? 'Accepting...' : 'Accept Invitation'}
-                        </Button>
-                      )}
-                      {canInvite && member.userId !== user?.id && member.email !== user?.email && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(member)}
-                        >
-                          Remove
-                        </Button>
-                      )}
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as MemberRole)}>
+                        <SelectTrigger id="role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="member">Member - Can view and manage domains</SelectItem>
+                          <SelectItem value="admin">Admin - Can manage members and domains</SelectItem>
+                          {isOwner && (
+                            <SelectItem value="owner">Owner - Full access</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                ))}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleInvite} disabled={!inviteEmail || inviting}>
+                      {inviting ? 'Sending...' : 'Send Invitation'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )
+          }
+        />
+
+        {!hasAccess ? (
+          <Card className="p-8">
+            <div className="text-center max-w-md mx-auto">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Users size={32} className="text-primary" />
               </div>
-            )}
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Team Management
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Upgrade to the Agency plan to unlock team collaboration features.
+              </p>
+              <div className="bg-muted rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm font-semibold text-foreground mb-3">
+                  Agency Plan includes:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-600" />
+                    <span>Invite unlimited team members</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-600" />
+                    <span>Role-based access control (Owner, Admin, Member)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-600" />
+                    <span>Comprehensive audit logging</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-600" />
+                    <span>White-label branding options</span>
+                  </li>
+                </ul>
+              </div>
+              <Button onClick={() => onNavigate('billing')}>
+                Upgrade to Agency
+              </Button>
+            </div>
           </Card>
+        ) : (
+          <DataTable
+            data={members}
+            columns={columns}
+            searchKey="email"
+            searchPlaceholder="Search members..."
+            emptyState={
+              <EmptyState
+                icon={<Users size={48} weight="thin" />}
+                title="No team members"
+                description="Invite team members to collaborate on certificate management with role-based permissions."
+                action={
+                  canInvite
+                    ? {
+                        label: 'Invite Member',
+                        onClick: () => setInviteDialogOpen(true),
+                      }
+                    : undefined
+                }
+              />
+            }
+          />
         )}
       </div>
 
-      {/* Invite Dialog */}
-      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite Team Member</DialogTitle>
-            <DialogDescription>
-              Send an invitation to join your organization
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="colleague@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as MemberRole)}>
-                <SelectTrigger id="role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="member">Member - Can view and manage domains</SelectItem>
-                  <SelectItem value="admin">Admin - Can manage members and domains</SelectItem>
-                  {isOwner && (
-                    <SelectItem value="owner">Owner - Full access</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleInvite} disabled={!inviteEmail || inviting}>
-              {inviting ? 'Sending...' : 'Send Invitation'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 }
