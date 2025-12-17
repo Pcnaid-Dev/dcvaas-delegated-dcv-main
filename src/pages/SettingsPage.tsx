@@ -110,7 +110,7 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
       const updated: Organization = {
         ...currentOrg,
         logoUrl: logoUrl.trim() || undefined,
-        brandColor: brandColor,
+        brandColor: brandColor || undefined,
       };
       await setOrganization(updated);
       toast.success('Branding saved successfully');
