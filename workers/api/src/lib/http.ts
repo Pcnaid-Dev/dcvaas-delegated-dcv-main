@@ -27,7 +27,7 @@ export function withCors(req: Request, env: Env, res: Response): Response {
   }
 
   h.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-  h.set('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  h.set('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
   h.set('Access-Control-Max-Age', '86400');
 
   return new Response(res.body, { status: res.status, headers: h });
@@ -48,4 +48,8 @@ export function notFound() {
 
 export function unauthorized() {
   return json({ error: 'unauthorized' }, 401);
+}
+
+export function forbidden(message = 'Forbidden') {
+  return json({ error: 'forbidden', message }, 403);
 }

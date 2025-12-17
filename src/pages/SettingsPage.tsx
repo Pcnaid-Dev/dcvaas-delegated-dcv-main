@@ -61,11 +61,16 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
       };
       await setOrganization(org);
 
+      const now = new Date().toISOString();
       await addMembership({
+        id: await generateId(),
         userId: user.id,
         orgId: org.id,
+        email: user.email,
         role: 'owner',
-        createdAt: new Date().toISOString(),
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
       });
 
       await refreshOrganizations();

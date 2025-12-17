@@ -6,20 +6,22 @@ CREATE TABLE IF NOT EXISTS organizations (
   name TEXT NOT NULL,
   owner_id TEXT NOT NULL,
   subscription_tier TEXT NOT NULL CHECK(subscription_tier IN ('free', 'pro', 'agency')),
-  theme_logo_url TEXT,
-  theme_primary_color TEXT,
-  theme_secondary_color TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Organization Members
 CREATE TABLE IF NOT EXISTS organization_members (
+  id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   org_id TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('owner', 'admin', 'member')),
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('owner', 'admin', 'member')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'invited', 'suspended')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  PRIMARY KEY (user_id, org_id),
-  FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
+  UNIQUE(org_id, user_id),
+  UNIQUE(org_id, email)
 );
 
 -- Modify existing domains table or create migration

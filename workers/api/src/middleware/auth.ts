@@ -1,7 +1,14 @@
 import type { Env } from '../env';
 import { sha256Hex } from '../lib/crypto';
 
-export type Auth = { orgId: string; tokenId: string };
+export type MemberRole = 'owner' | 'admin' | 'member';
+
+export type Auth = { 
+  orgId: string; 
+  tokenId: string;
+  userId?: string;
+  role?: MemberRole;
+};
 
 export async function authenticate(req: Request, env: Env): Promise<Auth | null> {
   const header = req.headers.get('Authorization') || '';
@@ -31,5 +38,48 @@ export async function authenticate(req: Request, env: Env): Promise<Auth | null>
     .run()
     .catch(() => {});
 
-  return { orgId: row.org_id, tokenId: row.id };
+  // API tokens are assumed to have full owner privileges for their organization
+  // This allows API token holders to perform all operations including member management
+  return { orgId: row.org_id, tokenId: row.id, role: 'owner' };
+}
+
+/**
+ * Authenticate with user-based auth (for Auth0 integration)
+ * Checks if the user is a member of the organization
+ */
+export async function authenticateUser(req: Request, env: Env, userId: string, orgId: string): Promise<Auth | null> {
+  const member = await env.DB
+    .prepare(
+      `SELECT user_id, role, status
+       FROM organization_members
+       WHERE user_id = ? AND org_id = ? AND status = 'active'`,
+    )
+    .bind(userId, orgId)
+    .first<{ user_id: string; role: MemberRole; status: string }>();
+
+  if (!member) return null;
+
+  return { 
+    orgId, 
+    tokenId: '', // No token for user auth
+    userId: member.user_id,
+    role: member.role
+  };
+}
+
+/**
+ * Check if authenticated user has required role
+ */
+export function hasRole(auth: Auth, requiredRole: MemberRole | MemberRole[]): boolean {
+  if (!auth.role) return false;
+  
+  const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+  return roles.includes(auth.role);
+}
+
+/**
+ * Check if authenticated user is owner or admin
+ */
+export function isOwnerOrAdmin(auth: Auth): boolean {
+  return hasRole(auth, ['owner', 'admin']);
 }

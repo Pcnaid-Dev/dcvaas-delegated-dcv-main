@@ -30,17 +30,28 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
-  const { user, currentOrg, organizations, setCurrentOrg } = useAuth();
+  const { user, currentOrg, organizations, setCurrentOrg, userRole } = useAuth();
 
-  const navItems = [
-    { id: 'dashboard', label: 'Domains', icon: Globe },
-    { id: 'jobs', label: 'Jobs', icon: Queue },
-    { id: 'team', label: 'Team', icon: Users },
-    { id: 'api-tokens', label: 'API', icon: Code },
-    { id: 'webhooks', label: 'Webhooks', icon: Bell },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'settings', label: 'Settings', icon: Gear },
+  // Define all navigation items with role requirements
+  const allNavItems = [
+    { id: 'dashboard', label: 'Domains', icon: Globe, roles: ['owner', 'admin', 'member'] },
+    { id: 'jobs', label: 'Jobs', icon: Queue, roles: ['owner', 'admin', 'member'] },
+    { id: 'team', label: 'Team', icon: Users, roles: ['owner', 'admin', 'member'] },
+    { id: 'api-tokens', label: 'API', icon: Code, roles: ['owner', 'admin'] },
+    { id: 'webhooks', label: 'Webhooks', icon: Bell, roles: ['owner', 'admin'] },
+    { id: 'billing', label: 'Billing', icon: CreditCard, roles: ['owner'] },
+    { id: 'settings', label: 'Settings', icon: Gear, roles: ['owner', 'admin'] },
   ];
+
+  // Filter navigation items based on user role
+  // During loading, show only basic items to prevent exposure of restricted functionality
+  const navItems = allNavItems.filter(item => {
+    if (!userRole) {
+      // Show only basic items during loading
+      return ['dashboard', 'jobs', 'team'].includes(item.id);
+    }
+    return item.roles.includes(userRole);
+  });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

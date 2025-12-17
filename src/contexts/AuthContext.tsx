@@ -10,6 +10,7 @@ type AuthContextType = {
   organizations: Organization[];
   currentOrg: Organization | null;
   setCurrentOrg: (org: Organization | null) => void;
+  userRole: 'owner' | 'admin' | 'member' | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   loginWithRedirect: () => Promise<void>;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+  const [userRole, setUserRole] = useState<'owner' | 'admin' | 'member' | null>(null);
 
   // Map Auth0 user to your app's User type
   const user: User | null = useMemo(() => {
@@ -59,6 +61,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadOrgs();
   }, [user?.id]);
 
+  // Load user role when org changes
+  useEffect(() => {
+    async function loadRole() {
+      if (user && currentOrg) {
+        try {
+          const { getOrgMembers } = await import('@/lib/data');
+          const members = await getOrgMembers(currentOrg.id);
+          const member = members.find(m => m.userId === user.id || m.email === user.email);
+          setUserRole(member?.role || null);
+        } catch (err) {
+          console.warn('Failed to load user role', err);
+          // Set role to null on failure to avoid assigning an incorrect role.
+          setUserRole(null);
+        }
+      } else {
+        setUserRole(null);
+      }
+    }
+    loadRole();
+  }, [user?.id, currentOrg?.id]);
+
   const handleLogout = () => {
     auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   };
@@ -79,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizations,
         currentOrg,
         setCurrentOrg,
+        userRole,
         isLoading,
         isAuthenticated,
         loginWithRedirect,
