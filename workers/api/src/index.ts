@@ -4,6 +4,7 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { createOAuthConnection, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -231,6 +232,63 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             return withCors(req, env, json({ success: true }));
           } catch (err: any) {
             return withCors(req, env, badRequest(err.message));
+          }
+        }
+      }
+
+      // POST /api/oauth/exchange - Exchange OAuth code for tokens
+      if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
+        const body = await req.json().catch(() => ({} as any));
+        const provider = String(body.provider ?? '').trim().toLowerCase();
+        const code = String(body.code ?? '').trim();
+        const redirectUri = String(body.redirectUri ?? '').trim();
+
+        if (!provider || !code || !redirectUri) {
+          return withCors(req, env, badRequest('provider, code, and redirectUri are required'));
+        }
+
+        // Validate provider
+        const validProviders = ['cloudflare', 'godaddy'];
+        if (!validProviders.includes(provider)) {
+          return withCors(req, env, badRequest(`Invalid provider. Must be one of: ${validProviders.join(', ')}`));
+        }
+
+        try {
+          const connection = await createOAuthConnection(env, auth.orgId, provider, code, redirectUri);
+          // Return connection without encrypted tokens
+          const { encrypted_access_token, encrypted_refresh_token, ...safeConnection } = connection;
+          return withCors(req, env, json({ connection: safeConnection }, 201));
+        } catch (err: any) {
+          console.error('OAuth exchange error:', err);
+          return withCors(req, env, badRequest(err.message || 'Failed to exchange OAuth code'));
+        }
+      }
+
+      // GET /api/oauth/connections - List OAuth connections
+      if (method === 'GET' && url.pathname === '/api/oauth/connections') {
+        try {
+          const connections = await listOAuthConnections(env, auth.orgId);
+          // Return connections without encrypted tokens
+          const safeConnections = connections.map(({ encrypted_access_token, encrypted_refresh_token, ...conn }) => conn);
+          return withCors(req, env, json({ connections: safeConnections }));
+        } catch (err: any) {
+          console.error('List OAuth connections error:', err);
+          return withCors(req, env, badRequest(err.message || 'Failed to list OAuth connections'));
+        }
+      }
+
+      // DELETE /api/oauth/connections/:provider - Delete OAuth connection
+      {
+        const m = url.pathname.match(/^\/api\/oauth\/connections\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const provider = decodeURIComponent(m[1]).toLowerCase();
+
+          try {
+            await deleteOAuthConnection(env, auth.orgId, provider);
+            return withCors(req, env, json({ success: true }));
+          } catch (err: any) {
+            console.error('Delete OAuth connection error:', err);
+            return withCors(req, env, badRequest(err.message || 'Failed to delete OAuth connection'));
           }
         }
       }

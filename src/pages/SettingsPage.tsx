@@ -5,13 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { getOrganization, setOrganization, getUserOrganizations, addMembership } from '@/lib/data';
+import { getOrganization, setOrganization, getUserOrganizations, addMembership, listOAuthConnections, deleteOAuthConnection, type OAuthConnection } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { toast } from 'sonner';
 import type { Organization } from '@/types';
 import { PLAN_LIMITS } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus } from '@phosphor-icons/react';
+import { Plus, LinkSimple, Trash } from '@phosphor-icons/react';
 
 type SettingsPageProps = {
   onNavigate: (page: string) => void;
@@ -24,14 +24,29 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
   const [newOrgName, setNewOrgName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [brandColor, setBrandColor] = useState('#2563eb');
+  const [oauthConnections, setOauthConnections] = useState<OAuthConnection[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(false);
 
   useEffect(() => {
     if (currentOrg) {
       setOrgName(currentOrg.name);
       setLogoUrl(currentOrg.logoUrl || '');
       setBrandColor(currentOrg.brandColor || '#2563eb');
+      loadOAuthConnections();
     }
   }, [currentOrg]);
+
+  const loadOAuthConnections = async () => {
+    setLoadingConnections(true);
+    try {
+      const connections = await listOAuthConnections();
+      setOauthConnections(connections);
+    } catch (error) {
+      console.error('Failed to load OAuth connections:', error);
+    } finally {
+      setLoadingConnections(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!currentOrg) return;
@@ -124,6 +139,59 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
 
   const hasWhiteLabel = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].whiteLabel;
 
+  const handleConnectProvider = (provider: string) => {
+    // OAuth flow configuration
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    
+    // Provider-specific OAuth URLs
+    const oauthUrls: Record<string, string> = {
+      cloudflare: `https://dash.cloudflare.com/oauth2/authorize`,
+      godaddy: `https://sso.godaddy.com/authorize`,
+    };
+
+    const clientIds: Record<string, string> = {
+      cloudflare: import.meta.env.VITE_CLOUDFLARE_CLIENT_ID || '',
+      godaddy: import.meta.env.VITE_GODADDY_CLIENT_ID || '',
+    };
+
+    const clientId = clientIds[provider];
+    const authUrl = oauthUrls[provider];
+
+    if (!clientId) {
+      toast.error(`${provider} OAuth is not configured`);
+      return;
+    }
+
+    // Store provider and redirect URI in session storage for the callback
+    sessionStorage.setItem('oauth_provider', provider);
+    sessionStorage.setItem('oauth_redirect_uri', redirectUri);
+
+    // Construct OAuth URL
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: provider === 'cloudflare' ? 'account:read zone:read' : 'domain:read',
+    });
+
+    // Redirect to OAuth provider
+    window.location.href = `${authUrl}?${params.toString()}`;
+  };
+
+  const handleDisconnectProvider = async (provider: string) => {
+    try {
+      await deleteOAuthConnection(provider);
+      toast.success(`${provider} disconnected successfully`);
+      await loadOAuthConnections();
+    } catch (error) {
+      toast.error(`Failed to disconnect ${provider}`);
+    }
+  };
+
+  const getProviderLabel = (provider: string) => {
+    return provider.charAt(0).toUpperCase() + provider.slice(1);
+  };
+
   return (
     <AppShell onNavigate={onNavigate} currentPage="settings">
       <div className="space-y-8">
@@ -180,6 +248,74 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
                 </div>
                 <Button onClick={handleSave}>Save Changes</Button>
               </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                DNS Provider Connections
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connect your DNS providers to enable automatic DNS record management and one-click domain verification.
+              </p>
+              
+              {loadingConnections ? (
+                <p className="text-sm text-muted-foreground">Loading connections...</p>
+              ) : (
+                <div className="space-y-4">
+                  {/* Connected Providers */}
+                  {oauthConnections.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Connected Providers</Label>
+                      <div className="space-y-2">
+                        {oauthConnections.map((conn) => (
+                          <div
+                            key={conn.id}
+                            className="flex items-center justify-between p-3 border border-border rounded-md"
+                          >
+                            <div className="flex items-center gap-2">
+                              <LinkSimple size={20} className="text-green-500" />
+                              <span className="font-medium">{getProviderLabel(conn.provider)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                Connected {new Date(conn.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDisconnectProvider(conn.provider)}
+                            >
+                              <Trash size={16} className="text-red-500" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Available Providers */}
+                  <div className="space-y-2">
+                    <Label>Available Providers</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['cloudflare', 'godaddy'].map((provider) => {
+                        const isConnected = oauthConnections.some(
+                          (conn) => conn.provider === provider
+                        );
+                        return (
+                          <Button
+                            key={provider}
+                            variant="outline"
+                            onClick={() => handleConnectProvider(provider)}
+                            disabled={isConnected}
+                          >
+                            <LinkSimple size={20} className="mr-2" />
+                            Connect {getProviderLabel(provider)}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </Card>
 
             <Card className="p-6">
