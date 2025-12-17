@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { authenticate, isOwnerOrAdmin } from './middleware/auth';
+import { authenticate, isOwnerOrAdmin, hasRole } from './middleware/auth';
 import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidden } from './lib/http';
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
@@ -91,8 +91,20 @@ export default {
           const role = (body.role ?? 'member') as 'owner' | 'admin' | 'member';
           
           if (!email) return withCors(req, env, badRequest('email is required'));
+          
+          // Validate email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            return withCors(req, env, badRequest('Invalid email format'));
+          }
+          
           if (!['owner', 'admin', 'member'].includes(role)) {
             return withCors(req, env, badRequest('Invalid role'));
+          }
+
+          // Only owners can invite other owners
+          if (role === 'owner' && !hasRole(auth, 'owner')) {
+            return withCors(req, env, forbidden('Only owners can invite other owners'));
           }
 
           try {
@@ -137,7 +149,7 @@ export default {
           if (orgId !== auth.orgId) return withCors(req, env, forbidden());
           
           // Only owners can change roles
-          if (!auth.role || auth.role !== 'owner') {
+          if (!hasRole(auth, 'owner')) {
             return withCors(req, env, forbidden('Only owners can change member roles'));
           }
 

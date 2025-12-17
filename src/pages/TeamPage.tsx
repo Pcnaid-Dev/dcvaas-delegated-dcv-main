@@ -156,14 +156,14 @@ export function TeamPage({ onNavigate }: TeamPageProps) {
                       <p className="font-medium text-foreground">{member.email}</p>
                       <p className="text-sm text-muted-foreground">
                         {member.status === 'invited' ? 'Invitation pending' : 'Active member'}
-                        {member.userId === user?.id && ' (You)'}
+                        {(member.userId === user?.id || member.email === user?.email) && ' (You)'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={getRoleBadgeVariant(member.role) as any}>
                         {member.role}
                       </Badge>
-                      {canInvite && member.userId !== user?.id && (
+                      {canInvite && member.userId !== user?.id && member.email !== user?.email && (
                         <Button
                           variant="ghost"
                           size="sm"

@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS organization_members (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
-    UNIQUE(org_id, user_id)
+    UNIQUE(org_id, user_id),
+    UNIQUE(org_id, email)
 );
 
 -- 3. Create indexes for performance
@@ -35,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_org_members_user ON organization_members(user_id)
 CREATE INDEX IF NOT EXISTS idx_org_members_org ON organization_members(org_id);
 CREATE INDEX IF NOT EXISTS idx_org_members_email ON organization_members(email);
 CREATE INDEX IF NOT EXISTS idx_org_members_status ON organization_members(status);
+CREATE INDEX IF NOT EXISTS idx_org_members_org_email ON organization_members(org_id, email);
 
 -- 4. Migrate existing organizations to have owner entries
 -- For each organization with an owner_id, create a membership record
