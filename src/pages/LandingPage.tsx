@@ -1,6 +1,7 @@
 // src/pages/LandingPage.tsx
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { TerminalWindow } from '@/components/TerminalWindow';
 // import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
 import { useAuth0 } from '@auth0/auth0-react'; // <--- Ensure this is imported
 import {
@@ -9,6 +10,7 @@ import {
   ArrowsClockwise,
   CheckCircle,
   Globe,
+  Sparkle,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
@@ -48,25 +50,66 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </header>
 
       <main>
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <h1 className="text-5xl font-bold text-foreground tracking-tight">
-              Secure SSL/TLS Automation via{' '}
-              <span className="text-primary">Delegated DCV</span>
-            </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Delegate once with CNAME. We'll handle every ACME DNS-01 challenge
-              securely—no root DNS API keys on your servers. Zero-touch renewals
-              for the era of 47-day certificates.
+        {/* Hero Section with Split Layout */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Side: Value Prop */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-sm text-primary">
+                <Sparkle size={16} weight="fill" />
+                <span>Zero-touch certificate automation</span>
+              </div>
+              <h1 className="text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-tight">
+                Secure SSL/TLS Automation via{' '}
+                <span className="text-primary">Delegated DCV</span>
+              </h1>
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Delegate once with CNAME. We'll handle every ACME DNS-01 challenge
+                securely—no root DNS API keys on your servers. Zero-touch renewals
+                for the era of 47-day certificates.
+              </p>
+              <div className="flex items-center gap-4">
+                {/* Sign Up Button */}
+                <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+                  Get Started Free
+                </Button>
+                <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
+                  Read Documentation
+                </Button>
+              </div>
+              
+              {/* Trust indicators */}
+              <div className="flex items-center gap-4 pt-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={20} weight="fill" className="text-success" />
+                  <span className="text-sm text-muted-foreground">No credit card</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={20} weight="fill" className="text-success" />
+                  <span className="text-sm text-muted-foreground">3 domains free</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Side: Terminal Window */}
+            <div className="hidden lg:block">
+              <TerminalWindow />
+            </div>
+          </div>
+        </section>
+        
+        {/* Trust Signals - Logo Strip */}
+        <section className="border-y border-border bg-muted/30 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-sm text-muted-foreground mb-8 uppercase tracking-wide">
+              Compatible with leading DNS providers
             </p>
-            <div className="flex items-center justify-center gap-4">
-              {/* Sign Up Button */}
-              <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                Get Started Free
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
-                Read Documentation
-              </Button>
+            <div className="flex items-center justify-center gap-12 flex-wrap grayscale opacity-60">
+              <div className="text-2xl font-bold text-foreground">Cloudflare</div>
+              <div className="text-2xl font-bold text-foreground">AWS Route53</div>
+              <div className="text-2xl font-bold text-foreground">GoDaddy</div>
+              <div className="text-2xl font-bold text-foreground">Namecheap</div>
+              <div className="text-2xl font-bold text-foreground">DNSimple</div>
             </div>
           </div>
         </section>
@@ -84,7 +127,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Shield size={24} weight="fill" className="text-primary" />
               </div>
@@ -98,7 +141,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
                 <ArrowsClockwise
                   size={24}
@@ -116,7 +159,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
                 <Globe size={24} weight="fill" className="text-success" />
               </div>
