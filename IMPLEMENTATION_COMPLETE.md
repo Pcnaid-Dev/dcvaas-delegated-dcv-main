@@ -255,7 +255,7 @@ All acceptance criteria from the original issue have been met:
 
 ## 📁 Files Changed
 
-### New Files (5)
+### New Files (6)
 - `workers/api/migrations/0007_integrations.sql` - Database migration
 - `workers/api/src/lib/tokens.ts` - API token management
 - `workers/api/src/lib/webhooks.ts` - Webhook management + dispatch
