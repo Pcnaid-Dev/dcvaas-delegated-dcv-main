@@ -1,6 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, Certificate } from '@phosphor-icons/react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { CheckCircle, Certificate, X, Star } from '@phosphor-icons/react';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
@@ -199,7 +206,134 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
           ))}
         </div>
 
-        <Card className="p-8 bg-muted/30">
+        {/* Feature Comparison */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
+            Feature Comparison
+          </h2>
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left p-4 font-semibold text-foreground">Feature</th>
+                    <th className="text-center p-4 font-semibold text-foreground">Free</th>
+                    <th className="text-center p-4 font-semibold text-foreground relative">
+                      Pro
+                      <Star size={16} weight="fill" className="text-yellow-500 absolute top-3 right-3" />
+                    </th>
+                    <th className="text-center p-4 font-semibold text-foreground">Agency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border">
+                    <td className="p-4 text-foreground">Max Domains</td>
+                    <td className="text-center p-4 text-muted-foreground">3</td>
+                    <td className="text-center p-4 text-muted-foreground">15</td>
+                    <td className="text-center p-4 text-muted-foreground">50</td>
+                  </tr>
+                  <tr className="border-b border-border bg-muted/30">
+                    <td className="p-4 text-foreground">Automatic Renewals</td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <td className="p-4 text-foreground">DNS-01 Validation</td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="border-b border-border bg-muted/30">
+                    <td className="p-4 text-foreground">API Access</td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <td className="p-4 text-foreground">Team Management</td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="border-b border-border bg-muted/30">
+                    <td className="p-4 text-foreground">White-label Branding</td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <td className="p-4 text-foreground">Single-click CNAME Setup</td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><X size={20} className="text-muted-foreground inline" /></td>
+                    <td className="text-center p-4"><CheckCircle size={20} weight="fill" className="text-green-600 inline" /></td>
+                  </tr>
+                  <tr className="bg-muted/30">
+                    <td className="p-4 text-foreground">Support</td>
+                    <td className="text-center p-4 text-muted-foreground">Community</td>
+                    <td className="text-center p-4 text-muted-foreground">Email</td>
+                    <td className="text-center p-4 text-muted-foreground">Priority</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+
+        {/* FAQ */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
+            Pricing FAQ
+          </h2>
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="text-left">
+                Can I change plans later?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! You can upgrade or downgrade your plan anytime from the Billing page. Upgrades take effect immediately, while downgrades apply at the end of your current billing period.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2">
+              <AccordionTrigger className="text-left">
+                What payment methods do you accept?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                We accept all major credit cards (Visa, Mastercard, American Express) through our secure payment processor Stripe.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3">
+              <AccordionTrigger className="text-left">
+                Is there a long-term contract?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                No. All plans are billed monthly with no long-term commitment. You can cancel anytime with no penalties.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4">
+              <AccordionTrigger className="text-left">
+                What happens if I exceed my domain limit?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                You'll be notified when approaching your limit. To add more domains, simply upgrade to the next tier. Existing domains continue to work normally.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5">
+              <AccordionTrigger className="text-left">
+                Do you offer discounts for nonprofits or educational institutions?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! Contact us at support@dcvaas.com with proof of nonprofit or educational status for special pricing.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+
+        <Card className="p-8 bg-primary/5 border-primary/20">
           <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
             Why Certificate Automation Matters Now
           </h2>
@@ -209,9 +343,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
             the entire lifecycle with delegated DNS-01 validation, keeping your
             certificates valid without exposing root DNS credentials.
           </p>
-          <div className="text-center">
+          <div className="text-center space-x-4">
+            <Button onClick={() => onNavigate('dashboard')}>
+              Get Started Free
+            </Button>
             <Button variant="outline" onClick={() => onNavigate('docs')}>
-              Learn More About Delegated DCV
+              Learn More
             </Button>
           </div>
         </Card>

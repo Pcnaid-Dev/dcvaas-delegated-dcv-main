@@ -1,14 +1,23 @@
 // src/pages/LandingPage.tsx
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
-import { useAuth0 } from '@auth0/auth0-react'; // <--- Ensure this is imported
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { useAuth0 } from '@auth0/auth0-react';
 import {
   Certificate,
   Shield,
   ArrowsClockwise,
   CheckCircle,
   Globe,
+  EnvelopeSimple,
+  GithubLogo,
+  TwitterLogo,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
@@ -185,6 +194,74 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </div>
         </section>
 
+        {/* FAQ Section */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Everything you need to know about delegated DCV
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="text-left">
+                What is delegated DNS-01 validation?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Delegated DNS-01 validation allows you to prove domain ownership by creating a single CNAME record that points to our service. We then handle all future DNS-01 challenges on your behalf, without requiring your root DNS API keys.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2">
+              <AccordionTrigger className="text-left">
+                How is this more secure than giving you my DNS credentials?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                With delegation, we can only respond to ACME challenges under the _acme-challenge subdomain. We cannot modify your production DNS records, reducing your attack surface significantly compared to sharing full DNS API access.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3">
+              <AccordionTrigger className="text-left">
+                What happens if DCVaaS goes down?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Your existing certificates continue to work. If our service experiences downtime during a renewal window, we have retry logic and alerts to ensure renewals complete. You can also remove the CNAME and handle validation manually at any time.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4">
+              <AccordionTrigger className="text-left">
+                Can I use this with my existing ACME client?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! DCVaaS works alongside your existing ACME setup. We provide both a web dashboard and REST API for integration. You can continue using certbot, acme.sh, or any other ACME client.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5">
+              <AccordionTrigger className="text-left">
+                What certificate authorities do you support?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                We currently use Cloudflare's SSL for SaaS infrastructure, which issues certificates from trusted CAs. Support for custom CA selection is on our roadmap for Pro and Agency tiers.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-6">
+              <AccordionTrigger className="text-left">
+                How do I upgrade or downgrade my plan?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                You can upgrade or downgrade anytime from the Billing page. Upgrades take effect immediately, while downgrades apply at the end of your current billing period.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </section>
+
         <section className="bg-primary/5 border-y border-border py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <h2 className="text-3xl font-bold text-foreground">
@@ -193,23 +270,105 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <p className="text-lg text-muted-foreground">
               Start with 3 free domains. No credit card required.
             </p>
-            <Button size="lg" onClick={() => onNavigate('dashboard')}>
+            <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
               Get Started Free
             </Button>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border bg-card/30 py-8">
+      <footer className="border-t border-border bg-card/30 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Certificate size={24} weight="bold" className="text-primary" />
-              <span className="font-semibold text-foreground">DCVaaS</span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Certificate size={28} weight="bold" className="text-primary" />
+                <span className="text-lg font-bold text-foreground">DCVaaS</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Secure SSL/TLS certificate automation via delegated DNS-01 validation.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 DCVaaS. Secure certificate automation.
-            </p>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors">
+                    Features
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => onNavigate('pricing')} className="hover:text-primary transition-colors">
+                    Pricing
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => onNavigate('docs')} className="hover:text-primary transition-colors">
+                    Documentation
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <a href="#" className="hover:text-primary transition-colors">
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-primary transition-colors">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-primary transition-colors">
+                    Careers
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <a href="mailto:support@dcvaas.com" className="hover:text-primary transition-colors flex items-center gap-2">
+                    <EnvelopeSimple size={16} />
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-primary transition-colors">
+                    Status
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-primary transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-border">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                © 2024 DCVaaS. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  <TwitterLogo size={20} weight="fill" />
+                </a>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  <GithubLogo size={20} weight="fill" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
