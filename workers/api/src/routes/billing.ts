@@ -41,8 +41,8 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      success_url: `${new URL(req.url).origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${new URL(req.url).origin}/billing`,
+      success_url: `${new URL(req.url).origin}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${new URL(req.url).origin}/billing?checkout=cancel`,
       client_reference_id: auth.orgId,
       metadata: {
         orgId: auth.orgId,
