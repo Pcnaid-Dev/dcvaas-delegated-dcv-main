@@ -295,7 +295,7 @@ export async function createAPIToken(name: string, expiresAt?: string): Promise<
   return res;
 }
 
-// Keep addAPIToken for backwards compatibility, but redirect to createAPIToken
+// Keep addAPIToken for backwards compatibility. It is now a deprecated no-op.
 export async function addAPIToken(token: APIToken): Promise<void> {
   // This is now a no-op since we don't use localStorage anymore
   // The UI should use createAPIToken instead
