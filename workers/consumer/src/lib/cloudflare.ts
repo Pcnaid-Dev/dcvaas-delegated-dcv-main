@@ -9,6 +9,7 @@ export interface CustomHostname {
     status: string;
     method: string;
     type: string;
+    expires_on?: string;
     validation_errors?: { message: string }[];
     ownership_verification?: {
         name: string;

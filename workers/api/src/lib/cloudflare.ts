@@ -9,6 +9,7 @@ export interface CustomHostname {
     status: string;
     method: string;
     type: string;
+    expires_on?: string;
     validation_errors?: { message: string }[];
     // Information needed for TXT verification if CNAME isn't used immediately
     ownership_verification?: {
