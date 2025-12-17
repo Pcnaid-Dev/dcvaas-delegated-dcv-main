@@ -244,7 +244,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/tokens - Create new API token
       if (method === 'POST' && url.pathname === '/api/tokens') {
-        const body = await req.json().catch(() => ({} as any));
+        const body: Partial<{ name: string; expiresAt: string }> = await req.json().catch(() => ({}));
         const name = String(body.name ?? '').trim();
         
         if (!name) {
