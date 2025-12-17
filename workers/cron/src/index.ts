@@ -15,9 +15,9 @@ interface DomainRow {
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    // 1. Find domains that are NOT active yet (stuck in pending/issuing)
+    // 1. Find domains that are in pending_cname or issuing status (as per documentation)
     const res = await env.DB.prepare(
-      `SELECT * FROM domains WHERE status != 'active'`
+      `SELECT * FROM domains WHERE status IN ('pending_cname', 'issuing')`
     ).all<DomainRow>();
 
     const domains = res.results ?? [];
