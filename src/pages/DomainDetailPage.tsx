@@ -11,7 +11,7 @@ import { ArrowLeft, ArrowsClockwise, CheckCircle } from '@phosphor-icons/react';
 import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
 import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
-import type { Domain, Job } from '@/types';
+import type { Domain, Job, DomainStatus } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -20,8 +20,12 @@ type DomainDetailPageProps = {
   onNavigate: (page: string) => void;
 };
 
-// Auto-poll interval in milliseconds
+// Auto-poll interval configuration
 const AUTO_POLL_INTERVAL_MS = 12000; // 12 seconds
+const AUTO_POLL_INTERVAL_SECONDS = AUTO_POLL_INTERVAL_MS / 1000;
+
+// Statuses that trigger auto-polling
+const POLLING_STATUSES: DomainStatus[] = ['pending_cname', 'issuing', 'pending_validation'];
 
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
@@ -39,9 +43,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
       const domain = query.state.data;
       if (!domain) return false;
       
-      const shouldPoll = domain.status === 'pending_cname' || 
-                         domain.status === 'issuing' || 
-                         domain.status === 'pending_validation';
+      const shouldPoll = POLLING_STATUSES.includes(domain.status);
       
       return shouldPoll ? AUTO_POLL_INTERVAL_MS : false;
     },
@@ -69,7 +71,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
         toast.success('🎉 Certificate is now active!', {
           description: `${domain.domainName} is ready to use`,
         });
-      } else if (currentStatus === 'error' && previousStatus !== 'error') {
+      } else if (currentStatus === 'error') {
         toast.error('Domain verification failed', {
           description: 'Please check your DNS configuration',
         });
@@ -193,7 +195,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       • If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
                     </p>
                     <p>
-                      • The system automatically checks your DNS every {AUTO_POLL_INTERVAL_MS / 1000} seconds
+                      • The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
                     </p>
                     <p>
                       • If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
@@ -213,7 +215,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       Cloudflare is validating your DNS configuration. This process is automatic and typically completes within 5-15 minutes.
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Status updates automatically every {AUTO_POLL_INTERVAL_MS / 1000} seconds
+                      Status updates automatically every {AUTO_POLL_INTERVAL_SECONDS} seconds
                     </p>
                   </div>
                 </div>
