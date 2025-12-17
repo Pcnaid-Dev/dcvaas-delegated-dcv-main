@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
@@ -23,67 +24,78 @@ type DashboardPageProps = {
 
 export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps) {
   const { user, currentOrg } = useAuth();
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newDomainName, setNewDomainName] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    loadDomains();
-  }, [currentOrg]);
+  // Use React Query for data fetching with caching
+  const { data: domains = [] } = useQuery({
+    queryKey: ['domains', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgDomains(currentOrg.id) : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 10000, // 10 seconds
+  });
 
-  const loadDomains = async () => {
-    if (!currentOrg) return;
-    const orgDomains = await getOrgDomains(currentOrg.id);
-    setDomains(orgDomains);
-  };
+  // Mutation for adding domains
+  const addDomainMutation = useMutation({
+    mutationFn: createDomain,
+    onSuccess: (domain) => {
+      // Invalidate and refetch domains query
+      queryClient.invalidateQueries({ queryKey: ['domains', currentOrg?.id] });
+      setIsAddOpen(false);
+      setNewDomainName('');
+      toast.success('Domain added successfully');
+      onSelectDomain(domain.id);
+      onNavigate('domain-detail');
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to add domain');
+    },
+  });
 
   const handleAddDomain = async () => {
-  if (!currentOrg || !user) return;
-  if (!newDomainName.trim()) {
-    toast.error('Please enter a domain name');
-    return;
-  }
+    if (!currentOrg || !user) return;
+    if (!newDomainName.trim()) {
+      toast.error('Please enter a domain name');
+      return;
+    }
 
-  const planLimit = PLAN_LIMITS[currentOrg.subscriptionTier];
-  if (domains.length >= planLimit.maxDomains) {
-    toast.error(`Domain limit reached (${planLimit.maxDomains}). Please upgrade your plan.`);
-    return;
-  }
+    const planLimit = PLAN_LIMITS[currentOrg.subscriptionTier];
+    if (domains.length >= planLimit.maxDomains) {
+      toast.error(`Domain limit reached (${planLimit.maxDomains}). Please upgrade your plan.`);
+      return;
+    }
 
-  setIsAdding(true);
-  try {
-    const domain = await createDomain(newDomainName.trim().toLowerCase());
+    try {
+      const domain = await addDomainMutation.mutateAsync(newDomainName.trim().toLowerCase());
 
-    await addAuditLog({
-      id: await generateId(),
-      orgId: currentOrg.id,
-      userId: user.id,
-      action: 'domain.created',
-      entityType: 'domain',
-      entityId: domain.id,
-      details: { domainName: domain.domainName },
-      createdAt: new Date().toISOString(),
-    });
+      try {
+        await addAuditLog({
+          id: await generateId(),
+          orgId: currentOrg.id,
+          userId: user.id,
+          action: 'domain.created',
+          entityType: 'domain',
+          entityId: domain.id,
+          details: { domainName: domain.domainName },
+          createdAt: new Date().toISOString(),
+        });
+        // Invalidate audit log queries so UI stays in sync
+        queryClient.invalidateQueries({ queryKey: ['auditLogs', currentOrg.id] });
+      } catch (auditError) {
+        toast.error('Domain added, but failed to record audit log. Please contact support if this persists.');
+      }
+    } catch (error) {
+      // Error already handled by mutation
+    }
+  };
 
-    await loadDomains();
-    setIsAddOpen(false);
-    setNewDomainName('');
-    toast.success('Domain added successfully');
-    onSelectDomain(domain.id);
-    onNavigate('domain-detail');
-  } catch (error: any) {
-    toast.error(error?.message || 'Failed to add domain');
-  } finally {
-    setIsAdding(false);
-  }
-};
-
-
-  const filteredDomains = domains.filter(d =>
-    d.domainName.toLowerCase().includes(search.toLowerCase())
-  );
+  // Memoize filtered domains to avoid recalculation on every render
+  const filteredDomains = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    return domains.filter(d => d.domainName.toLowerCase().includes(searchLower));
+  }, [domains, search]);
 
   if (!currentOrg) {
     return (
@@ -141,9 +153,9 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
                 <Button
                   className="w-full"
                   onClick={handleAddDomain}
-                  disabled={isAdding}
+                  disabled={addDomainMutation.isPending}
                 >
-                  {isAdding ? 'Adding...' : 'Add Domain'}
+                  {addDomainMutation.isPending ? 'Adding...' : 'Add Domain'}
                 </Button>
               </div>
             </DialogContent>

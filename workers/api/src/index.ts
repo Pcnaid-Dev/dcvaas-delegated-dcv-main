@@ -5,6 +5,12 @@ import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from '
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 
+// Helper function to normalize ETags for comparison
+// Removes W/ prefix (weak ETag indicator) and quotes
+function normalizeETag(etag: string): string {
+  return etag.replace(/^W\//, '').replace(/"/g, '');
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const pf = preflight(req, env);
@@ -40,8 +46,28 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
-        const domains = await listDomains(env, auth.orgId);
-        return withCors(req, env, json({ domains }));
+        // Parse and validate pagination parameters
+        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 1000));
+        const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+        const domains = await listDomains(env, auth.orgId, limit, offset);
+        const response = json({ domains }, 200, {
+          'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
+        });
+        
+        // Check If-None-Match header for ETag support
+        const ifNoneMatch = req.headers.get('If-None-Match');
+        const etag = response.headers.get('ETag');
+        if (ifNoneMatch && etag && normalizeETag(ifNoneMatch) === normalizeETag(etag)) {
+          return withCors(req, env, new Response(null, { 
+            status: 304, 
+            headers: { 
+              'ETag': etag,
+              'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
+            } 
+          }));
+        }
+        
+        return withCors(req, env, response);
       }
 
       // POST /api/domains

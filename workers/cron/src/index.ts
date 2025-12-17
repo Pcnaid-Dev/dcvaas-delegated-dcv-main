@@ -15,23 +15,32 @@ interface DomainRow {
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    // 1. Find domains that are in pending_cname or issuing status (as per documentation)
-    const res = await env.DB.prepare(
-      `SELECT * FROM domains WHERE status IN ('pending_cname', 'issuing')`
-    ).all<DomainRow>();
+    // 1. Find domains that are NOT active yet (stuck in pending/issuing)
+    // Use LIMIT to avoid overwhelming the queue with large batches
+    const BATCH_SIZE = 100;
+  const res = await env.DB.prepare(
+    `SELECT * FROM domains 
+     WHERE status IN ('pending_cname', 'issuing')
+     ORDER BY updated_at ASC 
+     LIMIT ?`
+  ).bind(BATCH_SIZE).all<DomainRow>();
 
-    const domains = res.results ?? [];
+  const domains = res.results ?? [];
+  console.log(`Cron: Processing ${domains.length} pending/issuing domains`);
 
-    for (const domain of domains) {
-      // 2. Queue a "sync_status" job instead of "renewal"
-      // You will need to ensure your consumer handles this type
-      const jobId = crypto.randomUUID();
-      await env.QUEUE.send({
-        id: jobId,
-        type: 'sync_status', // NEW JOB TYPE
-        domain_id: domain.id,
-        attempts: 0,
-      });
+  // Batch send to queue for better performance
+  const messages = domains.map(domain => ({
+    body: { // <--- THIS FIXES THE TYPE ERROR
+      id: crypto.randomUUID(),
+      type: 'sync_status' as const,
+      domain_id: domain.id,
+      attempts: 0
     }
-  },
-};
+  }));
+
+  // Send messages in batches
+  if (messages.length > 0) {
+    await env.QUEUE.sendBatch(messages);
+  }
+    },
+  };

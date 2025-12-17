@@ -5,7 +5,8 @@ import { MessageBatch } from '@cloudflare/workers-types';
 
 export default {
   async queue(batch: MessageBatch<JobMessage>, env: Env): Promise<void> {
-    for (const message of batch.messages) {
+    // Process messages in parallel for better throughput
+    const promises = batch.messages.map(async (message) => {
       const job = message.body;
       try {
         switch (job.type) {
@@ -22,7 +23,20 @@ export default {
       } catch (error) {
         console.error(`Failed to process job ${job.id}:`, error);
         message.retry();
+        throw error;
       }
+    });
+
+    // Wait for all messages to be processed and log any failures
+    const results = await Promise.allSettled(promises);
+    
+    // Check for any failures and log them
+    const failures = results.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.error(`Batch processing completed with ${failures.length} failures out of ${results.length} messages`);
+      failures.forEach((failure, idx) => {
+        console.error(`Message ${idx} failed:`, failure.reason);
+      });
     }
   },
 };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
@@ -15,6 +16,18 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
+
+// Create a QueryClient instance with optimized defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10000, // 10 seconds
+      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -99,13 +112,15 @@ function AppContent() {
 
 function App() {
   return (
+  <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider>
         <AppContent />
         <Toaster />
       </ThemeProvider>
     </AuthProvider>
-  );
+  </QueryClientProvider>
+);
 }
 
 export default App;

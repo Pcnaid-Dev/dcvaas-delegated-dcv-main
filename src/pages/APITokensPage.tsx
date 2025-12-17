@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,21 +21,56 @@ type APITokensPageProps = {
 
 export function APITokensPage({ onNavigate }: APITokensPageProps) {
   const { currentOrg } = useAuth();
-  const [tokens, setTokens] = useState<APIToken[]>([]);
+  const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [tokenName, setTokenName] = useState('');
   const [newToken, setNewToken] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    loadTokens();
-  }, [currentOrg]);
+  // Fetch tokens with React Query
+  const { data: tokens = [] } = useQuery({
+    queryKey: ['apiTokens', currentOrg?.id],
+    queryFn: () => currentOrg ? getOrgAPITokens() : Promise.resolve([]),
+    enabled: !!currentOrg,
+    staleTime: 30000,
+  });
 
-  const loadTokens = async () => {
-    if (!currentOrg) return;
-    const orgTokens = await getOrgAPITokens(currentOrg.id);
-    setTokens(orgTokens);
-  };
+  // Mutation for creating tokens
+  const createTokenMutation = useMutation({
+    mutationFn: async (name: string) => {
+      if (!currentOrg) throw new Error('No organization');
+      const plainToken = await generateToken();
+      const token: APIToken = {
+        id: await generateId(),
+        orgId: currentOrg.id,
+        name,
+        tokenHash: await hashToken(plainToken),
+        createdAt: new Date().toISOString(),
+      };
+      await addAPIToken(token);
+      return plainToken;
+    },
+    onSuccess: (plainToken) => {
+      queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
+      setNewToken(plainToken);
+      setTokenName('');
+      toast.success('API token created');
+    },
+    onError: () => {
+      toast.error('Failed to create token');
+    },
+  });
+
+  // Mutation for deleting tokens
+  const deleteTokenMutation = useMutation({
+    mutationFn: (tokenId: string) => deleteAPIToken(tokenId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
+      toast.success('Token deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete token');
+    },
+  });
 
   const handleCreate = async () => {
     if (!currentOrg) return;
@@ -42,39 +78,12 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
       toast.error('Please enter a token name');
       return;
     }
-
-    setIsCreating(true);
-    try {
-      const plainToken = await generateToken();
-      const token: APIToken = {
-        id: await generateId(),
-        orgId: currentOrg.id,
-        name: tokenName,
-        tokenHash: await hashToken(plainToken),
-        createdAt: new Date().toISOString(),
-      };
-
-      await addAPIToken(token);
-      setNewToken(plainToken);
-      setTokenName('');
-      await loadTokens();
-      toast.success('API token created');
-    } catch (error) {
-      toast.error('Failed to create token');
-    } finally {
-      setIsCreating(false);
-    }
+    createTokenMutation.mutate(tokenName);
   };
 
   const handleDelete = async (tokenId: string) => {
     if (!currentOrg) return;
-    try {
-      await deleteAPIToken(currentOrg.id, tokenId);
-      await loadTokens();
-      toast.success('Token deleted');
-    } catch (error) {
-      toast.error('Failed to delete token');
-    }
+    deleteTokenMutation.mutate(tokenId);
   };
 
   if (!currentOrg) return null;
@@ -133,9 +142,9 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                         <Button
                           className="w-full"
                           onClick={handleCreate}
-                          disabled={isCreating}
+                          disabled={createTokenMutation.isPending}
                         >
-                          {isCreating ? 'Creating...' : 'Create Token'}
+                          {createTokenMutation.isPending ? 'Creating...' : 'Create Token'}
                         </Button>
                       </div>
                     ) : (
