@@ -172,7 +172,8 @@ export async function updateMemberRole(
     .run();
 
   const updated = await getMember(env, orgId, userId);
-  return updated!;
+  if (!updated) throw new Error('Failed to update member role');
+  return updated;
 }
 
 /**
