@@ -3,7 +3,7 @@
 // - Domains & jobs: talk to the Cloudflare Worker API.
 // - Users/orgs/tokens/audit: localStorage stubs for now so the UI never crashes.
 
-import type { Organization, User, Domain, Job, AuditLog, APIToken, Membership } from '@/types'; 
+import type { Organization, User, Domain, Job, AuditLog, APIToken, Membership, WebhookEndpoint } from '@/types'; 
 
 // Define default user for fallback/mocking
 const DEFAULT_USER: User = {

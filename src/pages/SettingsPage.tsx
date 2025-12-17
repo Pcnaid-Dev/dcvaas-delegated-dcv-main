@@ -231,6 +231,70 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
                 </div>
               )}
             </Card>
+
+            {/* OAuth Provider Connections */}
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">DNS Provider Connections</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Connect your DNS provider for automated domain verification (Coming Soon)
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center">
+                        <span className="text-orange-600 dark:text-orange-400 font-bold">CF</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">Cloudflare</p>
+                        <p className="text-sm text-muted-foreground">Not connected</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" disabled>
+                      Connect
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                        <span className="text-blue-600 dark:text-blue-400 font-bold">GD</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">GoDaddy</p>
+                        <p className="text-sm text-muted-foreground">Not connected</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" disabled>
+                      Connect
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+                        <span className="text-amber-600 dark:text-amber-400 font-bold">R53</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">AWS Route 53</p>
+                        <p className="text-sm text-muted-foreground">Not connected</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" disabled>
+                      Connect
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  OAuth provider integrations are currently in development. 
+                  The backend endpoint `/api/oauth/exchange` is available but requires provider configuration.
+                </p>
+              </div>
+            </Card>
           </>
         )}
       </div>
