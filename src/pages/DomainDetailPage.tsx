@@ -42,6 +42,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
       
       return shouldPoll ? 12000 : false; // 12 seconds
     },
+    refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
 
   // Fetch jobs for this domain
@@ -69,7 +70,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     if (domain) {
       setPreviousStatus(domain.status);
     }
-  }, [domain?.status, previousStatus, domain?.domainName]);
+  }, [domain?.status, domain?.domainName]);
 
   // Mutation for syncing domain
   const syncMutation = useMutation({
