@@ -215,7 +215,7 @@ DCVaaS is a SaaS control plane for managing SSL/TLS certificates via **Cloudflar
 The application implements comprehensive performance optimizations as detailed in `PERFORMANCE_IMPROVEMENTS.md`:
 
 ### HTTP Caching
-- **ETag Support**: All successful (2xx) responses include ETags generated with FNV-1a hash
+- **ETag Support**: The /api/domains endpoint includes ETags generated with FNV-1a hash...
 - **304 Not Modified**: API checks `If-None-Match` header and returns 304 when content unchanged
 - **Cache-Control Headers**: `public, max-age=10, stale-while-revalidate=30`
 - **Implementation**: `workers/api/src/lib/http.ts` (json helper) and route handlers
