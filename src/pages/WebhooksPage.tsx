@@ -124,7 +124,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
-      setNewWebhookSecret(result.secret);
+      setNewWebhookSecret(result.webhook.secret);
       setNewWebhook({ url: '', events: [] });
       setIsCreateOpen(false);
       toast.success('Webhook endpoint created');

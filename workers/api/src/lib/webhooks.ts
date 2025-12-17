@@ -162,6 +162,7 @@ export async function deleteWebhook(env: Env, orgId: string, webhookId: string) 
 
 /**
  * Dispatch a webhook event to all subscribed endpoints
+ * Uses shared dispatch logic with database-level event filtering
  */
 export async function dispatchWebhook(
   env: Env,
@@ -169,81 +170,7 @@ export async function dispatchWebhook(
   event: WebhookEvent,
   payload: Record<string, any>
 ) {
-  // Find all enabled webhooks for this org that subscribe to this event
-  const { results: webhooks } = await env.DB
-    .prepare(
-      `SELECT * FROM webhook_endpoints 
-       WHERE org_id = ? AND enabled = 1`
-    )
-    .bind(orgId)
-    .all<WebhookEndpointRow>();
-
-  if (!webhooks || webhooks.length === 0) {
-    return;
-  }
-
-  // Filter webhooks that subscribe to this event
-  const relevantWebhooks = webhooks.filter((webhook) => {
-    const events = JSON.parse(webhook.events) as string[];
-    return events.includes(event);
-  });
-
-  // Dispatch to each webhook
-  const dispatches = relevantWebhooks.map(async (webhook) => {
-    try {
-      await dispatchToEndpoint(webhook.url, webhook.secret, event, payload);
-    } catch (err) {
-      console.error(`Failed to dispatch webhook to ${webhook.url}:`, err);
-      // Don't throw - continue dispatching to other endpoints
-    }
-  });
-
-  await Promise.allSettled(dispatches);
-}
-
-/**
- * Dispatch to a single webhook endpoint with HMAC signature
- */
-async function dispatchToEndpoint(
-  url: string,
-  secret: string,
-  event: WebhookEvent,
-  payload: Record<string, any>
-) {
-  const body = JSON.stringify(payload);
-
-  // Sign with HMAC-SHA256
-  const signature = await hmacSha256(secret, body);
-
-  await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-DCVaaS-Signature': signature,
-      'X-DCVaaS-Event': event,
-    },
-    body,
-  });
-}
-
-/**
- * Generate HMAC-SHA256 signature
- */
-async function hmacSha256(secret: string, message: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const keyData = encoder.encode(secret);
-  const messageData = encoder.encode(message);
-
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', key, messageData);
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  // Use shared webhook dispatch module
+  const { dispatchWebhook: sharedDispatch } = await import('../../shared/webhook-dispatch');
+  await sharedDispatch(env.DB, orgId, event, payload);
 }

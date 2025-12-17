@@ -380,15 +380,12 @@ export async function getOrgWebhooks(): Promise<WebhookEndpoint[]> {
   }
 }
 
-export async function createWebhook(url: string, events: string[]): Promise<{ webhook: WebhookEndpoint; secret: string }> {
+export async function createWebhook(url: string, events: string[]): Promise<{ webhook: WebhookEndpoint & { secret: string } }> {
   const res = await api<{ webhook: WebhookEndpoint & { secret: string } }>('/api/webhooks', {
     method: 'POST',
     body: JSON.stringify({ url, events }),
   });
-  return {
-    webhook: res.webhook,
-    secret: res.webhook.secret,
-  };
+  return res;
 }
 
 export async function updateWebhook(id: string, updates: { url?: string; events?: string[]; enabled?: boolean }): Promise<void> {

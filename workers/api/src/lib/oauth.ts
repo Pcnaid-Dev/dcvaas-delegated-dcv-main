@@ -42,48 +42,39 @@ export async function exchangeOAuthCode(
   
   const id = crypto.randomUUID();
   
-  // Upsert: update if exists, insert if not
-  const existing = await env.DB
-    .prepare(`SELECT id FROM oauth_connections WHERE org_id = ? AND provider = ?`)
-    .bind(orgId, provider)
-    .first<{ id: string }>();
-
-  if (existing) {
-    // Update existing connection
-    await env.DB
-      .prepare(
-        `UPDATE oauth_connections 
-         SET encrypted_access_token = ?, updated_at = datetime('now')
-         WHERE id = ?`
-      )
-      .bind(encryptedAccessToken, existing.id)
-      .run();
-    
-    return {
-      id: existing.id,
-      orgId,
-      provider,
-      status: 'updated',
-      note: 'OAuth connection updated with stub token - full implementation pending',
-    };
-  } else {
-    // Insert new connection
-    await env.DB
-      .prepare(
-        `INSERT INTO oauth_connections (id, org_id, provider, encrypted_access_token, created_at, updated_at)
-         VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`
-      )
-      .bind(id, orgId, provider, encryptedAccessToken)
-      .run();
-    
-    return {
-      id,
-      orgId,
-      provider,
-      status: 'created',
-      note: 'OAuth connection created with stub token - full implementation pending',
-    };
-  }
+  // Use D1 batch transaction for atomic upsert to prevent race conditions
+  const statements = [
+    // First, try to update existing connection
+    env.DB.prepare(
+      `UPDATE oauth_connections 
+       SET encrypted_access_token = ?, updated_at = datetime('now')
+       WHERE org_id = ? AND provider = ?`
+    ).bind(encryptedAccessToken, orgId, provider),
+    // Then insert if update affected no rows (using INSERT OR IGNORE)
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO oauth_connections (id, org_id, provider, encrypted_access_token, created_at, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(id, orgId, provider, encryptedAccessToken),
+  ];
+  
+  const results = await env.DB.batch(statements);
+  
+  // Check if update succeeded (first statement affected rows)
+  const wasUpdated = results[0].meta.changes > 0;
+  
+  // Get the actual ID (either from update or from the insert)
+  const actualId = wasUpdated 
+    ? (await env.DB.prepare('SELECT id FROM oauth_connections WHERE org_id = ? AND provider = ?')
+        .bind(orgId, provider).first<{ id: string }>())?.id || id
+    : id;
+  
+  return {
+    id: actualId,
+    orgId,
+    provider,
+    status: wasUpdated ? 'updated' : 'created',
+    note: `OAuth connection ${wasUpdated ? 'updated' : 'created'} with stub token - full implementation pending`,
+  };
 }
 
 /**
