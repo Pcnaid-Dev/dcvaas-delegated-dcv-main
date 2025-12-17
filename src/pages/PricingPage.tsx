@@ -4,6 +4,7 @@ import { CheckCircle, Certificate } from '@phosphor-icons/react';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 type PricingPageProps = {
   onNavigate: (page: string) => void;
@@ -24,13 +25,15 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       window.location.href = url;
     } catch (error) {
       console.error('Failed to create checkout session:', error);
-      let errorMessage = 'Failed to start checkout. Please try again.';
-      if (error instanceof Error && error.message) {
-        errorMessage += `\n\nDetails: ${error.message}`;
-      } else if (typeof error === 'string') {
-        errorMessage += `\n\nDetails: ${error}`;
-      }
-      alert(errorMessage);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : 'Unknown error';
+      toast.error('Failed to start checkout', {
+        description: errorMessage,
+      });
       setLoading(null);
     }
   };

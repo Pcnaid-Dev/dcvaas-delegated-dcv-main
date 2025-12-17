@@ -8,6 +8,7 @@ import { PLAN_LIMITS } from '@/types';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 type BillingPageProps = {
   onNavigate: (page: string) => void;
@@ -33,7 +34,9 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
           : typeof error === 'string'
           ? error
           : 'Unknown error';
-      alert(`Failed to start checkout. ${errorMessage ? 'Error: ' + errorMessage : 'Please try again.'}`);
+      toast.error('Failed to start checkout', {
+        description: errorMessage,
+      });
       setLoading(false);
     }
   };
