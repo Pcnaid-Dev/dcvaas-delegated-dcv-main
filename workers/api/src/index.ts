@@ -253,8 +253,8 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           return withCors(req, env, badRequest('url is required'));
         }
 
-        if (!url_param.startsWith('http://') && !url_param.startsWith('https://')) {
-          return withCors(req, env, badRequest('url must start with http:// or https://'));
+        if (!url_param.startsWith('https://')) {
+          return withCors(req, env, badRequest('url must start with https://'));
         }
 
         if (!secret) {
