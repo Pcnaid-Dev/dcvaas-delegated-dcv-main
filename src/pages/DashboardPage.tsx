@@ -273,7 +273,7 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
                   {/* Favicon */}
                   <img
                     src={`https://www.google.com/s2/favicons?domain=${domain.domainName}&sz=32`}
-                    alt=""
+                    alt={`Favicon for ${domain.domainName}`}
                     className="w-8 h-8 rounded"
                     onError={(e) => {
                       // Fallback to Globe icon on error
