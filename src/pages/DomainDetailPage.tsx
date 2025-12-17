@@ -26,7 +26,7 @@ const AUTO_POLL_INTERVAL_MS = 12000; // 12 seconds
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const [previousStatus, setPreviousStatus] = React.useState<string | null>(null);
+  const previousStatusRef = React.useRef<string | null>(null);
 
   // Fetch domain with React Query
   const { data: domain, isLoading: isDomainLoading } = useQuery({
@@ -56,24 +56,29 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     staleTime: 5000,
   });
 
-  // Show toast notification when status changes to active
+  // Show toast notification when status changes
   React.useEffect(() => {
-    if (domain && previousStatus && previousStatus !== domain.status) {
-      if (domain.status === 'active') {
+    if (!domain) return;
+    
+    const currentStatus = domain.status;
+    const previousStatus = previousStatusRef.current;
+    
+    // Only show toasts if we have a previous status and it changed
+    if (previousStatus && previousStatus !== currentStatus) {
+      if (currentStatus === 'active') {
         toast.success('🎉 Certificate is now active!', {
           description: `${domain.domainName} is ready to use`,
         });
-      } else if (domain.status === 'error' && previousStatus !== 'error') {
+      } else if (currentStatus === 'error' && previousStatus !== 'error') {
         toast.error('Domain verification failed', {
           description: 'Please check your DNS configuration',
         });
       }
     }
     
-    if (domain) {
-      setPreviousStatus(domain.status);
-    }
-  }, [domain?.status]);
+    // Update the ref with current status
+    previousStatusRef.current = currentStatus;
+  }, [domain?.status, domain?.domainName]);
 
   // Mutation for syncing domain
   const syncMutation = useMutation({
