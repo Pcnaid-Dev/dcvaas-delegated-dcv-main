@@ -70,16 +70,22 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
     try {
       const domain = await addDomainMutation.mutateAsync(newDomainName.trim().toLowerCase());
 
-      await addAuditLog({
-        id: await generateId(),
-        orgId: currentOrg.id,
-        userId: user.id,
-        action: 'domain.created',
-        entityType: 'domain',
-        entityId: domain.id,
-        details: { domainName: domain.domainName },
-        createdAt: new Date().toISOString(),
-      });
+      try {
+        await addAuditLog({
+          id: await generateId(),
+          orgId: currentOrg.id,
+          userId: user.id,
+          action: 'domain.created',
+          entityType: 'domain',
+          entityId: domain.id,
+          details: { domainName: domain.domainName },
+          createdAt: new Date().toISOString(),
+        });
+        // Invalidate audit log queries so UI stays in sync
+        queryClient.invalidateQueries({ queryKey: ['auditLogs', currentOrg.id] });
+      } catch (auditError) {
+        toast.error('Domain added, but failed to record audit log. Please contact support if this persists.');
+      }
     } catch (error) {
       // Error already handled by mutation
     }
