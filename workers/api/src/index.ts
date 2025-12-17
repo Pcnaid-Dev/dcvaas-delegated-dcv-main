@@ -4,6 +4,8 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
+import { logAudit } from './lib/audit';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -232,6 +234,66 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           } catch (err: any) {
             return withCors(req, env, badRequest(err.message));
           }
+        }
+      }
+
+      // GET /api/tokens - List API tokens
+      if (method === 'GET' && url.pathname === '/api/tokens') {
+        const tokens = await listAPITokens(env, auth.orgId);
+        return withCors(req, env, json({ tokens }));
+      }
+
+      // POST /api/tokens - Create API token
+      if (method === 'POST' && url.pathname === '/api/tokens') {
+        // Only owners and admins can create API tokens
+        if (!isOwnerOrAdmin(auth)) {
+          return withCors(req, env, forbidden('Only owners and admins can create API tokens'));
+        }
+
+        const body = await req.json().catch(() => ({} as any));
+        const name = String(body.name ?? '').trim();
+        const expiresAt = body.expiresAt ? String(body.expiresAt) : undefined;
+        
+        if (!name) return withCors(req, env, badRequest('name is required'));
+        
+        const result = await createAPIToken(env, auth.orgId, name, expiresAt);
+        
+        // Log audit event
+        await logAudit(env, {
+          org_id: auth.orgId,
+          user_id: auth.userId || null,
+          action: 'token.created',
+          entity_type: 'api_token',
+          entity_id: result.token.id,
+          details: { name },
+        });
+        
+        return withCors(req, env, json({ token: result.token, plaintext: result.plaintext }, 201));
+      }
+
+      // DELETE /api/tokens/:id - Delete API token
+      {
+        const m = url.pathname.match(/^\/api\/tokens\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const tokenId = decodeURIComponent(m[1]);
+          
+          // Only owners and admins can delete API tokens
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can delete API tokens'));
+          }
+          
+          await deleteAPIToken(env, auth.orgId, tokenId);
+          
+          // Log audit event
+          await logAudit(env, {
+            org_id: auth.orgId,
+            user_id: auth.userId || null,
+            action: 'token.deleted',
+            entity_type: 'api_token',
+            entity_id: tokenId,
+          });
+          
+          return withCors(req, env, json({ success: true }));
         }
       }
 

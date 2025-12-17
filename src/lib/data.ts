@@ -275,28 +275,36 @@ export function setJob(_job: Job): void {
   // no-op
 }
 
-// ===== API TOKENS (local stub for now) =====
+// ===== API TOKENS (real API) =====
 
 export async function getOrgAPITokens(): Promise<APIToken[]> {
-  if (!isBrowser()) return [];
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  return raw ? (JSON.parse(raw) as APIToken[]) : [];
+  try {
+    const res = await api<{ tokens: APIToken[] }>(`/api/tokens`);
+    return res?.tokens ?? [];
+  } catch (err) {
+    console.warn('getOrgAPITokens failed', err);
+    return [];
+  }
 }
 
+export async function createAPIToken(name: string, expiresAt?: string): Promise<{ token: APIToken; plaintext: string }> {
+  const res = await api<{ token: APIToken; plaintext: string }>(`/api/tokens`, {
+    method: 'POST',
+    body: JSON.stringify({ name, expiresAt }),
+  });
+  return res;
+}
+
+// Legacy function for compatibility
 export async function addAPIToken(token: APIToken): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  list.push(token);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(list));
+  // This is now handled by createAPIToken
+  console.warn('addAPIToken is deprecated, use createAPIToken instead');
 }
 
 export async function deleteAPIToken(id: string): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  const filtered = list.filter((t: any) => t.id !== id);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(filtered));
+  await api(`/api/tokens/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
 
 // ===== AUDIT LOGS (local stub for now) =====
