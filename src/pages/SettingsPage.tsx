@@ -18,7 +18,7 @@ type SettingsPageProps = {
 };
 
 export function SettingsPage({ onNavigate }: SettingsPageProps) {
-  const { user, currentOrg, refreshOrganizations } = useAuth();
+  const { user, currentOrg, setCurrentOrg, refreshOrganizations } = useAuth();
   const [orgName, setOrgName] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
@@ -113,6 +113,7 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
         brandColor: brandColor || undefined,
       };
       await setOrganization(updated);
+      setCurrentOrg(updated);
       toast.success('Branding saved successfully');
       await refreshOrganizations();
     } catch (error) {
