@@ -23,6 +23,7 @@ export default {
       } catch (error) {
         console.error(`Failed to process job ${job.id}:`, error);
         message.retry();
+        throw error;
       }
     });
 
