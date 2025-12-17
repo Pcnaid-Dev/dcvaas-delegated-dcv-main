@@ -1,8 +1,9 @@
 import type { Env } from '../env';
 import Stripe from 'stripe';
+import { getTierFromPriceId, PRICE_ID_TO_TIER } from '../lib/stripe-constants';
 
 export interface AuthInfo {
-  userId: string;
+  tokenId: string;
   orgId: string;
 }
 
@@ -31,6 +32,9 @@ export async function createCheckoutSession(
       apiVersion: '2024-12-18.acacia',
     });
 
+    // Determine tier from price ID for metadata
+    const tier = getTierFromPriceId(priceId);
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -46,7 +50,8 @@ export async function createCheckoutSession(
       client_reference_id: auth.orgId,
       metadata: {
         orgId: auth.orgId,
-        userId: auth.userId,
+        tokenId: auth.tokenId,
+        tier: tier,
       },
     });
 
@@ -109,27 +114,18 @@ export async function handleStripeWebhook(
         });
       }
 
-      // Determine the subscription tier based on the price ID or metadata
+      // Determine the subscription tier based on metadata or price ID
       let tier: 'free' | 'pro' | 'agency' = 'pro'; // default
       
-      // Explicit mapping from Stripe price IDs to tiers
-      const PRICE_ID_TO_TIER: Record<string, 'free' | 'pro' | 'agency'> = {
-        // Replace these with your actual Stripe price IDs
-        'price_123_PRO': 'pro',
-        'price_456_AGENCY': 'agency',
-        'price_789_FREE': 'free',
-      };
-
-      // First check metadata for explicit tier
+      // First check metadata for explicit tier (should always be present now)
       if (session.metadata?.tier && ['free', 'pro', 'agency'].includes(session.metadata.tier)) {
         tier = session.metadata.tier as 'free' | 'pro' | 'agency';
       } else if (session.mode === 'subscription' && session.subscription) {
-        // Try to map price ID to tier using explicit mapping
+        // Fallback: Try to map price ID to tier using explicit mapping
         const priceId = session.line_items?.data?.[0]?.price?.id;
         if (priceId && PRICE_ID_TO_TIER[priceId]) {
           tier = PRICE_ID_TO_TIER[priceId];
         } else {
-          // Optionally log or handle unknown priceId
           console.warn(`Unknown priceId: ${priceId}, defaulting to 'pro'`);
         }
       }
