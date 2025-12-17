@@ -4,6 +4,7 @@
 // Configuration constants for retry logic
 const MAX_DELAY = 30000; // Cap at 30 seconds
 const MAX_RATE_LIMIT_RETRIES = 3; // Maximum retries for rate limit responses
+const DEFAULT_RATE_LIMIT_RETRY_AFTER = 5; // Default seconds to wait if no Retry-After header
 
 /**
  * Helper function for fetch with retry logic and exponential backoff
@@ -21,16 +22,21 @@ export async function fetchWithRetry(url: string, options: RequestInit, maxRetri
     try {
       const response = await fetch(url, options);
       
-      // If rate limited, wait and retry (but count against a separate budget)
+      // If rate limited, wait and retry (doesn't count against main retry budget)
       if (response.status === 429) {
         if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
           throw new Error(`Rate limit retry budget exhausted (${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES} attempts)`);
         }
         rateLimitRetries++;
-        const retryAfter = parseInt(response.headers.get('Retry-After') || '5', 10);
+        const retryAfter = parseInt(response.headers.get('Retry-After') || String(DEFAULT_RATE_LIMIT_RETRY_AFTER), 10);
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        // Don't increment attempt counter for rate limits - retry without consuming retry budget
+        attempt--;
         continue;
       }
+      
+      // Reset rate limit counter on successful non-429 response
+      rateLimitRetries = 0;
       
       // Check for client errors (4xx) that shouldn't be retried
       if (response.status >= 400 && response.status < 500) {
