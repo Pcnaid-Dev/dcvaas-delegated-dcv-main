@@ -32,7 +32,8 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
   if (!currentOrg) return null;
 
   const currentLimit = PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains;
-  const usagePercentage = (domains.length / currentLimit) * 100;
+  const usagePercentage = currentLimit > 0 ? (domains.length / currentLimit) * 100 : 0;
+
 
   const handleUpgrade = async (tier: 'pro' | 'agency') => {
     setLoading(true);
