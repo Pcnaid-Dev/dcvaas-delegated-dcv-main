@@ -107,7 +107,9 @@ export type APIToken = {
   id: string;
   orgId: string;
   name: string;
-  tokenHash: string;
+  tokenHash?: string; // Not returned by API anymore
+  token?: string; // Only included on creation
+  maskedToken?: string; // For listing
   lastUsedAt?: string;
   expiresAt?: string;
   createdAt: string;

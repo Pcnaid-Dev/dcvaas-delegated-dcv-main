@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash } from '@phosphor-icons/react';
-import { getOrgAPITokens, addAPIToken, deleteAPIToken } from '@/lib/data';
-import { generateId, hashToken, generateToken } from '@/lib/crypto';
+import { getOrgAPITokens, createAPIToken, deleteAPIToken } from '@/lib/data';
 import { toast } from 'sonner';
 import type { APIToken } from '@/types';
 import { PLAN_LIMITS } from '@/types';
@@ -38,20 +37,12 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
   const createTokenMutation = useMutation({
     mutationFn: async (name: string) => {
       if (!currentOrg) throw new Error('No organization');
-      const plainToken = await generateToken();
-      const token: APIToken = {
-        id: await generateId(),
-        orgId: currentOrg.id,
-        name,
-        tokenHash: await hashToken(plainToken),
-        createdAt: new Date().toISOString(),
-      };
-      await addAPIToken(token);
-      return plainToken;
+      const result = await createAPIToken(name);
+      return result.token.token; // Extract the plaintext token from response
     },
     onSuccess: (plainToken) => {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
-      setNewToken(plainToken);
+      setNewToken(plainToken || null);
       setTokenName('');
       toast.success('API token created');
     },
@@ -188,10 +179,14 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                       key={token.id}
                       className="flex items-center justify-between p-4 border border-border rounded-lg"
                     >
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-foreground">{token.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground font-mono">
+                          {token.maskedToken || '••••••••'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           Created {new Date(token.createdAt).toLocaleDateString()}
+                          {token.lastUsedAt && ` • Last used ${new Date(token.lastUsedAt).toLocaleDateString()}`}
                         </p>
                       </div>
                       <Button
