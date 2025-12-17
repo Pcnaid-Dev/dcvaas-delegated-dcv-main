@@ -65,17 +65,24 @@ export async function inviteMember(
   const tempUserId = `pending_${crypto.randomUUID()}`;
 
   // Check if already invited or active
-  const existing = await env.DB
-    .prepare(`SELECT * FROM organization_members WHERE org_id = ? AND email = ?`)
+  // Check for any non-suspended memberships for this email in the org
+  const existingMembers = await env.DB
+    .prepare(`SELECT * FROM organization_members WHERE org_id = ? AND email = ? AND status != 'suspended'`)
     .bind(orgId, email)
-    .first<MemberRow>();
+    .all<MemberRow>();
 
-  if (existing) {
-    if (existing.status === 'active') {
+  if (existingMembers.results && existingMembers.results.length > 0) {
+    // If any active membership exists, do not allow another
+    const activeMember = existingMembers.results.find(m => m.status === 'active');
+    if (activeMember) {
       throw new Error('User is already a member');
     }
-    // If invited, return existing invitation
-    return rowToResponse(existing);
+    // If any invitation exists, return the first one
+    const invitedMember = existingMembers.results.find(m => m.status === 'invited');
+    if (invitedMember) {
+      return rowToResponse(invitedMember);
+    }
+    // (Should not happen, but if other statuses exist, fall through to create new invitation)
   }
 
   await env.DB
