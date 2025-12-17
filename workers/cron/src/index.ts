@@ -38,9 +38,9 @@ export default {
     }
   }));
 
-    // Send messages in batches
-    if (messages.length > 0) {
-      await env.QUEUE.sendBatch(messages);
-    }
+  // Send messages in batches
+  if (messages.length > 0) {
+    await env.QUEUE.sendBatch(messages);
+  }
     },
   };
