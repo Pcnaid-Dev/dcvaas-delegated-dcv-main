@@ -25,12 +25,17 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
   const queryClient = useQueryClient();
 
   // Fetch domain with React Query
-  const { data: domain, isLoading: isDomainLoading } = useQuery({
+  const query = useQuery({
     queryKey: ['domain', domainId],
     queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
     enabled: !!domainId,
     staleTime: 5000,
+    refetchInterval: (query) => 
+      query.state.data?.status === 'pending_cname' || query.state.data?.status === 'issuing' ? 10000 : false,
   });
+
+  const domain = query.data;
+  const isDomainLoading = query.isLoading;
 
   // Fetch jobs for this domain
   const { data: jobs = [] } = useQuery({
@@ -130,6 +135,15 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                   domain={domain.domainName}
                   cnameTarget={domain.cnameTarget}
                 />
+                <div className="bg-muted/50 p-4 rounded-md">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Troubleshooting Guide</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Ensure the CNAME record points to {domain.cnameTarget}</li>
+                    <li>Remove any conflicting A or AAAA records</li>
+                    <li>DNS propagation can take up to 48 hours</li>
+                    <li>Use a DNS checker tool to verify propagation</li>
+                  </ul>
+                </div>
                 <Button
                   onClick={handleCheckDNS}
                   disabled={syncMutation.isPending}
