@@ -8,26 +8,25 @@ export type User = {
 
 export type SubscriptionTier = 'free' | 'pro' | 'agency';
 
-export type Organization = {
+export interface Organization {
   id: string;
   name: string;
   ownerId: string;
-  subscriptionTier: SubscriptionTier;
-// Add these from Incoming (PR #8)
+  subscriptionTier: 'free' | 'pro' | 'agency'; // Matches PR #10 (RBAC)
+
+  // --- Branding Fields (PR #8) ---
   brandColor?: string;
   logoUrl?: string;
   customDomain?: string;
-  
-  // PR #8 also added this 'theme' object. Keep it for now to avoid breaking UI code, 
-  // but note it duplicates the fields above.
   theme?: {
     logoUrl?: string;
     primaryColor?: string;
     secondaryColor?: string;
   };
+  // -------------------------------
 
   createdAt: string;
-};
+}
 
 export type MemberRole = 'owner' | 'admin' | 'member';
 
