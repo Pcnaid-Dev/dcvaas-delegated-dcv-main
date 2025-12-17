@@ -250,9 +250,17 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       Validation Error
                     </h3>
                     <div className="mb-4 p-3 bg-card rounded-lg border border-destructive/20">
-                      <p className="text-sm text-foreground font-mono">
+                      <p className="text-sm text-foreground">
                         {domain.cfVerificationErrors 
-                          ? JSON.stringify(domain.cfVerificationErrors, null, 2)
+                          ? (Array.isArray(domain.cfVerificationErrors) 
+                              ? domain.cfVerificationErrors.map((err: any, idx: number) => (
+                                  <div key={idx} className="mb-1">
+                                    • {typeof err === 'string' ? err : err.message || JSON.stringify(err)}
+                                  </div>
+                                ))
+                              : typeof domain.cfVerificationErrors === 'string'
+                                ? domain.cfVerificationErrors
+                                : JSON.stringify(domain.cfVerificationErrors, null, 2))
                           : (domain.errorMessage || 'Unknown error occurred during validation')}
                       </p>
                     </div>

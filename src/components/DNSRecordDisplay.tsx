@@ -27,7 +27,7 @@ export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps)
           </div>
         </div>
         
-        {/* High-contrast code block */}
+        {/* High-contrast code block - intentionally using fixed terminal colors for code aesthetic */}
         <div className="relative">
           <div className="font-mono text-sm bg-slate-950 dark:bg-black text-green-400 p-4 rounded-lg border border-slate-800 dark:border-slate-900 overflow-x-auto">
             <div className="whitespace-nowrap">

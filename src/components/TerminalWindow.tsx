@@ -1,23 +1,24 @@
 import { Card } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 
+// Static terminal animation sequence
+const TERMINAL_LINES = [
+  { delay: 0, text: '$ dcvaas domain add example.com', color: 'text-green-400' },
+  { delay: 1000, text: '✓ Domain added successfully', color: 'text-green-400' },
+  { delay: 1500, text: '✓ CNAME target: 3a2f1b.dcv.example.net', color: 'text-blue-400' },
+  { delay: 2000, text: '$ # Configure your DNS...', color: 'text-slate-500' },
+  { delay: 3000, text: '$ dcvaas domain verify example.com', color: 'text-green-400' },
+  { delay: 4000, text: '⚡ Checking DNS configuration...', color: 'text-yellow-400' },
+  { delay: 5000, text: '✓ CNAME verified', color: 'text-green-400' },
+  { delay: 5500, text: '✓ Certificate issued: example.com', color: 'text-green-400' },
+  { delay: 6000, text: '✓ Valid for 90 days, auto-renewing', color: 'text-green-400' },
+];
+
 export function TerminalWindow() {
   const [line, setLine] = useState(0);
-  
-  const lines = [
-    { delay: 0, text: '$ dcvaas domain add example.com', color: 'text-green-400' },
-    { delay: 1000, text: '✓ Domain added successfully', color: 'text-green-400' },
-    { delay: 1500, text: '✓ CNAME target: 3a2f1b.dcv.example.net', color: 'text-blue-400' },
-    { delay: 2000, text: '$ # Configure your DNS...', color: 'text-slate-500' },
-    { delay: 3000, text: '$ dcvaas domain verify example.com', color: 'text-green-400' },
-    { delay: 4000, text: '⚡ Checking DNS configuration...', color: 'text-yellow-400' },
-    { delay: 5000, text: '✓ CNAME verified', color: 'text-green-400' },
-    { delay: 5500, text: '✓ Certificate issued: example.com', color: 'text-green-400' },
-    { delay: 6000, text: '✓ Valid for 90 days, auto-renewing', color: 'text-green-400' },
-  ];
 
   useEffect(() => {
-    const timers = lines.map((l, i) => {
+    const timers = TERMINAL_LINES.map((l, i) => {
       return setTimeout(() => setLine(i + 1), l.delay);
     });
     return () => timers.forEach(clearTimeout);
@@ -37,7 +38,7 @@ export function TerminalWindow() {
       
       {/* Terminal content */}
       <div className="p-6 font-mono text-sm min-h-[300px] space-y-2">
-        {lines.slice(0, line).map((l, i) => (
+        {TERMINAL_LINES.slice(0, line).map((l, i) => (
           <div key={i} className={`${l.color} leading-relaxed`}>
             {l.text}
             {i === line - 1 && (
