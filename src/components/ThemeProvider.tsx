@@ -12,8 +12,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     const root = document.documentElement;
     
-    if (currentOrg?.brandColor) {
-      // Apply custom brand color
+    if (currentOrg?.brandColor && /^#[0-9a-fA-F]{6}$/.test(currentOrg.brandColor)) {
+      // Apply custom brand color (validated hex)
       root.style.setProperty('--primary-color', currentOrg.brandColor);
     } else {
       // Revert to default by removing the inline style
