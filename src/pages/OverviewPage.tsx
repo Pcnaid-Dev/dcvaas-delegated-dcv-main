@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppShell } from '@/components/AppShell';
@@ -14,6 +14,31 @@ type OverviewPageProps = {
   onNavigate: (page: string) => void;
   onSelectDomain?: (domainId: string) => void;
 };
+
+const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+
+const DOMAIN_STATUS_CONFIG = {
+  active: {
+    icon: CheckCircle,
+    label: 'Active',
+    className: 'text-success',
+  },
+  issuing: {
+    icon: Clock,
+    label: 'Issuing',
+    className: 'text-primary',
+  },
+  pending_cname: {
+    icon: Clock,
+    label: 'Pending',
+    className: 'text-muted-foreground',
+  },
+  error: {
+    icon: XCircle,
+    label: 'Error',
+    className: 'text-destructive',
+  },
+} as const;
 
 export function OverviewPage({ onNavigate, onSelectDomain }: OverviewPageProps) {
   const { currentOrg } = useAuth();
@@ -44,7 +69,7 @@ export function OverviewPage({ onNavigate, onSelectDomain }: OverviewPageProps) 
     
     // Find domains expiring soon (within 30 days)
     const now = Date.now();
-    const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysFromNow = now + THIRTY_DAYS_IN_MS;
     const expiringSoon = domains.filter(d => {
       if (!d.expiresAt) return false;
       const expiryTime = new Date(d.expiresAt).getTime();
@@ -185,30 +210,15 @@ export function OverviewPage({ onNavigate, onSelectDomain }: OverviewPageProps) 
                       </p>
                     </div>
                     <div className="ml-4">
-                      {domain.status === 'active' && (
-                        <span className="text-success flex items-center gap-1">
-                          <CheckCircle size={16} weight="fill" />
-                          Active
+                      {DOMAIN_STATUS_CONFIG[domain.status as keyof typeof DOMAIN_STATUS_CONFIG] ? (
+                        <span className={`${DOMAIN_STATUS_CONFIG[domain.status as keyof typeof DOMAIN_STATUS_CONFIG].className} flex items-center gap-1`}>
+                          {React.createElement(
+                            DOMAIN_STATUS_CONFIG[domain.status as keyof typeof DOMAIN_STATUS_CONFIG].icon,
+                            { size: 16, weight: 'fill' }
+                          )}
+                          {DOMAIN_STATUS_CONFIG[domain.status as keyof typeof DOMAIN_STATUS_CONFIG].label}
                         </span>
-                      )}
-                      {domain.status === 'issuing' && (
-                        <span className="text-primary flex items-center gap-1">
-                          <Clock size={16} weight="fill" />
-                          Issuing
-                        </span>
-                      )}
-                      {domain.status === 'pending_cname' && (
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <Clock size={16} weight="fill" />
-                          Pending
-                        </span>
-                      )}
-                      {domain.status === 'error' && (
-                        <span className="text-destructive flex items-center gap-1">
-                          <XCircle size={16} weight="fill" />
-                          Error
-                        </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>

@@ -101,7 +101,12 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
       {
         label: 'DNS Configured',
         description: 'CNAME record verified',
-        status: domain.status === 'pending_cname' ? 'current' as const : 'complete' as const,
+        status: 
+          domain.status === 'pending_cname'
+            ? 'current' as const
+            : domain.status === 'error'
+            ? 'current' as const  // Error state halts at DNS step
+            : 'complete' as const,
       },
       {
         label: 'Validation',
@@ -109,9 +114,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
         status:
           domain.status === 'active'
             ? 'complete' as const
-            : domain.status === 'issuing' ||
-              domain.status === 'pending_validation' ||
-              domain.status === 'error'
+            : domain.status === 'issuing' || domain.status === 'pending_validation'
             ? 'current' as const
             : 'upcoming' as const,
       },

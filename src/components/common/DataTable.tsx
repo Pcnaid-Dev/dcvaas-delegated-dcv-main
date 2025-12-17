@@ -62,9 +62,22 @@ export function DataTable<T extends { id: string }>({
 
   const sortedData = sortConfig
     ? [...data].sort((a, b) => {
-        const aVal = String((a as any)[sortConfig.key] || '');
-        const bVal = String((b as any)[sortConfig.key] || '');
-        const comparison = aVal.localeCompare(bVal);
+        const aVal = (a as any)[sortConfig.key];
+        const bVal = (b as any)[sortConfig.key];
+        
+        // Handle null/undefined values - push to end
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        
+        // Handle numeric values
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          const comparison = aVal - bVal;
+          return sortConfig.direction === 'asc' ? comparison : -comparison;
+        }
+        
+        // Handle string values
+        const comparison = String(aVal).localeCompare(String(bVal));
         return sortConfig.direction === 'asc' ? comparison : -comparison;
       })
     : data;

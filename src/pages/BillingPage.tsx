@@ -18,6 +18,8 @@ type BillingPageProps = {
   onNavigate: (page: string) => void;
 };
 
+const UPGRADE_WARNING_THRESHOLD = 80;
+
 export function BillingPage({ onNavigate }: BillingPageProps) {
   const { currentOrg } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -101,7 +103,7 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
             </span>
           </div>
           <Progress value={usagePercentage} className="h-2" />
-          {usagePercentage >= 80 && (
+          {usagePercentage >= UPGRADE_WARNING_THRESHOLD && (
             <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
               You're approaching your domain limit. Consider upgrading your plan.
             </p>

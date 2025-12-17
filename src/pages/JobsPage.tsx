@@ -45,16 +45,11 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
   // Memoize domain ID set and filtered/sorted jobs
   const filteredJobs = useMemo(() => {
     const orgDomainIds = new Set(domains.map(d => d.id));
-    let orgJobs = allJobs
+    
+    return allJobs
       .filter(j => orgDomainIds.has(j.domainId))
+      .filter(j => statusFilter === 'all' || j.status === statusFilter)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      orgJobs = orgJobs.filter(j => j.status === statusFilter);
-    }
-
-    return orgJobs;
   }, [allJobs, domains, statusFilter]);
 
   // Define table columns

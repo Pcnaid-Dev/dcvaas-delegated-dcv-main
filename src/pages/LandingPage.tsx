@@ -24,6 +24,33 @@ type LandingPageProps = {
   onNavigate: (page: string) => void;
 };
 
+const FAQ_ITEMS = [
+  {
+    question: 'What is delegated DNS-01 validation?',
+    answer: 'Delegated DNS-01 validation allows you to prove domain ownership by creating a single CNAME record that points to our service. We then handle all ACME challenges without requiring your root DNS API keys, significantly improving security.',
+  },
+  {
+    question: 'Do I need to provide DNS API credentials?',
+    answer: "No! That's the beauty of delegated validation. You only need to create a single CNAME record in your DNS. Our service handles all ACME challenges without accessing your DNS provider's API.",
+  },
+  {
+    question: 'How often are certificates renewed?',
+    answer: "Certificates are automatically renewed 30 days before expiration. With the upcoming shift to 47-day certificate lifetimes, our automated renewal system ensures you'll never have an expired certificate.",
+  },
+  {
+    question: 'What DNS providers are supported?',
+    answer: 'All DNS providers are supported! Since you only need to create a CNAME record, DCVaaS works with any DNS provider including Cloudflare, Route 53, Google Cloud DNS, and traditional registrar DNS services.',
+  },
+  {
+    question: 'Is there a free tier?',
+    answer: 'Yes! Our free tier includes 3 domains with automated certificate issuance and renewal. Perfect for personal projects or trying out the service before upgrading to Pro or Agency plans.',
+  },
+  {
+    question: 'Can I use this for wildcard certificates?',
+    answer: "Yes! DCVaaS supports both single-domain and wildcard certificates. Wildcard certificates require DNS-01 validation, which is exactly what our delegated validation system is designed for.",
+  },
+];
+
 export function LandingPage({ onNavigate }: LandingPageProps) {
   const { loginWithRedirect, isAuthenticated } = useAuth0(); // <--- USE THE HOOK
 
@@ -228,72 +255,20 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </div>
 
           <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem value="item-1" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                What is delegated DNS-01 validation?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Delegated DNS-01 validation allows you to prove domain ownership by
-                creating a single CNAME record that points to our service. We then
-                handle all ACME challenges without requiring your root DNS API keys,
-                significantly improving security.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-2" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                Do I need to provide DNS API credentials?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                No! That's the beauty of delegated validation. You only need to create
-                a single CNAME record in your DNS. Our service handles all ACME
-                challenges without accessing your DNS provider's API.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-3" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                How often are certificates renewed?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Certificates are automatically renewed 30 days before expiration. With
-                the upcoming shift to 47-day certificate lifetimes, our automated
-                renewal system ensures you'll never have an expired certificate.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-4" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                What DNS providers are supported?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                All DNS providers are supported! Since you only need to create a CNAME
-                record, DCVaaS works with any DNS provider including Cloudflare, Route
-                53, Google Cloud DNS, and traditional registrar DNS services.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-5" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                Is there a free tier?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Yes! Our free tier includes 3 domains with automated certificate
-                issuance and renewal. Perfect for personal projects or trying out the
-                service before upgrading to Pro or Agency plans.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-6" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left">
-                Can I use this for wildcard certificates?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Yes! DCVaaS supports both single-domain and wildcard certificates.
-                Wildcard certificates require DNS-01 validation, which is exactly what
-                our delegated validation system is designed for.
-              </AccordionContent>
-            </AccordionItem>
+            {FAQ_ITEMS.map((item, index) => (
+              <AccordionItem
+                key={`item-${index + 1}`}
+                value={`item-${index + 1}`}
+                className="border rounded-lg px-6"
+              >
+                <AccordionTrigger className="text-left">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </section>
 
