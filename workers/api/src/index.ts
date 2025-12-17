@@ -4,7 +4,8 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
-import { createOAuthConnection, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
+import { getOrganization } from './lib/organizations';
+import { snakeToCamel } from './lib/utils';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -44,6 +45,18 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
   const response = await createCheckoutSession(req, env, auth as any);
   return withCors(req, env, response);
 }
+
+      // GET /api/organizations - Get current organization
+      if (method === 'GET' && url.pathname === '/api/organizations') {
+        const org = await getOrganization(env, auth.orgId);
+        if (!org) return withCors(req, env, notFound());
+        
+        // Transform snake_case from DB to camelCase for frontend
+        const response = json({
+          organization: snakeToCamel(org)
+        });
+        return withCors(req, env, response);
+      }
 
       // GET /api/domains
       if (method === 'GET' && url.pathname === '/api/domains') {
