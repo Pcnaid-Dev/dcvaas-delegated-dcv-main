@@ -104,10 +104,9 @@ export function Stepper({ steps, orientation = 'vertical', className }: StepperP
               {!isLast && orientation === 'vertical' && (
                 <div
                   className={cn(
-                    'w-0.5 h-full ml-4 -mt-2 mb-2',
+                    'absolute left-4 top-full h-full w-0.5 -translate-x-1/2',
                     isCompleted ? 'bg-green-600 dark:bg-green-400' : 'bg-border'
                   )}
-                  style={{ marginLeft: '15px', minHeight: '32px' }}
                 />
               )}
             </div>
