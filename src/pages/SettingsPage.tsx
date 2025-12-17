@@ -18,14 +18,18 @@ type SettingsPageProps = {
 };
 
 export function SettingsPage({ onNavigate }: SettingsPageProps) {
-  const { user, currentOrg, refreshOrganizations } = useAuth();
+  const { user, currentOrg, setCurrentOrg, refreshOrganizations } = useAuth();
   const [orgName, setOrgName] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [brandColor, setBrandColor] = useState('#2563eb');
 
   useEffect(() => {
     if (currentOrg) {
       setOrgName(currentOrg.name);
+      setLogoUrl(currentOrg.logoUrl || '');
+      setBrandColor(currentOrg.brandColor || '#2563eb');
     }
   }, [currentOrg]);
 
@@ -37,6 +41,7 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
         name: orgName,
       };
       await setOrganization(updated);
+      setCurrentOrg(updated);
       toast.success('Settings saved');
       await refreshOrganizations();
     } catch (error) {
@@ -79,6 +84,41 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
       toast.success('Organization created');
     } catch (error) {
       toast.error('Failed to create organization');
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    if (!currentOrg) return;
+    
+    // Validate hex color format
+    const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+    if (brandColor && !hexColorRegex.test(brandColor)) {
+      toast.error('Invalid color format. Please use hex format (e.g., #2563eb)');
+      return;
+    }
+    
+    // Validate URL format
+    if (logoUrl.trim()) {
+      try {
+        new URL(logoUrl.trim());
+      } catch {
+        toast.error('Invalid logo URL. Please enter a valid URL');
+        return;
+      }
+    }
+    
+    try {
+      const updated: Organization = {
+        ...currentOrg,
+        logoUrl: logoUrl.trim() || undefined,
+        brandColor: brandColor || undefined,
+      };
+      await setOrganization(updated);
+      setCurrentOrg(updated);
+      toast.success('Branding saved successfully');
+      await refreshOrganizations();
+    } catch (error) {
+      toast.error('Failed to save branding');
     }
   };
 
@@ -152,14 +192,33 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
                     Customize the appearance of your DCVaaS portal with your own branding.
                   </p>
                   <div className="space-y-2">
-                    <Label>Logo URL</Label>
-                    <Input placeholder="https://example.com/logo.png" />
+                    <Label htmlFor="logo-url">Logo URL</Label>
+                    <Input
+                      id="logo-url"
+                      placeholder="https://example.com/logo.png"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Primary Color</Label>
-                    <Input type="color" />
+                    <Label htmlFor="brand-color">Primary Color</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        id="brand-color"
+                        type="color"
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                        className="w-20 h-10"
+                      />
+                      <Input
+                        type="text"
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                        placeholder="#2563eb"
+                      />
+                    </div>
                   </div>
-                  <Button variant="outline">Save Branding</Button>
+                  <Button onClick={handleSaveBranding}>Save Branding</Button>
                 </div>
               ) : (
                 <div>

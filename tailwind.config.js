@@ -24,6 +24,7 @@ const defaultTheme = {
       pwa: { raw: "(display-mode: standalone)" },
     },
     colors: {
+      primary: "var(--primary-color)",
       neutral: {
         1: "var(--color-neutral-1)",
         2: "var(--color-neutral-2)",

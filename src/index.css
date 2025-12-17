@@ -16,6 +16,7 @@
 }
 
 :root {
+  --primary-color: #2563eb;
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.25 0.02 250);
   --card: oklch(0.97 0.005 250);
