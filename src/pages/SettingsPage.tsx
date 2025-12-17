@@ -41,6 +41,7 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
         name: orgName,
       };
       await setOrganization(updated);
+      setCurrentOrg(updated);
       toast.success('Settings saved');
       await refreshOrganizations();
     } catch (error) {
