@@ -282,12 +282,13 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
       {domains.length >= PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains && (
         <Callout variant="warning" title="Domain Limit Reached">
           You've reached your plan limit of {PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains} domains.{' '}
-          <button
+          <Button
+            variant="link"
             onClick={() => onNavigate('billing')}
-            className="underline font-medium"
+            className="h-auto p-0 font-medium"
           >
             Upgrade your plan
-          </button>{' '}
+          </Button>
           to add more domains.
         </Callout>
       )}
