@@ -4,6 +4,9 @@ import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidde
 import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
+import { createAPIToken, listAPITokens, deleteAPIToken } from './lib/tokens';
+import { createWebhookEndpoint, listWebhookEndpoints, deleteWebhookEndpoint, updateWebhookEndpoint } from './lib/webhooks';
+import { exchangeOAuthCode, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -232,6 +235,195 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           } catch (err: any) {
             return withCors(req, env, badRequest(err.message));
           }
+        }
+      }
+
+      // GET /api/tokens - List API tokens
+      if (method === 'GET' && url.pathname === '/api/tokens') {
+        const tokens = await listAPITokens(env, auth.orgId);
+        return withCors(req, env, json({ tokens }));
+      }
+
+      // POST /api/tokens - Create API token
+      if (method === 'POST' && url.pathname === '/api/tokens') {
+        // Only owners and admins can create tokens
+        if (!isOwnerOrAdmin(auth)) {
+          return withCors(req, env, forbidden('Only owners and admins can create API tokens'));
+        }
+
+        const body = await req.json().catch(() => ({} as any));
+        const name = String(body.name ?? '').trim();
+        const expiresAt = body.expiresAt ? String(body.expiresAt) : undefined;
+
+        if (!name) {
+          return withCors(req, env, badRequest('name is required'));
+        }
+
+        try {
+          const token = await createAPIToken(env, auth.orgId, name, expiresAt);
+          return withCors(req, env, json({ token }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // DELETE /api/tokens/:id - Revoke API token
+      {
+        const m = url.pathname.match(/^\/api\/tokens\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const tokenId = decodeURIComponent(m[1]);
+
+          // Only owners and admins can delete tokens
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can delete API tokens'));
+          }
+
+          const deleted = await deleteAPIToken(env, auth.orgId, tokenId);
+          if (!deleted) {
+            return withCors(req, env, notFound());
+          }
+
+          return withCors(req, env, json({ success: true }));
+        }
+      }
+
+      // GET /api/webhooks - List webhook endpoints
+      if (method === 'GET' && url.pathname === '/api/webhooks') {
+        const webhooks = await listWebhookEndpoints(env, auth.orgId);
+        return withCors(req, env, json({ webhooks }));
+      }
+
+      // POST /api/webhooks - Create webhook endpoint
+      if (method === 'POST' && url.pathname === '/api/webhooks') {
+        // Only owners and admins can create webhooks
+        if (!isOwnerOrAdmin(auth)) {
+          return withCors(req, env, forbidden('Only owners and admins can create webhook endpoints'));
+        }
+
+        const body = await req.json().catch(() => ({} as any));
+        const url = String(body.url ?? '').trim();
+        const events = Array.isArray(body.events) ? body.events : [];
+        const secret = body.secret ? String(body.secret) : undefined;
+
+        if (!url) {
+          return withCors(req, env, badRequest('url is required'));
+        }
+
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          return withCors(req, env, badRequest('url must start with http:// or https://'));
+        }
+
+        if (events.length === 0) {
+          return withCors(req, env, badRequest('at least one event is required'));
+        }
+
+        try {
+          const webhook = await createWebhookEndpoint(env, auth.orgId, url, events, secret);
+          return withCors(req, env, json({ webhook }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // PATCH /api/webhooks/:id - Update webhook endpoint
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'PATCH') {
+          const webhookId = decodeURIComponent(m[1]);
+
+          // Only owners and admins can update webhooks
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can update webhook endpoints'));
+          }
+
+          const body = await req.json().catch(() => ({} as any));
+          const enabled = body.enabled === true || body.enabled === false ? body.enabled : undefined;
+
+          if (enabled === undefined) {
+            return withCors(req, env, badRequest('enabled field is required'));
+          }
+
+          const webhook = await updateWebhookEndpoint(env, auth.orgId, webhookId, enabled);
+          if (!webhook) {
+            return withCors(req, env, notFound());
+          }
+
+          return withCors(req, env, json({ webhook }));
+        }
+      }
+
+      // DELETE /api/webhooks/:id - Delete webhook endpoint
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const webhookId = decodeURIComponent(m[1]);
+
+          // Only owners and admins can delete webhooks
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can delete webhook endpoints'));
+          }
+
+          const deleted = await deleteWebhookEndpoint(env, auth.orgId, webhookId);
+          if (!deleted) {
+            return withCors(req, env, notFound());
+          }
+
+          return withCors(req, env, json({ success: true }));
+        }
+      }
+
+      // GET /api/oauth/connections - List OAuth connections
+      if (method === 'GET' && url.pathname === '/api/oauth/connections') {
+        const connections = await listOAuthConnections(env, auth.orgId);
+        return withCors(req, env, json({ connections }));
+      }
+
+      // POST /api/oauth/exchange - Exchange OAuth code for tokens
+      if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
+        // Only owners and admins can manage OAuth connections
+        if (!isOwnerOrAdmin(auth)) {
+          return withCors(req, env, forbidden('Only owners and admins can manage OAuth connections'));
+        }
+
+        const body = await req.json().catch(() => ({} as any));
+        const provider = String(body.provider ?? '').trim();
+        const code = String(body.code ?? '').trim();
+        const redirectUri = String(body.redirectUri ?? '').trim();
+
+        if (!provider || !code || !redirectUri) {
+          return withCors(req, env, badRequest('provider, code, and redirectUri are required'));
+        }
+
+        const validProviders = ['cloudflare', 'godaddy', 'route53', 'other'];
+        if (!validProviders.includes(provider)) {
+          return withCors(req, env, badRequest('Invalid provider'));
+        }
+
+        try {
+          const connection = await exchangeOAuthCode(env, auth.orgId, provider, code, redirectUri);
+          return withCors(req, env, json({ connection }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // DELETE /api/oauth/connections/:id - Delete OAuth connection
+      {
+        const m = url.pathname.match(/^\/api\/oauth\/connections\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const connectionId = decodeURIComponent(m[1]);
+
+          // Only owners and admins can delete OAuth connections
+          if (!isOwnerOrAdmin(auth)) {
+            return withCors(req, env, forbidden('Only owners and admins can delete OAuth connections'));
+          }
+
+          const deleted = await deleteOAuthConnection(env, auth.orgId, connectionId);
+          if (!deleted) {
+            return withCors(req, env, notFound());
+          }
+
+          return withCors(req, env, json({ success: true }));
         }
       }
 

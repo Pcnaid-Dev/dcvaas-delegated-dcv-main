@@ -32,8 +32,6 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useKV } from '@github/spark/hooks';
-import { generateWebhookSecret } from '@/lib/crypto';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -96,7 +94,7 @@ const AVAILABLE_EVENTS = [
 
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
-  const [webhooks, setWebhooks] = useKV<WebhookEndpoint[]>('webhooks', []);
+  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -106,6 +104,23 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   });
 
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
+
+  // Load webhooks from API
+  useEffect(() => {
+    if (!hasApiAccess) return;
+    
+    const loadWebhooks = async () => {
+      try {
+        const { getWebhooks } = await import('@/lib/data');
+        const data = await getWebhooks();
+        setWebhooks(data);
+      } catch (err) {
+        console.error('Failed to load webhooks:', err);
+      }
+    };
+    
+    loadWebhooks();
+  }, [hasApiAccess]);
 
   const orgWebhooks = (webhooks || []).filter((wh) => wh.orgId === currentOrg?.id);
 
@@ -128,17 +143,9 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     }
 
     try {
-      const secret = generateWebhookSecret();
-      const webhook: WebhookEndpoint = {
-        id: crypto.randomUUID(),
-        orgId: currentOrg.id,
-        url: newWebhook.url,
-        events: newWebhook.events,
-        secret,
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
-
+      const { createWebhook } = await import('@/lib/data');
+      const webhook = await createWebhook(newWebhook.url, newWebhook.events);
+      
       setWebhooks((current) => [...(current || []), webhook]);
       setIsCreateOpen(false);
       setNewWebhook({ url: '', events: [] });
@@ -151,6 +158,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       }, 500);
     } catch (error) {
       toast.error('Failed to create webhook');
+      console.error('Create webhook error:', error);
     }
   };
 
@@ -158,22 +166,30 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     if (!deleteWebhookId) return;
 
     try {
+      const { deleteWebhook } = await import('@/lib/data');
+      await deleteWebhook(deleteWebhookId);
+      
       setWebhooks((current) => (current || []).filter((wh) => wh.id !== deleteWebhookId));
       setDeleteWebhookId(null);
       toast.success('Webhook deleted');
     } catch (error) {
       toast.error('Failed to delete webhook');
+      console.error('Delete webhook error:', error);
     }
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
     try {
+      const { updateWebhook } = await import('@/lib/data');
+      await updateWebhook(webhookId, enabled);
+      
       setWebhooks((current) =>
         (current || []).map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
       );
       toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
     } catch (error) {
       toast.error('Failed to update webhook');
+      console.error('Update webhook error:', error);
     }
   };
 

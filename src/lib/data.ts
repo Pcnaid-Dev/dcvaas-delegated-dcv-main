@@ -275,28 +275,35 @@ export function setJob(_job: Job): void {
   // no-op
 }
 
-// ===== API TOKENS (local stub for now) =====
+// ===== API TOKENS (real API) =====
 
 export async function getOrgAPITokens(): Promise<APIToken[]> {
-  if (!isBrowser()) return [];
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  return raw ? (JSON.parse(raw) as APIToken[]) : [];
+  try {
+    const res = await api<{ tokens: APIToken[] }>('/api/tokens');
+    return res?.tokens ?? [];
+  } catch (err) {
+    console.warn('getOrgAPITokens failed', err);
+    return [];
+  }
 }
 
-export async function addAPIToken(token: APIToken): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  list.push(token);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(list));
+export async function createAPIToken(name: string, expiresAt?: string): Promise<APIToken & { token?: string }> {
+  const res = await api<{ token: APIToken & { token?: string } }>('/api/tokens', {
+    method: 'POST',
+    body: JSON.stringify({ name, expiresAt }),
+  });
+  return res.token;
+}
+
+// Keep old name for compatibility
+export async function addAPIToken(token: { name: string; expiresAt?: string }): Promise<void> {
+  await createAPIToken(token.name, token.expiresAt);
 }
 
 export async function deleteAPIToken(id: string): Promise<void> {
-  if (!isBrowser()) return;
-  const raw = localStorage.getItem(LOCAL_TOKENS_KEY);
-  const list: APIToken[] = raw ? JSON.parse(raw) : [];
-  const filtered = list.filter((t: any) => t.id !== id);
-  localStorage.setItem(LOCAL_TOKENS_KEY, JSON.stringify(filtered));
+  await api(`/api/tokens/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
 
 // ===== AUDIT LOGS (local stub for now) =====
@@ -359,6 +366,41 @@ export async function acceptOrgInvitation(orgId: string, userId: string, email: 
     body: JSON.stringify({ userId, email }),
   });
 }
+
+// ===== WEBHOOKS (real API) =====
+
+export async function getWebhooks(): Promise<any[]> {
+  try {
+    const res = await api<{ webhooks: any[] }>('/api/webhooks');
+    return res?.webhooks ?? [];
+  } catch (err) {
+    console.warn('getWebhooks failed', err);
+    return [];
+  }
+}
+
+export async function createWebhook(url: string, events: string[], secret?: string): Promise<any> {
+  const res = await api<{ webhook: any }>('/api/webhooks', {
+    method: 'POST',
+    body: JSON.stringify({ url, events, secret }),
+  });
+  return res.webhook;
+}
+
+export async function updateWebhook(webhookId: string, enabled: boolean): Promise<any> {
+  const res = await api<{ webhook: any }>(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
+  });
+  return res.webhook;
+}
+
+export async function deleteWebhook(webhookId: string): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: 'DELETE',
+  });
+}
+
 // ===== BILLING / STRIPE =====
 
 export async function createStripeCheckoutSession(priceId: string): Promise<{ url: string }> {

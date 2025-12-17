@@ -15,22 +15,25 @@ interface DomainRow {
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    // 1. Find domains that are NOT active yet (stuck in pending/issuing)
+    // 1. Find domains that need syncing:
+    //    - Domains not yet active (pending_cname, issuing)
+    //    - Active domains that haven't been updated in over 24 hours (to refresh expiration dates)
     // Use LIMIT to avoid overwhelming the queue with large batches
     const BATCH_SIZE = 100;
   const res = await env.DB.prepare(
     `SELECT * FROM domains 
      WHERE status IN ('pending_cname', 'issuing')
+        OR (status = 'active' AND updated_at < datetime('now', '-1 day'))
      ORDER BY updated_at ASC 
      LIMIT ?`
   ).bind(BATCH_SIZE).all<DomainRow>();
 
   const domains = res.results ?? [];
-  console.log(`Cron: Processing ${domains.length} pending/issuing domains`);
+  console.log(`Cron: Processing ${domains.length} domains (pending/issuing/stale-active)`);
 
   // Batch send to queue for better performance
   const messages = domains.map(domain => ({
-    body: { // <--- THIS FIXES THE TYPE ERROR
+    body: {
       id: crypto.randomUUID(),
       type: 'sync_status' as const,
       domain_id: domain.id,
