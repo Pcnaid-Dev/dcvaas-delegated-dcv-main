@@ -109,7 +109,9 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
         status:
           domain.status === 'active'
             ? 'complete' as const
-            : domain.status === 'issuing' || domain.status === 'pending_validation'
+            : domain.status === 'issuing' ||
+              domain.status === 'pending_validation' ||
+              domain.status === 'error'
             ? 'current' as const
             : 'upcoming' as const,
       },
@@ -119,14 +121,6 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
         status: domain.status === 'active' ? 'complete' as const : 'upcoming' as const,
       },
     ];
-
-    // If error, mark the current step as current to show where it failed
-    if (domain.status === 'error') {
-      const currentStepIndex = steps.findIndex(s => s.status === 'current');
-      if (currentStepIndex !== -1) {
-        steps[currentStepIndex].status = 'current';
-      }
-    }
 
     return steps;
   }, [domain.status]);
