@@ -22,16 +22,14 @@ DCVaaS uses [Resend](https://resend.com) to send transactional email notificatio
 
 ### 1. Get Resend API Key
 
-**For this project, the API key has been provided:**
-```
-re_5aPcXFhJ_3Aa3UBM8cjWKvAow1vsGLF5y
-```
+**IMPORTANT**: Never commit API keys to source control. Use Wrangler secrets to securely store your Resend API key.
 
-For production or your own setup:
+To obtain a Resend API key:
 1. Sign up at [resend.com](https://resend.com)
 2. Navigate to API Keys section
 3. Create a new API key with send permissions
 4. Copy the API key (starts with `re_`)
+5. Store it securely using `wrangler secret put RESEND_API_KEY`
 
 ### 2. Configure Workers
 

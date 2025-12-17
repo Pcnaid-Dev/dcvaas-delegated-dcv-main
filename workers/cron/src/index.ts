@@ -1,4 +1,5 @@
 import { ScheduledEvent, ExecutionContext, Queue, D1Database } from '@cloudflare/workers-types';
+import { buildCertificateExpiringEmail } from './lib/email-templates';
 
 interface Env {
   DB: D1Database;
@@ -139,70 +140,4 @@ async function sendExpiringCertificateNotification(env: Env, domain: DomainRow):
     console.error('Failed to queue expiring certificate notification:', error);
     // Don't throw - we don't want to fail the cron job
   }
-}
-
-function buildCertificateExpiringEmail(
-  domainName: string,
-  daysUntilExpiry: number,
-  expiresAt: string,
-  orgName: string
-): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-    .warning-badge { display: inline-block; background: #f59e0b; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; margin: 20px 0; }
-    .domain { font-size: 24px; font-weight: 700; color: #1f2937; margin: 20px 0; }
-    .info-box { background: #fef3c7; padding: 16px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b; }
-    .action-box { background: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center; }
-    .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; }
-    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>⚠️ Certificate Expiring Soon</h1>
-    </div>
-    <div class="content">
-      <div class="warning-badge">⏰ Expires in ${daysUntilExpiry} days</div>
-      <p>This is a reminder that your SSL/TLS certificate is approaching its expiration date.</p>
-      
-      <div class="domain">${domainName}</div>
-      
-      <div class="info-box">
-        <p><strong>Expiration Details:</strong></p>
-        <ul>
-          <li>Expires on: <strong>${new Date(expiresAt).toLocaleDateString()}</strong></li>
-          <li>Days remaining: <strong>${daysUntilExpiry}</strong></li>
-        </ul>
-      </div>
-      
-      <p><strong>What you need to do:</strong></p>
-      <ul>
-        <li>If auto-renewal is enabled, your certificate should renew automatically</li>
-        <li>Please verify that your DNS records are still correctly configured</li>
-        <li>Check your domain status in the dashboard</li>
-      </ul>
-      
-      <div class="action-box">
-        <a href="https://dcv.pcnaid.com" class="button">View Certificate Details</a>
-      </div>
-      
-      <p>If you need assistance, please contact our support team.</p>
-    </div>
-    <div class="footer">
-      <p>This email was sent to you by DCVaaS for ${orgName}</p>
-      <p>© ${new Date().getFullYear()} DCVaaS. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
 }

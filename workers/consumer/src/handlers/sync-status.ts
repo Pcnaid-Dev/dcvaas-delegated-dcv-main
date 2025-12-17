@@ -1,6 +1,7 @@
 import type { Env } from '../env';
 import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
+import { buildCertificateIssuedEmail } from '../lib/email-templates';
 
 export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
@@ -75,55 +76,4 @@ async function sendCertificateIssuedNotification(env: Env, domain: any): Promise
     console.error('Failed to queue certificate issued notification:', error);
     // Don't throw - we don't want to fail the job if email queueing fails
   }
-}
-
-function buildCertificateIssuedEmail(domainName: string, orgName: string): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-    .badge { display: inline-block; background: #10b981; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; margin: 20px 0; }
-    .domain { font-size: 24px; font-weight: 700; color: #1f2937; margin: 20px 0; }
-    .info-box { background: #f3f4f6; padding: 16px; border-radius: 6px; margin: 20px 0; }
-    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🎉 Certificate Issued Successfully!</h1>
-    </div>
-    <div class="content">
-      <div class="badge">✓ Active</div>
-      <p>Great news! Your SSL/TLS certificate has been successfully issued and is now active.</p>
-      
-      <div class="domain">${domainName}</div>
-      
-      <div class="info-box">
-        <p><strong>What this means:</strong></p>
-        <ul>
-          <li>Your domain is now secured with a valid SSL/TLS certificate</li>
-          <li>HTTPS connections are enabled and trusted by browsers</li>
-          <li>Certificate is automatically renewed before expiration</li>
-        </ul>
-      </div>
-      
-      <p>You can view your certificate details in your <a href="https://dcv.pcnaid.com" style="color: #2563eb;">DCVaaS dashboard</a>.</p>
-      
-      <p>If you have any questions, please don't hesitate to reach out to our support team.</p>
-    </div>
-    <div class="footer">
-      <p>This email was sent to you by DCVaaS for ${orgName}</p>
-      <p>© ${new Date().getFullYear()} DCVaaS. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
 }

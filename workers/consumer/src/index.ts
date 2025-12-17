@@ -21,7 +21,10 @@ export default {
           //   await handleDnsCheck(job, env);
           //   break;
           default:
-            console.warn(`Unknown job type: ${(job as any).type}`);
+            // Unknown job type - throw error so it gets sent to DLQ
+            const unknownType = 'type' in job ? job.type : 'unknown';
+            console.error(`Unknown job type: ${unknownType}. Throwing error to send to DLQ.`);
+            throw new Error(`Unknown job type: ${unknownType}`);
         }
         message.ack();
       } catch (error) {
