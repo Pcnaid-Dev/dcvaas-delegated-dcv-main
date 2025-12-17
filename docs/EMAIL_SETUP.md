@@ -47,12 +47,9 @@ wrangler secret put RESEND_API_KEY
 cd ../consumer
 wrangler secret put RESEND_API_KEY
 # Paste your API key when prompted
-
-# DLQ Worker
-cd ../dlq
-wrangler secret put RESEND_API_KEY
-# Paste your API key when prompted
 ```
+
+**Note**: The DLQ worker doesn't need `RESEND_API_KEY` because it only queues email jobs for the consumer worker to process. It doesn't send emails directly.
 
 ### 3. Verify Domain (Production)
 
