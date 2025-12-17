@@ -250,7 +250,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       Validation Error
                     </h3>
                     <div className="mb-4 p-3 bg-card rounded-lg border border-destructive/20">
-                      <p className="text-sm text-foreground">
+                      <div className="text-sm text-foreground">
                         {domain.cfVerificationErrors 
                           ? (Array.isArray(domain.cfVerificationErrors) 
                               ? domain.cfVerificationErrors.map((err: any, idx: number) => (
