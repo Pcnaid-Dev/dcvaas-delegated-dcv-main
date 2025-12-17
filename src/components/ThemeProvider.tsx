@@ -1,12 +1,13 @@
 // src/components/ThemeProvider.tsx
 import { useEffect, ReactNode } from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 
 type ThemeProviderProps = {
   children: ReactNode;
 };
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+function BrandColorApplier() {
   const { currentOrg } = useAuth();
 
   useEffect(() => {
@@ -21,5 +22,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [currentOrg?.brandColor]);
 
-  return <>{children}</>;
+  return null;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <BrandColorApplier />
+      {children}
+    </NextThemesProvider>
+  );
 }

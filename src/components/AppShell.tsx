@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -9,6 +10,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   Certificate,
@@ -22,6 +26,9 @@ import {
   ShieldCheck,
   Bell,
   SignOut,
+  Moon,
+  Sun,
+  Monitor,
 } from '@phosphor-icons/react';
 
 type AppShellProps = {
@@ -31,8 +38,8 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, onNavigate, currentPage }: AppShellProps) {
-// ADD THIS ONE LINE
-const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = useAuth();
+  const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   // Define all navigation items with role requirements
   const allNavItems = [
@@ -132,6 +139,33 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
                     <ListBullets size={16} className="mr-2" />
                     Audit Logs
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      {theme === 'dark' ? (
+                        <Moon size={16} className="mr-2" />
+                      ) : theme === 'light' ? (
+                        <Sun size={16} className="mr-2" />
+                      ) : (
+                        <Monitor size={16} className="mr-2" />
+                      )}
+                      Theme
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => setTheme('light')}>
+                        <Sun size={16} className="mr-2" />
+                        Light
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('dark')}>
+                        <Moon size={16} className="mr-2" />
+                        Dark
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('system')}>
+                        <Monitor size={16} className="mr-2" />
+                        System
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <SignOut size={16} className="mr-2" />
