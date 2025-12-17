@@ -25,7 +25,7 @@ export default {
       // Stripe webhook - no authentication required
       if (method === 'POST' && url.pathname === '/api/webhooks/stripe') {
         const response = await handleStripeWebhook(req, env);
-        return withCors(req, env, response);
+        return response;
       }
 
 // 1. Ensure this auth check exists first
