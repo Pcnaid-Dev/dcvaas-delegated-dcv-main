@@ -12,6 +12,7 @@ import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { getOrgDomains, createDomain, addAuditLog } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
+import { EmptyState } from '@/components/EmptyState';
 import type { Domain } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -162,50 +163,59 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
           </Dialog>
         </div>
 
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <MagnifyingGlass size={20} className="text-muted-foreground" />
-            <Input
-              placeholder="Search domains..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1"
-            />
-          </div>
+{domains.length === 0 ? (
+          <EmptyState
+            title="No Domains Yet"
+            description="Add your first domain to start managing SSL/TLS certificates with automatic validation and renewal."
+            actionLabel="Add Domain"
+            onAction={() => setIsAddOpen(true)}
+          />
+        ) : (
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MagnifyingGlass size={20} className="text-muted-foreground" />
+              <Input
+                placeholder="Search domains..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1"
+              />
+            </div>
 
-          {filteredDomains.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {search ? 'No domains found matching your search.' : 'No domains yet. Add your first domain to get started.'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredDomains.map((domain) => (
-                <div
-                  key={domain.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    onSelectDomain(domain.id);
-                    onNavigate('domain-detail');
-                  }}
-                >
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground">
-                      {domain.domainName}
+            {filteredDomains.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No domains found matching your search.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredDomains.map((domain) => (
+                  <div
+                    key={domain.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      onSelectDomain(domain.id);
+                      onNavigate('domain-detail');
+                    }}
+                  >
+                    <div className="flex-1">
+                      <div className="font-semibold text-foreground font-mono">
+                        {domain.domainName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {domain.expiresAt
+                          ? `Expires ${formatDistanceToNow(new Date(domain.expiresAt), { addSuffix: true })}`
+                          : 'Not issued yet'}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {domain.expiresAt
-                        ? `Expires ${formatDistanceToNow(new Date(domain.expiresAt), { addSuffix: true })}`
-                        : 'Not issued yet'}
-                    </div>
+                    <StatusBadge status={domain.status} />
                   </div>
-                  <StatusBadge status={domain.status} />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
 
         <Card className="p-6 bg-muted/30">
           <h3 className="font-semibold text-foreground mb-2">Plan Usage</h3>
