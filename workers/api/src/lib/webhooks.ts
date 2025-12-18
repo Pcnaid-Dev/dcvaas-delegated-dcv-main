@@ -110,7 +110,6 @@ export async function dispatchWebhook(
   payload: Record<string, any>
 ): Promise<void> {
   // Fetch enabled webhooks for this org that are subscribed to this event
-  // Fetch enabled webhooks for this org that are subscribed to this event
   const { results: subscribedWebhooks } = await env.DB.prepare(
     "SELECT * FROM webhook_endpoints WHERE org_id = ? AND enabled = 1 AND INSTR(events, ?)"
   )

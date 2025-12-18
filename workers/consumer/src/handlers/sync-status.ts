@@ -2,6 +2,7 @@ import type { Env } from '../env';
 import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
 import { buildCertificateIssuedEmail } from '../lib/email-templates';
+import { dispatchWebhook } from '../../../api/src/lib/webhooks';
 
 export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
@@ -52,6 +53,8 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
       status: internalStatus,
       error_message: cfData.ssl.validation_errors?.[0] || 'Unknown error',
     }).catch((err) => console.error('Failed to dispatch domain.error webhook:', err));
+  }
+
   // Send email notification when certificate becomes active
   if (previousStatus !== 'active' && internalStatus === 'active') {
     await sendCertificateIssuedNotification(env, domain);
