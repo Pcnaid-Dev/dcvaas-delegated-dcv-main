@@ -1,13 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Certificate } from '@phosphor-icons/react';
+import { Certificate, Key } from '@phosphor-icons/react';
+import { useEffect } from 'react';
+import { useBrand } from '@/components/ThemeProvider';
 
 type DocsPageProps = {
   onNavigate: (page: string) => void;
 };
 
 export function DocsPage({ onNavigate }: DocsPageProps) {
+  const { brand } = useBrand();
+  const HeaderIcon = brand.id === 'keylessssl' ? Key : Certificate;
+
+  useEffect(() => {
+    document.title = `Documentation - ${brand.name}`;
+  }, [brand]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -17,8 +26,8 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
               onClick={() => onNavigate('home')}
               className="flex items-center gap-2"
             >
-              <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <HeaderIcon size={32} weight="bold" className="text-primary" />
+              <span className="text-xl font-bold text-foreground">{brand.name}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button

@@ -1,0 +1,98 @@
+/**
+ * Brand-specific theme overrides
+ * 
+ * This file contains CSS variables and overrides for domain-based branding.
+ * The ThemeProvider applies these styles based on the detected hostname.
+ */
+
+/* KeylessSSL Brand Theme - Dark, Technical, Security-First */
+.brand-keylessssl {
+  /* Override primary colors */
+  --primary: oklch(0.55 0.15 250); /* #2D7FF9 mapped to oklch */
+  --primary-foreground: oklch(0.99 0 0);
+  
+  /* Accent color (purple) */
+  --accent: oklch(0.65 0.20 300); /* #A855F7 mapped to oklch */
+  --accent-foreground: oklch(0.99 0 0);
+  
+  /* Dark background */
+  --background: oklch(0.12 0.02 250); /* #0B1020 mapped to oklch */
+  --foreground: oklch(0.92 0.01 250); /* #E8EEFF mapped to oklch */
+  
+  /* Surface colors */
+  --card: oklch(0.15 0.03 250); /* #111A33 mapped to oklch */
+  --card-foreground: oklch(0.92 0.01 250);
+  --popover: oklch(0.15 0.03 250);
+  --popover-foreground: oklch(0.92 0.01 250);
+  
+  /* Muted colors */
+  --muted: oklch(0.20 0.02 250);
+  --muted-foreground: oklch(0.70 0.03 250); /* #A8B3D8 mapped to oklch */
+  
+  /* Status colors */
+  --success: oklch(0.60 0.15 145); /* #2ECC71 mapped to oklch */
+  --success-foreground: oklch(0.99 0 0);
+  
+  --warning: oklch(0.75 0.15 85); /* #F1C40F mapped to oklch */
+  --warning-foreground: oklch(0.15 0.01 250);
+  
+  --destructive: oklch(0.60 0.20 25); /* #FF4D4D mapped to oklch */
+  --destructive-foreground: oklch(0.99 0 0);
+  
+  /* UI elements */
+  --border: oklch(0.25 0.02 250);
+  --input: oklch(0.20 0.02 250);
+  --ring: oklch(0.55 0.15 250);
+  
+  /* Secondary */
+  --secondary: oklch(0.25 0.02 250);
+  --secondary-foreground: oklch(0.92 0.01 250);
+  
+  /* Radius */
+  --radius: 8px;
+}
+
+/* KeylessSSL-specific component overrides */
+.brand-keylessssl body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.brand-keylessssl code,
+.brand-keylessssl pre,
+.brand-keylessssl .font-mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* Ensure dark mode styles are applied for KeylessSSL */
+.brand-keylessssl.dark {
+  color-scheme: dark;
+}
+
+/* KeylessSSL button styles - more technical appearance */
+.brand-keylessssl .btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: 1px solid var(--primary);
+  transition: all 0.2s ease;
+}
+
+.brand-keylessssl .btn-primary:hover {
+  box-shadow: 0 0 20px rgba(45, 127, 249, 0.4);
+}
+
+/* Code block styling for KeylessSSL */
+.brand-keylessssl pre {
+  background: oklch(0.10 0.02 250);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Card styling for KeylessSSL - stronger borders */
+.brand-keylessssl .card {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.brand-keylessssl .card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 20px rgba(45, 127, 249, 0.15);
+}
