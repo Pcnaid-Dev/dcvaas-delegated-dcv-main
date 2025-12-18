@@ -11,8 +11,7 @@ import { ArrowLeft, ArrowsClockwise, CheckCircle, Clock, Warning } from '@phosph
 import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
 import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
-import { PageHeader, Stepper, Callout, DataTable, type Column } from '@/components/common';
-import type { Domain, Job } from '@/types';
+import type { Domain, Job, DomainStatus } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -21,9 +20,17 @@ type DomainDetailPageProps = {
   onNavigate: (page: string) => void;
 };
 
+// Auto-poll interval configuration
+const AUTO_POLL_INTERVAL_MS = 12000; // 12 seconds
+const AUTO_POLL_INTERVAL_SECONDS = AUTO_POLL_INTERVAL_MS / 1000;
+
+// Statuses that trigger auto-polling
+const POLLING_STATUSES: DomainStatus[] = ['pending_cname', 'issuing', 'pending_validation'];
+
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
   const queryClient = useQueryClient();
+  const previousStatusRef = React.useRef<DomainStatus | null>(null);
 
   // Fetch domain with React Query
   const { data: domain, isLoading: isDomainLoading } = useQuery({
@@ -31,6 +38,13 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
     enabled: !!domainId,
     staleTime: 5000,
+    // Auto-poll when domain is in pending or issuing state
+    refetchInterval: (query) => {
+      return query.state.data?.status && POLLING_STATUSES.includes(query.state.data.status)
+        ? AUTO_POLL_INTERVAL_MS
+        : false;
+    },
+    refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
 
   // Fetch jobs for this domain
@@ -40,6 +54,30 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     enabled: !!domainId,
     staleTime: 5000,
   });
+
+  // Show toast notification when status changes
+  React.useEffect(() => {
+    if (!domain) return;
+    
+    const currentStatus = domain.status;
+    const previousStatus = previousStatusRef.current;
+    
+    // Only show toasts if we have a previous status and it changed
+    if (previousStatus && previousStatus !== currentStatus) {
+      if (currentStatus === 'active') {
+        toast.success('🎉 Certificate is now active!', {
+          description: `${domain.domainName} is ready to use`,
+        });
+      } else if (currentStatus === 'error') {
+        toast.error('Domain verification failed', {
+          description: 'Please check your DNS configuration',
+        });
+      }
+    }
+    
+    // Update the ref with current status
+    previousStatusRef.current = currentStatus;
+  }, [domain?.status, domain?.domainName]);
 
   // Mutation for syncing domain
   const syncMutation = useMutation({
@@ -213,32 +251,48 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
           <TabsTrigger value="jobs">Jobs ({jobs.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* Status-specific callouts and actions */}
-          {domain.status === 'pending_cname' && (
-            <>
-              <Callout variant="info" title="DNS Configuration Required">
-                Add the CNAME record below to your DNS provider to complete domain
-                verification.
-              </Callout>
-              <Card className="p-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  DNS Record
-                </h3>
-                <DNSRecordDisplay
-                  domain={domain.domainName}
-                  cnameTarget={domain.cnameTarget}
-                />
-                <Button
-                  onClick={handleCheckDNS}
-                  disabled={syncMutation.isPending}
-                  className="w-full"
-                >
-                  {syncMutation.isPending ? 'Checking DNS...' : 'Check DNS Now'}
-                </Button>
-              </Card>
-            </>
-          )}
+          <TabsContent value="overview" className="space-y-6">
+            {domain.status === 'pending_cname' && (
+              <>
+                <Card className="p-6 space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Step 1: Configure DNS
+                  </h3>
+                  <DNSRecordDisplay
+                    domain={domain.domainName}
+                    cnameTarget={domain.cnameTarget}
+                  />
+                  <Button
+                    onClick={handleCheckDNS}
+                    disabled={syncMutation.isPending}
+                    className="w-full"
+                  >
+                    {syncMutation.isPending ? 'Checking DNS...' : 'Check DNS Now'}
+                  </Button>
+                </Card>
+                
+                {/* DNS Troubleshooting Tips */}
+                <Card className="p-6 space-y-3 bg-blue-50/50 border-blue-200">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <span className="text-blue-600">💡</span> DNS Propagation Tips
+                  </h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                    <li>
+                      DNS propagation can take <strong>5-15 minutes</strong> after adding the CNAME record
+                    </li>
+                    <li>
+                      If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
+                    </li>
+                    <li>
+                      The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
+                    </li>
+                    <li>
+                      If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
+                    </li>
+                  </ul>
+                </Card>
+              </>
+            )}
 
           {(domain.status === 'issuing' || domain.status === 'pending_validation') && (
             <Callout variant="info" title="Verification in Progress">
@@ -260,8 +314,13 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Domain</p>
-                    <p className="font-medium text-foreground">{domain.domainName}</p>
+                    <h3 className="text-lg font-semibold text-foreground">Verification in Progress</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Cloudflare is validating your DNS configuration. This process is automatic and typically completes within 5-15 minutes.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Status updates automatically every {AUTO_POLL_INTERVAL_SECONDS} seconds
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Status</p>
