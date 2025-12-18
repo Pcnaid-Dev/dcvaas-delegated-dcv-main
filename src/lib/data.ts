@@ -407,27 +407,7 @@ export async function getOrgWebhooks(): Promise<WebhookEndpoint[]> {
   }
 }
 
-export async function createWebhook(url: string, events: string[]): Promise<{ webhook: WebhookEndpoint & { secret: string } }> {
-  const res = await api<{ webhook: WebhookEndpoint & { secret: string } }>('/api/webhooks', {
-    method: 'POST',
-    body: JSON.stringify({ url, events }),
-  });
-  return res;
-}
-
-export async function updateWebhook(id: string, updates: { url?: string; events?: string[]; enabled?: boolean }): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    body: JSON.stringify(updates),
-  });
-}
-
-export async function deleteWebhook(id: string): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
-
 // ===== WEBHOOKS =====
-
-import type { WebhookEndpoint } from '@/types';
 
 export async function getWebhooks(): Promise<WebhookEndpoint[]> {
   const res = await api<{ webhooks: WebhookEndpoint[] }>('/api/webhooks');
@@ -442,34 +422,16 @@ export async function createWebhook(url: string, secret: string, events: string[
   return res.webhook;
 }
 
+export async function updateWebhook(id: string, updates: { url?: string; events?: string[]; enabled?: boolean }): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
 export async function deleteWebhook(webhookId: string): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
     method: 'DELETE',
-  });
-}
-
-// ===== OAUTH CONNECTIONS (real API) =====
-
-export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<any> {
-  const res = await api('/api/oauth/exchange', {
-    method: 'POST',
-    body: JSON.stringify({ provider, code, redirectUri }),
-  });
-  return res;
-}
-
-export async function getOAuthConnections(): Promise<any[]> {
-  try {
-    const res = await api<{ connections: any[] }>('/api/oauth/connections');
-    return res?.connections ?? [];
-  } catch (err) {
-    console.warn('getOAuthConnections failed', err);
-    return [];
-  }
-export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ enabled }),
   });
 }
 
