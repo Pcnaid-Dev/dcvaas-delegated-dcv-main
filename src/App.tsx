@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BrandProvider } from './contexts/BrandContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
@@ -131,10 +132,12 @@ function App() {
   return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <ThemeProvider>
-        <AppContent />
-        <Toaster />
-      </ThemeProvider>
+      <BrandProvider>
+        <ThemeProvider>
+          <AppContent />
+          <Toaster />
+        </ThemeProvider>
+      </BrandProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

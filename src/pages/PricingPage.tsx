@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Certificate } from '@phosphor-icons/react';
+import { useBrand } from '@/contexts/BrandContext';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
@@ -11,7 +12,9 @@ type PricingPageProps = {
 };
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
+  const { brand } = useBrand();
   const [loading, setLoading] = useState<string | null>(null);
+  const isAutoCertify = brand.id === 'autocertify';
 
   const handleSubscribe = async (planName: string, priceId: string) => {
     if (planName === 'Free') {
@@ -38,7 +41,19 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
     }
   };
 
-  const plans = [
+  // Brand-specific pricing
+  const plans = isAutoCertify ? [
+    {
+      name: brand.pricing.planName,
+      price: brand.pricing.price,
+      period: brand.pricing.period,
+      description: brand.pricing.description,
+      features: brand.pricing.features,
+      cta: 'Get Started',
+      highlighted: true,
+      priceId: STRIPE_PRICE_IDS.pro,
+    },
+  ] : [
     {
       name: 'Free',
       price: '$0',
@@ -103,7 +118,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               className="flex items-center gap-2"
             >
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.name}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
@@ -135,14 +150,16 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+            {isAutoCertify ? 'One Simple Plan' : 'Simple, Transparent Pricing'}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start free and scale as you grow. No hidden fees, cancel anytime.
+            {isAutoCertify 
+              ? 'Everything you need to secure your website. No setup fees, cancel anytime.'
+              : 'Start free and scale as you grow. No hidden fees, cancel anytime.'}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className={`grid ${isAutoCertify ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-3'} gap-8 mb-16`}>
           {plans.map((plan) => (
             <Card
               key={plan.name}
