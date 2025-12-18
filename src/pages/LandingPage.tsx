@@ -8,9 +8,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useBrand } from '@/contexts/BrandContext';
 import { Stepper } from '@/components/common';
 import { TerminalWindow } from '@/components/TerminalWindow';
-// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
 import {
   Certificate,
   Shield,
@@ -20,13 +20,15 @@ import {
   Sparkle,
   Lock,
   Lightning,
+  Warning,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
   onNavigate: (page: string) => void;
 };
 
-const FAQ_ITEMS = [
+// Brand-specific FAQ items
+const DEFAULT_FAQ_ITEMS = [
   {
     question: 'What is delegated DNS-01 validation?',
     answer: 'Delegated DNS-01 validation allows you to prove domain ownership by creating a single CNAME record that points to our service. We then handle all ACME challenges without requiring your root DNS API keys, significantly improving security.',
@@ -53,8 +55,36 @@ const FAQ_ITEMS = [
   },
 ];
 
+const AUTOCERTIFY_FAQ_ITEMS = [
+  {
+    question: 'What does "Not Secure" mean?',
+    answer: 'When browsers show "Not Secure", it means your website doesn\'t have a valid SSL certificate. This warning scares customers away and Google may block your site from search results.',
+  },
+  {
+    question: 'Will my site go down during setup?',
+    answer: 'No! We verify everything before making changes. Your site stays online the entire time. Zero downtime guaranteed.',
+  },
+  {
+    question: 'Do I need to be technical to use this?',
+    answer: "Not at all! We'll guide you step-by-step. You just need to login to your domain registrar (like GoDaddy) and add one simple record. Takes less than 5 minutes.",
+  },
+  {
+    question: 'What if my certificate expires?',
+    answer: "It won't! AutoCertify automatically renews your certificate every 47 days. You'll never have to think about it again. We monitor 24/7 and handle everything for you.",
+  },
+  {
+    question: 'Does this work with WordPress?',
+    answer: 'Yes! AutoCertify works with WordPress, ClickFunnels, Shopify, Wix, Squarespace, and any custom website. As long as you can add a DNS record, we can secure your site.',
+  },
+  {
+    question: 'How much does it cost?',
+    answer: 'Our Business Pro plan is $15/month and covers up to 50 websites. No setup fees, no hidden costs. Cancel anytime.',
+  },
+];
+
 export function LandingPage({ onNavigate }: LandingPageProps) {
-  const { loginWithRedirect, isAuthenticated } = useAuth0(); // <--- USE THE HOOK
+  const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const { brand } = useBrand();
 
   // If already logged in, go to dashboard
   if (isAuthenticated) {
@@ -62,22 +92,26 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
      return null;
   }
 
+  // Use brand-specific FAQ items
+  const FAQ_ITEMS = brand.id === 'autocertify' ? AUTOCERTIFY_FAQ_ITEMS : DEFAULT_FAQ_ITEMS;
 
-    return (
+  // Brand-specific content for features
+  const isAutoCertify = brand.id === 'autocertify';
+
+  return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.name}</span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
               <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
               <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
               <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
             </nav>
-            {/* Login Button */}
             <Button onClick={() => loginWithRedirect()}>
               Log In
             </Button>
@@ -89,28 +123,37 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         {/* Hero Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkle size={24} weight="fill" className="text-primary" />
-              <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                Automated Certificate Management
-              </span>
-            </div>
+            {isAutoCertify && (
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Warning size={24} weight="fill" className="text-warning" />
+                <span className="text-sm font-semibold text-warning uppercase tracking-wider">
+                  Fix Security Warnings Instantly
+                </span>
+              </div>
+            )}
+            {!isAutoCertify && (
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Sparkle size={24} weight="fill" className="text-primary" />
+                <span className="text-sm font-semibold text-primary uppercase tracking-wider">
+                  Automated Certificate Management
+                </span>
+              </div>
+            )}
             <h1 className="text-5xl md:text-6xl font-bold text-foreground tracking-tight mb-6">
-              Secure SSL/TLS Automation via{' '}
-              <span className="text-primary">Delegated DCV</span>
+              {brand.hero.headline}
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto mb-10">
-              Delegate once with CNAME. We'll handle every ACME DNS-01 challenge
-              securely—no root DNS API keys on your servers. Zero-touch renewals
-              for the era of 47-day certificates.
+              {brand.hero.subheadline}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                Get Started Free
+                {brand.hero.cta}
               </Button>
-              <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
-                Read Documentation
-              </Button>
+              {!isAutoCertify && (
+                <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
+                  Read Documentation
+                </Button>
+              )}
             </div>
 
 {/* Terminal Window Animation */}
@@ -142,61 +185,103 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Why Delegated DCV?
+              {isAutoCertify ? 'The Peace of Mind Guarantee' : 'Why Delegated DCV?'}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Certificate lifetimes are shrinking—from 90 days today to 47 days
-              by 2029. Manual renewals are unsustainable. DCVaaS provides the
-              automation you need without compromising security.
+              {isAutoCertify 
+                ? 'Get your green padlock back and keep customers safe. We handle everything so you can focus on your business.'
+                : 'Certificate lifetimes are shrinking—from 90 days today to 47 days by 2029. Manual renewals are unsustainable. DCVaaS provides the automation you need without compromising security.'}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield size={24} weight="fill" className="text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                Enhanced Security
-              </h3>
-              <p className="text-muted-foreground">
-                No root DNS API keys on your servers. CNAME delegation isolates
-                ACME challenges to a controlled subdomain, minimizing attack
-                surface.
-              </p>
-            </Card>
+            {isAutoCertify ? (
+              <>
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <Warning size={24} weight="fill" className="text-warning" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Losing Sales?
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Google blocks "Not Secure" sites. If your certificate is expired, you're invisible. We fix it instantly.
+                  </p>
+                </Card>
 
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-              <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                <ArrowsClockwise
-                  size={24}
-                  weight="fill"
-                  className="text-accent"
-                />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                Zero-Touch Renewals
-              </h3>
-              <p className="text-muted-foreground">
-                Set it and forget it. Our orchestrator monitors expiration and
-                triggers renewals automatically, with retry logic and dead-letter
-                queue for reliability.
-              </p>
-            </Card>
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
+                    <CheckCircle size={24} weight="fill" className="text-success" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Zero Downtime
+                  </h3>
+                  <p className="text-muted-foreground">
+                    We verify your security before you make changes, ensuring your site never goes offline during the switch.
+                  </p>
+                </Card>
 
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-              <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <Globe size={24} weight="fill" className="text-success" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                Works with Any DNS Provider
-              </h3>
-              <p className="text-muted-foreground">
-                Simply create a CNAME record in your existing DNS setup. No
-                migrations, no nameserver changes. Premium tier offers single-click
-                setup via OAuth.
-              </p>
-            </Card>
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Globe size={24} weight="fill" className="text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Works with Everything
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Whether you use WordPress, ClickFunnels, or a custom site, we secure the connection. No coding required.
+                  </p>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Shield size={24} weight="fill" className="text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Enhanced Security
+                  </h3>
+                  <p className="text-muted-foreground">
+                    No root DNS API keys on your servers. CNAME delegation isolates
+                    ACME challenges to a controlled subdomain, minimizing attack
+                    surface.
+                  </p>
+                </Card>
+
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                    <ArrowsClockwise
+                      size={24}
+                      weight="fill"
+                      className="text-accent"
+                    />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Zero-Touch Renewals
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Set it and forget it. Our orchestrator monitors expiration and
+                    triggers renewals automatically, with retry logic and dead-letter
+                    queue for reliability.
+                  </p>
+                </Card>
+
+                <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+                  <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
+                    <Globe size={24} weight="fill" className="text-success" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Works with Any DNS Provider
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Simply create a CNAME record in your existing DNS setup. No
+                    migrations, no nameserver changes. Premium tier offers single-click
+                    setup via OAuth.
+                  </p>
+                </Card>
+              </>
+            )}
           </div>
         </section>
 
@@ -207,13 +292,31 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               How It Works
             </h2>
             <p className="text-lg text-muted-foreground">
-              Four simple steps to automated SSL/TLS certificates
+              {isAutoCertify 
+                ? 'Three simple steps to secure your website' 
+                : 'Four simple steps to automated SSL/TLS certificates'}
             </p>
           </div>
 
           <Card className="p-8">
             <Stepper
-              steps={[
+              steps={isAutoCertify ? [
+                {
+                  label: 'Enter Your Website',
+                  description: 'Tell us which site needs the green padlock',
+                  status: 'complete',
+                },
+                {
+                  label: 'Add One Record',
+                  description: 'We guide you step-by-step to add a simple DNS record',
+                  status: 'complete',
+                },
+                {
+                  label: "You're Secure",
+                  description: 'Your site is protected and renews automatically',
+                  status: 'complete',
+                },
+              ] : [
                 {
                   label: 'Add Your Domain',
                   description: 'Enter your domain in the DCVaaS dashboard',
@@ -247,7 +350,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about DCVaaS
+              {isAutoCertify 
+                ? 'Common questions about securing your website'
+                : 'Everything you need to know about DCVaaS'}
             </p>
           </div>
 
@@ -273,15 +378,28 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-y border-border py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <h2 className="text-4xl font-bold text-foreground">
-              Ready to automate your certificate lifecycle?
+              {isAutoCertify 
+                ? 'Ready to fix your "Not Secure" warning?'
+                : 'Ready to automate your certificate lifecycle?'}
             </h2>
             <p className="text-xl text-muted-foreground">
-              Start with 3 free domains. No credit card required.
+              {isAutoCertify
+                ? 'Get the green padlock and protect your customers in less than 5 minutes.'
+                : 'Start with 3 free domains. No credit card required.'}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                <Lightning size={20} weight="fill" className="mr-2" />
-                Get Started Free
+                {isAutoCertify ? (
+                  <>
+                    <Lock size={20} weight="fill" className="mr-2" />
+                    {brand.hero.cta}
+                  </>
+                ) : (
+                  <>
+                    <Lightning size={20} weight="fill" className="mr-2" />
+                    Get Started Free
+                  </>
+                )}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate('pricing')}>
                 View Pricing
@@ -290,11 +408,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <div className="pt-6 flex items-center justify-center gap-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} weight="fill" className="text-success" />
-                <span>No credit card</span>
+                <span>{isAutoCertify ? 'No coding' : 'No credit card'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} weight="fill" className="text-success" />
-                <span>3 free domains</span>
+                <span>{isAutoCertify ? 'Zero downtime' : '3 free domains'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} weight="fill" className="text-success" />
@@ -310,10 +428,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Certificate size={24} weight="bold" className="text-primary" />
-              <span className="font-semibold text-foreground">DCVaaS</span>
+              <span className="font-semibold text-foreground">{brand.name}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 DCVaaS. Secure certificate automation.
+              © 2024 {brand.name}. {isAutoCertify ? 'Instant SSL security for your website.' : 'Secure certificate automation.'}
             </p>
           </div>
         </div>

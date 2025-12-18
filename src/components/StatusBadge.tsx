@@ -6,6 +6,7 @@ import {
   ArrowsClockwise,
   Warning,
 } from '@phosphor-icons/react';
+import { useBrand } from '@/contexts/BrandContext';
 import type { DomainStatus, JobStatus } from '@/types';
 
 type StatusBadgeProps = {
@@ -14,7 +15,9 @@ type StatusBadgeProps = {
 };
 
 export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
-  const config = getStatusConfig(status);
+  const { brand } = useBrand();
+  const isAutoCertify = brand.id === 'autocertify';
+  const config = getStatusConfig(status, isAutoCertify);
 
   return (
     <Badge
@@ -34,11 +37,11 @@ export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
   );
 }
 
-function getStatusConfig(status: DomainStatus | JobStatus) {
+function getStatusConfig(status: DomainStatus | JobStatus, isAutoCertify: boolean) {
   switch (status) {
     case 'pending_cname':
       return {
-        label: 'Pending CNAME',
+        label: isAutoCertify ? 'Setup Required' : 'Pending CNAME',
         icon: Clock,
         className: 'bg-warning/10 text-warning border-warning/20',
         animated: true,
@@ -46,7 +49,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
     case 'issuing':
     case 'running':
       return {
-        label: status === 'issuing' ? 'Issuing' : 'Running',
+        label: isAutoCertify ? 'Securing...' : (status === 'issuing' ? 'Issuing' : 'Running'),
         icon: ArrowsClockwise,
         className: 'bg-primary/10 text-primary border-primary/20',
         animated: true,
@@ -54,7 +57,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
     case 'active':
     case 'succeeded':
       return {
-        label: status === 'active' ? 'Active' : 'Succeeded',
+        label: isAutoCertify ? 'Secure' : (status === 'active' ? 'Active' : 'Succeeded'),
         icon: CheckCircle,
         className: 'bg-success/10 text-success border-success/20',
         animated: false,
@@ -62,7 +65,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
     case 'error':
     case 'failed':
       return {
-        label: status === 'error' ? 'Error' : 'Failed',
+        label: isAutoCertify ? 'Needs Attention' : (status === 'error' ? 'Error' : 'Failed'),
         icon: XCircle,
         className: 'bg-destructive/10 text-destructive border-destructive/20',
         animated: false,
