@@ -25,13 +25,14 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
 
   await env.DB.prepare(`
     UPDATE domains
-    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, updated_at = datetime('now')
+    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
     WHERE id = ?
   `).bind(
     internalStatus,
     cfData.status,
     cfData.ssl.status,
     JSON.stringify(cfData.ssl.validation_errors || []),
+    cfData.ssl.expires_on || null,
     domain.id
   ).run();
 

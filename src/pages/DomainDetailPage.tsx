@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DNSRecordDisplay } from '@/components/DNSRecordDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowsClockwise, CheckCircle } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowsClockwise, CheckCircle, Warning } from '@phosphor-icons/react';
 import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
 import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
@@ -33,7 +33,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
   const previousStatusRef = React.useRef<DomainStatus | null>(null);
 
   // Fetch domain with React Query
-  const { data: domain, isLoading: isDomainLoading } = useQuery({
+  const query = useQuery({
     queryKey: ['domain', domainId],
     queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
     enabled: !!domainId,
@@ -46,6 +46,9 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     },
     refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
+
+  const domain = query.data;
+  const isDomainLoading = query.isLoading;
 
   // Fetch jobs for this domain
   const { data: jobs = [] } = useQuery({
@@ -215,53 +218,121 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                       Status updates automatically every {AUTO_POLL_INTERVAL_SECONDS} seconds
                     </p>
                   </div>
-                </div>
-                <div className="mt-4">
-                    <Button onClick={handleRefreshStatus} variant="outline" size="sm" disabled={syncMutation.isPending}>
-                        {syncMutation.isPending ? 'Refreshing...' : 'Refresh Status'}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Verification in Progress</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Cloudflare is validating your DNS configuration and issuing your certificate. 
+                      This process is automatic and typically completes within a few minutes.
+                    </p>
+                    <Button 
+                      onClick={handleRefreshStatus} 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={syncMutation.isPending}
+                    >
+                      {syncMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
+                          Refreshing...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowsClockwise size={16} weight="bold" className="mr-2" />
+                          Refresh Status
+                        </>
+                      )}
                     </Button>
+                  </div>
                 </div>
               </Card>
             )}
 
             {domain.status === 'active' && (
-              <Card className="p-6 space-y-4">
-                <div className="flex items-center gap-2 text-success">
-                  <CheckCircle size={24} weight="fill" />
-                  <h3 className="text-lg font-semibold">Certificate Active</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Issued</p>
-                    <p className="font-medium text-foreground">
-                      {domain.updatedAt && format(new Date(domain.updatedAt), 'PPP')}
-                    </p>
+              <Card className="p-6 border-success/20 bg-success/5">
+                <div className="flex items-start gap-4">
+                  <div className="mt-1">
+                    <div className="flex h-10 w-10 rounded-full bg-success items-center justify-center">
+                      <CheckCircle size={24} weight="fill" className="text-success-foreground" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <p className="font-medium text-foreground">
-                      Active (Auto-Renewing)
-                    </p>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Certificate Active</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Issued</p>
+                        <p className="font-medium text-foreground">
+                          {domain.updatedAt && format(new Date(domain.updatedAt), 'PPP')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Status</p>
+                        <p className="font-medium text-foreground">
+                          Active (Auto-Renewing)
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleRefreshStatus} 
+                      variant="outline" 
+                      className="w-full" 
+                      disabled={syncMutation.isPending}
+                    >
+                      {syncMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                          Refreshing...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowsClockwise size={20} weight="bold" className="mr-2" />
+                          Refresh Status
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
-                <Button onClick={handleRefreshStatus} variant="outline" className="w-full" disabled={syncMutation.isPending}>
-                  <ArrowsClockwise size={20} weight="bold" className="mr-2" />
-                  Refresh Status
-                </Button>
               </Card>
             )}
 
             {domain.status === 'error' && (
-              <Card className="p-6 border-destructive">
-                <h3 className="text-lg font-semibold text-destructive mb-2">
-                  Error
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {domain.cfVerificationErrors ? JSON.stringify(domain.cfVerificationErrors) : (domain.errorMessage || 'Unknown error')}
-                </p>
-                <Button onClick={handleCheckDNS} variant="outline" className="mt-4">
-                  Retry DNS Check
-                </Button>
+              <Card className="p-6 border-destructive/50 bg-destructive/5">
+                <div className="flex items-start gap-4">
+                  <div className="mt-1">
+                    <div className="flex h-10 w-10 rounded-full bg-destructive items-center justify-center">
+                      <Warning size={24} weight="fill" className="text-destructive-foreground" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-destructive mb-2">
+                      Validation Error
+                    </h3>
+                    <div className="mb-4 p-3 bg-card rounded-lg border border-destructive/20">
+                      <div className="text-sm text-foreground">
+                        {formatVerificationErrors(
+                          domain.cfVerificationErrors,
+                          domain.errorMessage
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Please verify your DNS configuration and try again. If the issue persists, check our documentation or contact support.
+                    </p>
+                    <Button 
+                      onClick={handleCheckDNS} 
+                      variant="outline" 
+                      disabled={syncMutation.isPending}
+                    >
+                      {syncMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                          Retrying...
+                        </>
+                      ) : (
+                        'Retry DNS Check'
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </Card>
             )}
           </TabsContent>

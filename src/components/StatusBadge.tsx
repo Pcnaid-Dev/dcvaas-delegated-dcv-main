@@ -19,9 +19,16 @@ export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={`${config.className} inline-flex items-center gap-1`}
+      className={`${config.className} inline-flex items-center gap-1.5`}
     >
-      {showIcon && <config.icon size={14} weight="fill" />}
+      {showIcon && config.animated ? (
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-current"></span>
+        </span>
+      ) : showIcon ? (
+        <config.icon size={14} weight="fill" />
+      ) : null}
       <span>{config.label}</span>
     </Badge>
   );
@@ -33,7 +40,8 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
       return {
         label: 'Pending CNAME',
         icon: Clock,
-        className: 'bg-muted text-muted-foreground border-border',
+        className: 'bg-warning/10 text-warning border-warning/20',
+        animated: true,
       };
     case 'issuing':
     case 'running':
@@ -41,6 +49,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
         label: status === 'issuing' ? 'Issuing' : 'Running',
         icon: ArrowsClockwise,
         className: 'bg-primary/10 text-primary border-primary/20',
+        animated: true,
       };
     case 'active':
     case 'succeeded':
@@ -48,6 +57,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
         label: status === 'active' ? 'Active' : 'Succeeded',
         icon: CheckCircle,
         className: 'bg-success/10 text-success border-success/20',
+        animated: false,
       };
     case 'error':
     case 'failed':
@@ -55,18 +65,21 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
         label: status === 'error' ? 'Error' : 'Failed',
         icon: XCircle,
         className: 'bg-destructive/10 text-destructive border-destructive/20',
+        animated: false,
       };
     case 'queued':
       return {
         label: 'Queued',
         icon: Clock,
         className: 'bg-muted text-muted-foreground border-border',
+        animated: true,
       };
     default:
       return {
         label: status,
         icon: Warning,
         className: 'bg-muted text-muted-foreground border-border',
+        animated: false,
       };
   }
 }
