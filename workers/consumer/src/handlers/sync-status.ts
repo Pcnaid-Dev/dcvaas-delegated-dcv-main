@@ -10,6 +10,7 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
 
   const previousStatus = domain.status;
   const cfData = await getCustomHostname(env, domain.cf_custom_hostname_id);
+  const previousStatus = domain.status;
 
   // Store the old status before updating
   const oldStatus = domain.status;
@@ -23,39 +24,113 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
     internalStatus = 'issuing'; // Or 'pending_validation'
   }
 
+  // Extract certificate expiry and issued dates
+  const expiresAt = cfData.ssl.expires_on || null;
+  const lastIssuedAt = cfData.ssl.issued_on || null;
+  
+  // Extract error message from validation errors
+  const errorMessage = cfData.ssl.validation_errors && cfData.ssl.validation_errors.length > 0
+    ? cfData.ssl.validation_errors[0].message
+    : null;
+
   await env.DB.prepare(`
     UPDATE domains
-    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
+    SET status = ?, 
+        cf_status = ?, 
+        cf_ssl_status = ?, 
+        cf_verification_errors = ?, 
+        expires_at = ?,
+        last_issued_at = ?,
+        error_message = ?,
+        updated_at = datetime('now')
     WHERE id = ?
   `).bind(
     internalStatus,
     cfData.status,
     cfData.ssl.status,
     JSON.stringify(cfData.ssl.validation_errors || []),
-    cfData.ssl.expires_on || null,
+    expiresAt,
+    lastIssuedAt,
+    errorMessage,
     domain.id
   ).run();
 
-  // Dispatch webhook if domain became active (fire and forget - don't await)
-  if (oldStatus !== 'active' && internalStatus === 'active') {
-    dispatchWebhook(env, domain.org_id, 'domain.active', {
-      domain_id: domain.id,
-      domain_name: domain.domain_name,
-      status: internalStatus,
-      expires_at: domain.expires_at,
-    }).catch((err) => console.error('Failed to dispatch domain.active webhook:', err));
+  // Dispatch webhooks for status transitions
+  await dispatchStatusTransitionWebhooks(env, domain, previousStatus, internalStatus, cfData);
+}
+
+/**
+ * Dispatch webhooks when domain status changes
+ */
+async function dispatchStatusTransitionWebhooks(
+  env: Env,
+  domain: any,
+  previousStatus: string,
+  newStatus: string,
+  cfData: any
+) {
+  // Detect status transitions
+  const transitions: { event: string; payload: any }[] = [];
+
+  // domain.active event
+  if (previousStatus !== 'active' && newStatus === 'active') {
+    transitions.push({
+      event: 'domain.active',
+      payload: {
+        domainId: domain.id,
+        domainName: domain.domain_name,
+        orgId: domain.org_id,
+        status: newStatus,
+        cfStatus: cfData.status,
+        cfSslStatus: cfData.ssl.status,
+        expiresAt: cfData.ssl.expires_on,
+        issuedAt: cfData.ssl.issued_on,
+        timestamp: new Date().toISOString(),
+      },
+    });
   }
 
-  // Dispatch webhook if domain went into error state (fire and forget - don't await)
-  if (oldStatus !== 'error' && internalStatus === 'error') {
-    dispatchWebhook(env, domain.org_id, 'domain.error', {
-      domain_id: domain.id,
-      domain_name: domain.domain_name,
-      status: internalStatus,
-      error_message: cfData.ssl.validation_errors?.[0] || 'Unknown error',
-    }).catch((err) => console.error('Failed to dispatch domain.error webhook:', err));
+  // domain.error event
+  if (previousStatus !== 'error' && newStatus === 'error') {
+    transitions.push({
+      event: 'domain.error',
+      payload: {
+        domainId: domain.id,
+        domainName: domain.domain_name,
+        orgId: domain.org_id,
+        status: newStatus,
+        cfStatus: cfData.status,
+        cfSslStatus: cfData.ssl.status,
+        errors: cfData.ssl.validation_errors || [],
+        timestamp: new Date().toISOString(),
+      },
+    });
   }
 
+  // Dispatch all transitions
+  for (const { event, payload } of transitions) {
+    try {
+      await dispatchWebhook(env, domain.org_id, event, payload);
+    } catch (err) {
+      console.error(`Failed to dispatch webhook for ${event}:`, err);
+      // Don't fail the sync if webhook dispatch fails
+    }
+  }
+}
+
+/**
+ * Dispatch a webhook event to all subscribed endpoints
+ * Uses shared dispatch logic with database-level event filtering
+ */
+async function dispatchWebhook(
+  env: Env,
+  orgId: string,
+  event: string,
+  payload: Record<string, any>
+) {
+  // Use shared webhook dispatch module
+  const { dispatchWebhook: sharedDispatch } = await import('../../shared/webhook-dispatch');
+  await sharedDispatch(env.DB, orgId, event as any, payload);
   // Send email notification when certificate becomes active
   if (previousStatus !== 'active' && internalStatus === 'active') {
     await sendCertificateIssuedNotification(env, domain);

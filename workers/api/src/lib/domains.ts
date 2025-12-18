@@ -13,6 +13,9 @@ export type DomainRow = {
   cf_status?: string | null;
   cf_ssl_status?: string | null;
   cf_verification_errors?: string | null;
+  expires_at?: string | null;
+  last_issued_at?: string | null;
+  error_message?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -39,6 +42,9 @@ return results.map((d: DomainRow) => ({
     cfCustomHostnameId: d.cf_custom_hostname_id,
     cfStatus: d.cf_status,
     cfSslStatus: d.cf_ssl_status,
+    expiresAt: d.expires_at,
+    lastIssuedAt: d.last_issued_at,
+    errorMessage: d.error_message,
     // Instructions for the UI
     dnsInstruction: `${d.domain_name} CNAME ${cnameTarget}`
   }));
@@ -64,6 +70,9 @@ export async function getDomain(env: Env, orgId: string, domainId: string) {
     cfStatus: row.cf_status,
     cfSslStatus: row.cf_ssl_status,
     cfVerificationErrors: row.cf_verification_errors ? JSON.parse(row.cf_verification_errors) : [],
+    expiresAt: row.expires_at,
+    lastIssuedAt: row.last_issued_at,
+    errorMessage: row.error_message,
   };
 }
 

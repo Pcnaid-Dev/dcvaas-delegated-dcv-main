@@ -38,20 +38,12 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
   const createTokenMutation = useMutation({
     mutationFn: async (name: string) => {
       if (!currentOrg) throw new Error('No organization');
-      const plainToken = await generateToken();
-      const token: APIToken = {
-        id: await generateId(),
-        orgId: currentOrg.id,
-        name,
-        tokenHash: await hashToken(plainToken),
-        createdAt: new Date().toISOString(),
-      };
-      await addAPIToken(token);
-      return plainToken;
+      const { createAPIToken } = await import('@/lib/data');
+      return createAPIToken(name);
     },
-    onSuccess: (plainToken) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
-      setNewToken(plainToken);
+      setNewToken(result.token);
       setTokenName('');
       toast.success('API token created');
     },
