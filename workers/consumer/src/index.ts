@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import type { JobMessage } from './lib/types';
 import { handleSyncStatus } from './handlers/sync-status';
+import { handleSendEmail } from './handlers/send-email';
 import { MessageBatch } from '@cloudflare/workers-types';
 
 export default {
@@ -13,17 +14,30 @@ export default {
           case 'sync_status':
             await handleSyncStatus(job, env);
             break;
+          case 'send_email':
+            await handleSendEmail(job, env);
+            break;
           // case 'dns_check':
           //   await handleDnsCheck(job, env);
           //   break;
           default:
-            console.warn(`Unknown job type: ${job.type}`);
+            // Unknown job type - throw error so it gets sent to DLQ
+            const unknownType = 'type' in job ? job.type : 'unknown';
+            console.error(`Unknown job type: ${unknownType}. Throwing error to send to DLQ.`);
+            throw new Error(`Unknown job type: ${unknownType}`);
         }
         message.ack();
       } catch (error) {
         console.error(`Failed to process job ${job.id}:`, error);
-        message.retry();
-        throw error;
+        
+        // If this is a DLQ notification email that failed, just ack it to prevent infinite loops
+        if (job.type === 'send_email' && job.isDLQNotification) {
+          console.error('DLQ notification email failed - acknowledging to prevent infinite loop');
+          message.ack();
+        } else {
+          message.retry();
+          throw error;
+        }
       }
     });
 

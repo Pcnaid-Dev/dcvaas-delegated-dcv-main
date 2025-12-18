@@ -1,4 +1,4 @@
-name = "dcvaas-consumer"
+name = "dcvaas-dlq"
 main = "src/index.ts"
 compatibility_date = "2025-12-03"
 
@@ -8,11 +8,10 @@ database_name = "dcvaas-db"
 database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
 
 [[queues.consumers]]
-queue = "dcvaas-jobs"
+queue = "dcvaas-jobs-dlq"
 max_batch_size = 10
 max_batch_timeout = 5
-max_retries = 3
-dead_letter_queue = "dcvaas-jobs-dlq"
 
-[vars]
-CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
+[[queues.producers]]
+binding = "QUEUE"
+queue = "dcvaas-jobs"
