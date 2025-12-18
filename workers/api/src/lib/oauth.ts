@@ -1,80 +1,138 @@
-// workers/api/src/lib/oauth.ts
+/**
+ * OAuth connections management
+ */
+
 import type { Env } from '../env';
-import { encryptSecret, decryptSecret } from './crypto';
+import { encryptAES, decryptAES } from './crypto';
+import { exchangeOAuthToken } from './oauth-providers';
 
-export type OAuthProvider = 'cloudflare' | 'godaddy' | 'route53' | 'other';
+/**
+ * Provider configuration map for OAuth credentials
+ */
+const PROVIDER_CONFIG = {
+  cloudflare: {
+    clientIdKey: 'CLOUDFLARE_CLIENT_ID',
+    clientSecretKey: 'CLOUDFLARE_CLIENT_SECRET',
+  },
+  godaddy: {
+    clientIdKey: 'GODADDY_CLIENT_ID',
+    clientSecretKey: 'GODADDY_CLIENT_SECRET',
+  },
+} as const;
 
-export type OAuthConnectionRow = {
+export interface OAuthConnection {
   id: string;
   org_id: string;
   provider: string;
   encrypted_access_token: string;
-  encrypted_refresh_token: string | null;
-  expires_at: string | null;
+  encrypted_refresh_token?: string;
+  expires_at?: string;
   created_at: string;
   updated_at: string;
-};
+}
+
+export interface DecryptedOAuthConnection extends Omit<OAuthConnection, 'encrypted_access_token' | 'encrypted_refresh_token'> {
+  access_token: string;
+  refresh_token?: string;
+}
 
 /**
- * Exchange OAuth code for tokens and store encrypted
- * This is a stub implementation that marks the connection as pending
+ * Generate a simple ID (UUID-like)
  */
-export async function exchangeOAuthCode(
+function generateId(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Exchange OAuth code for tokens and store encrypted in database
+ */
+export async function createOAuthConnection(
   env: Env,
   orgId: string,
-  provider: OAuthProvider,
+  provider: string,
   code: string,
   redirectUri: string
-) {
-  // For now, this is a stub that stores a placeholder
-  // In production, you would:
-  // 1. Exchange the code with the OAuth provider
-  // 2. Get access_token and refresh_token
-  // 3. Encrypt and store them
-
-  if (!env.ENCRYPTION_KEY) {
-    throw new Error('ENCRYPTION_KEY not configured - cannot store OAuth tokens');
+): Promise<OAuthConnection> {
+  // Get provider configuration
+  const providerConfig = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG];
+  if (!providerConfig) {
+    throw new Error(`Unsupported OAuth provider: ${provider}`);
   }
 
-  // Stub: Create a deterministic placeholder from the code
-  const placeholder = `stub-token-${provider}-${code.substring(0, 8)}`;
-  const encryptedAccessToken = await encryptSecret(placeholder, env.ENCRYPTION_KEY);
-  
-  const id = crypto.randomUUID();
-  
-  // Use D1 batch transaction for atomic upsert to prevent race conditions
-  const statements = [
-    // First, try to update existing connection
-    env.DB.prepare(
-      `UPDATE oauth_connections 
-       SET encrypted_access_token = ?, updated_at = datetime('now')
-       WHERE org_id = ? AND provider = ?`
-    ).bind(encryptedAccessToken, orgId, provider),
-    // Then insert if update affected no rows (using INSERT OR IGNORE)
-    env.DB.prepare(
-      `INSERT OR IGNORE INTO oauth_connections (id, org_id, provider, encrypted_access_token, created_at, updated_at)
-       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`
-    ).bind(id, orgId, provider, encryptedAccessToken),
-  ];
-  
-  const results = await env.DB.batch(statements);
-  
-  // Check if update succeeded (first statement affected rows)
-  const wasUpdated = results[0].meta.changes > 0;
-  
-  // Get the actual ID (either from update or from the insert)
-  const actualId = wasUpdated 
-    ? (await env.DB.prepare('SELECT id FROM oauth_connections WHERE org_id = ? AND provider = ?')
-        .bind(orgId, provider).first<{ id: string }>())?.id || id
-    : id;
-  
-  return {
-    id: actualId,
-    orgId,
-    provider,
-    status: wasUpdated ? 'updated' : 'created',
-    note: `OAuth connection ${wasUpdated ? 'updated' : 'created'} with stub token - full implementation pending`,
-  };
+  // Get OAuth client credentials from environment
+  const clientId = env[providerConfig.clientIdKey as keyof Env] as string;
+  const clientSecret = env[providerConfig.clientSecretKey as keyof Env] as string;
+
+  if (!clientId || !clientSecret) {
+    throw new Error(`OAuth credentials not configured for provider: ${provider}`);
+  }
+
+  // Exchange code for tokens
+  const tokens = await exchangeOAuthToken(provider, code, redirectUri, clientId, clientSecret);
+
+  // Encrypt tokens
+  const encryptedAccessToken = await encryptAES(tokens.access_token, env.ENCRYPTION_KEY);
+  const encryptedRefreshToken = tokens.refresh_token
+    ? await encryptAES(tokens.refresh_token, env.ENCRYPTION_KEY)
+    : undefined;
+
+  // Calculate expiration time
+  const expiresAt = tokens.expires_in
+    ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+    : undefined;
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  // Check if connection already exists for this org and provider
+  const existing = await env.DB.prepare(
+    'SELECT id FROM oauth_connections WHERE org_id = ? AND provider = ?'
+  ).bind(orgId, provider).first();
+
+  if (existing) {
+    // Update existing connection
+    await env.DB.prepare(`
+      UPDATE oauth_connections
+      SET encrypted_access_token = ?,
+          encrypted_refresh_token = ?,
+          expires_at = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).bind(
+      encryptedAccessToken,
+      encryptedRefreshToken || null,
+      expiresAt || null,
+      now,
+      existing.id
+    ).run();
+
+    const updated = await env.DB.prepare(
+      'SELECT * FROM oauth_connections WHERE id = ?'
+    ).bind(existing.id).first();
+
+    return updated as OAuthConnection;
+  } else {
+    // Create new connection
+    await env.DB.prepare(`
+      INSERT INTO oauth_connections (id, org_id, provider, encrypted_access_token, encrypted_refresh_token, expires_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      id,
+      orgId,
+      provider,
+      encryptedAccessToken,
+      encryptedRefreshToken || null,
+      expiresAt || null,
+      now,
+      now
+    ).run();
+
+    const created = await env.DB.prepare(
+      'SELECT * FROM oauth_connections WHERE id = ?'
+    ).bind(id).first();
+
+    return created as OAuthConnection;
+  }
 }
 
 /**
@@ -83,45 +141,61 @@ export async function exchangeOAuthCode(
 export async function getOAuthConnection(
   env: Env,
   orgId: string,
-  provider: OAuthProvider
-): Promise<OAuthConnectionRow | null> {
-  const row = await env.DB
-    .prepare(`SELECT * FROM oauth_connections WHERE org_id = ? AND provider = ?`)
-    .bind(orgId, provider)
-    .first<OAuthConnectionRow>();
+  provider: string
+): Promise<OAuthConnection | null> {
+  const result = await env.DB.prepare(
+    'SELECT * FROM oauth_connections WHERE org_id = ? AND provider = ?'
+  ).bind(orgId, provider).first();
 
-  return row;
+  return result as OAuthConnection | null;
+}
+
+/**
+ * Get OAuth connection with decrypted tokens
+ */
+export async function getDecryptedOAuthConnection(
+  env: Env,
+  orgId: string,
+  provider: string
+): Promise<DecryptedOAuthConnection | null> {
+  const connection = await getOAuthConnection(env, orgId, provider);
+  if (!connection) return null;
+
+  const access_token = await decryptAES(connection.encrypted_access_token, env.ENCRYPTION_KEY);
+  const refresh_token = connection.encrypted_refresh_token
+    ? await decryptAES(connection.encrypted_refresh_token, env.ENCRYPTION_KEY)
+    : undefined;
+
+  return {
+    ...connection,
+    access_token,
+    refresh_token,
+  };
 }
 
 /**
  * List all OAuth connections for an organization
  */
-export async function listOAuthConnections(env: Env, orgId: string) {
-  const { results } = await env.DB
-    .prepare(`SELECT id, org_id, provider, expires_at, created_at, updated_at FROM oauth_connections WHERE org_id = ?`)
-    .bind(orgId)
-    .all<Omit<OAuthConnectionRow, 'encrypted_access_token' | 'encrypted_refresh_token'>>();
+export async function listOAuthConnections(
+  env: Env,
+  orgId: string
+): Promise<OAuthConnection[]> {
+  const result = await env.DB.prepare(
+    'SELECT * FROM oauth_connections WHERE org_id = ? ORDER BY created_at DESC'
+  ).bind(orgId).all();
 
-  return results.map((row) => ({
-    id: row.id,
-    orgId: row.org_id,
-    provider: row.provider,
-    expiresAt: row.expires_at,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  return (result.results || []) as OAuthConnection[];
 }
 
 /**
- * Delete an OAuth connection
+ * Delete OAuth connection
  */
 export async function deleteOAuthConnection(
   env: Env,
   orgId: string,
-  connectionId: string
-) {
-  await env.DB
-    .prepare(`DELETE FROM oauth_connections WHERE id = ? AND org_id = ?`)
-    .bind(connectionId, orgId)
-    .run();
+  provider: string
+): Promise<void> {
+  await env.DB.prepare(
+    'DELETE FROM oauth_connections WHERE org_id = ? AND provider = ?'
+  ).bind(orgId, provider).run();
 }

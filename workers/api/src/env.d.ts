@@ -27,4 +27,10 @@ export interface Env {
   INTERNAL_ADMIN_TOKEN: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
+  
+  // OAuth provider credentials (optional - only needed if using OAuth integrations)
+  CLOUDFLARE_CLIENT_ID?: string;
+  CLOUDFLARE_CLIENT_SECRET?: string;
+  GODADDY_CLIENT_ID?: string;
+  GODADDY_CLIENT_SECRET?: string;
 }

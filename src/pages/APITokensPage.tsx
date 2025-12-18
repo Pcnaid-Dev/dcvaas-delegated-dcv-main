@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Trash } from '@phosphor-icons/react';
-import { getOrgAPITokens, deleteAPIToken } from '@/lib/data';
+import { Plus, Trash, Eye, EyeSlash } from '@phosphor-icons/react';
+import { getOrgAPITokens, addAPIToken, deleteAPIToken } from '@/lib/data';
+import { generateId, hashToken, generateToken } from '@/lib/crypto';
 import { toast } from 'sonner';
 import type { APIToken } from '@/types';
 import { PLAN_LIMITS } from '@/types';
@@ -177,21 +178,27 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                   {tokens.map((token) => (
                     <div
                       key={token.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors"
                     >
-                      <div>
-                        <p className="font-medium text-foreground">{token.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground mb-1">{token.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          dcv_••••••••••••{token.id.slice(-4)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           Created {new Date(token.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(token.id)}
-                      >
-                        <Trash size={18} className="text-destructive" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(token.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash size={18} />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

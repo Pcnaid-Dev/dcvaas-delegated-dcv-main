@@ -2,6 +2,7 @@ import type { Env } from '../env';
 import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
 import { buildCertificateIssuedEmail } from '../lib/email-templates';
+import { dispatchWebhook } from '../../../api/src/lib/webhooks';
 
 export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
@@ -10,6 +11,9 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const previousStatus = domain.status;
   const cfData = await getCustomHostname(env, domain.cf_custom_hostname_id);
   const previousStatus = domain.status;
+
+  // Store the old status before updating
+  const oldStatus = domain.status;
 
   let internalStatus = 'pending_cname';
   if (cfData.status === 'active' && cfData.ssl.status === 'active') {

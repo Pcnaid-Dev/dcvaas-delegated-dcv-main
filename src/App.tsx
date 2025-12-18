@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
+import { OverviewPage } from './pages/OverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PricingPage } from './pages/PricingPage';
 import { DocsPage } from './pages/DocsPage';
@@ -16,6 +17,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
+import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -34,7 +36,10 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
 
-  if (isLoading) {
+  // Check if this is an OAuth callback
+  const isOAuthCallback = window.location.pathname === '/oauth/callback';
+
+  if (isLoading && !isOAuthCallback) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -43,6 +48,11 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  // Handle OAuth callback without checking authentication
+  if (isOAuthCallback) {
+    return <OAuthCallbackPage />;
   }
 
   if (!isAuthenticated && currentPage === 'home') {
@@ -63,6 +73,13 @@ function AppContent() {
 
   const renderPage = () => {
     switch (currentPage) {
+      case 'overview':
+        return (
+          <OverviewPage
+            onNavigate={setCurrentPage}
+            onSelectDomain={setSelectedDomainId}
+          />
+        );
       case 'dashboard':
         return (
           <DashboardPage
@@ -99,7 +116,7 @@ function AppContent() {
         return <DocsPage onNavigate={setCurrentPage} />;
       default:
         return (
-          <DashboardPage
+          <OverviewPage
             onNavigate={setCurrentPage}
             onSelectDomain={setSelectedDomainId}
           />
