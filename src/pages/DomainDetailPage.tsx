@@ -33,7 +33,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
   const previousStatusRef = React.useRef<DomainStatus | null>(null);
 
   // Fetch domain with React Query
-  const { data: domain, isLoading: isDomainLoading } = useQuery({
+  const query = useQuery({
     queryKey: ['domain', domainId],
     queryFn: () => domainId ? getDomain(domainId) : Promise.resolve(null),
     enabled: !!domainId,
@@ -46,6 +46,9 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     },
     refetchIntervalInBackground: false, // Stop polling when page is not visible
   });
+
+  const domain = query.data;
+  const isDomainLoading = query.isLoading;
 
   // Fetch jobs for this domain
   const { data: jobs = [] } = useQuery({
