@@ -1,12 +1,13 @@
 import type { Env } from '../env';
-import type { JobMessage } from '../lib/types';
+import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
-import { dispatchWebhook } from '../../../api/src/lib/webhooks';
+import { buildCertificateIssuedEmail } from '../lib/email-templates';
 
-export async function handleSyncStatus(job: JobMessage, env: Env) {
+export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
   if (!domain || !domain.cf_custom_hostname_id) return;
 
+  const previousStatus = domain.status;
   const cfData = await getCustomHostname(env, domain.cf_custom_hostname_id);
 
   // Store the old status before updating
@@ -51,5 +52,49 @@ export async function handleSyncStatus(job: JobMessage, env: Env) {
       status: internalStatus,
       error_message: cfData.ssl.validation_errors?.[0] || 'Unknown error',
     }).catch((err) => console.error('Failed to dispatch domain.error webhook:', err));
+  // Send email notification when certificate becomes active
+  if (previousStatus !== 'active' && internalStatus === 'active') {
+    await sendCertificateIssuedNotification(env, domain);
+  }
+}
+
+async function sendCertificateIssuedNotification(env: Env, domain: any): Promise<void> {
+  try {
+    // Get organization details
+    const org = await env.DB.prepare('SELECT * FROM organizations WHERE id = ?')
+      .bind(domain.org_id)
+      .first<any>();
+    
+    if (!org) return;
+
+    // Get all active members of the organization
+    const members = await env.DB.prepare(
+      `SELECT email FROM organization_members 
+       WHERE org_id = ? AND status = 'active'`
+    ).bind(domain.org_id).all<{ email: string }>();
+
+    const emails = members.results?.map(m => m.email).filter(Boolean) || [];
+    
+    if (emails.length === 0) return;
+
+    // Build email HTML
+    const html = buildCertificateIssuedEmail(domain.domain_name, org.name);
+
+    // Queue email notification
+    await env.QUEUE.send({
+      id: crypto.randomUUID(),
+      type: 'send_email',
+      emailParams: {
+        to: emails,
+        subject: `Certificate Issued: ${domain.domain_name}`,
+        html,
+      },
+      attempts: 0,
+    });
+
+    console.log(`Queued certificate issued notification for domain ${domain.domain_name} to ${emails.length} recipients`);
+  } catch (error) {
+    console.error('Failed to queue certificate issued notification:', error);
+    // Don't throw - we don't want to fail the job if email queueing fails
   }
 }
