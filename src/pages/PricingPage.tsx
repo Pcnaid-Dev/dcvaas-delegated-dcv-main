@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, Certificate } from '@phosphor-icons/react';
+import { CheckCircle, Certificate, Key } from '@phosphor-icons/react';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useBrand } from '@/components/ThemeProvider';
 
 type PricingPageProps = {
   onNavigate: (page: string) => void;
@@ -12,6 +13,12 @@ type PricingPageProps = {
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
   const [loading, setLoading] = useState<string | null>(null);
+  const { brand } = useBrand();
+
+  // Update document title based on brand
+  useEffect(() => {
+    document.title = `Pricing - ${brand.name}`;
+  }, [brand]);
 
   const handleSubscribe = async (planName: string, priceId: string) => {
     if (planName === 'Free') {
@@ -38,41 +45,34 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
     }
   };
 
+  // Use brand-specific pricing
   const plans = [
     {
-      name: 'Free',
-      price: '$0',
+      name: brand.pricing.free.name,
+      price: brand.pricing.free.price,
       period: 'forever',
-      description: 'Perfect for developers and small projects',
-      features: [
-        'Up to 3 domains',
-        'Automatic renewals',
-        'DNS-01 validation',
-        'Community support',
-        'Basic audit logs',
-      ],
+      description: brand.id === 'keylessssl' 
+        ? 'For developers and personal projects' 
+        : 'Perfect for developers and small projects',
+      features: brand.pricing.free.features,
       cta: 'Get Started',
       highlighted: false,
       priceId: '',
     },
     {
-      name: 'Pro',
-      price: '$29',
+      name: brand.pricing.pro.name,
+      price: brand.pricing.pro.price,
       period: 'per month',
-      description: 'For growing businesses and teams',
-      features: [
-        'Up to 15 domains',
-        'All Free features',
-        'API access',
-        'Email support',
-        'Priority renewals',
-        'Custom CA support',
-      ],
-      cta: 'Start Trial',
+      description: brand.id === 'keylessssl'
+        ? 'For production workloads and APIs'
+        : 'For growing businesses and teams',
+      features: brand.pricing.pro.features,
+      cta: brand.id === 'keylessssl' ? 'Get API Key' : 'Start Trial',
       highlighted: true,
       priceId: STRIPE_PRICE_IDS.pro,
     },
-    {
+    // Agency plan (only for DCVaaS brand)
+    ...(brand.id === 'dcvaas' ? [{
       name: 'Agency',
       price: '$99',
       period: 'per month',
@@ -90,8 +90,10 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       cta: 'Contact Sales',
       highlighted: false,
       priceId: STRIPE_PRICE_IDS.agency,
-    },
+    }] : []),
   ];
+
+  const HeaderIcon = brand.id === 'keylessssl' ? Key : Certificate;
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,8 +104,8 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               onClick={() => onNavigate('home')}
               className="flex items-center gap-2"
             >
-              <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <HeaderIcon size={32} weight="bold" className="text-primary" />
+              <span className="text-xl font-bold text-foreground">{brand.name}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
@@ -201,17 +203,18 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
 
         <Card className="p-8 bg-muted/30">
           <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
-            Why Certificate Automation Matters Now
+            {brand.id === 'keylessssl' 
+              ? 'Why Your DNS Keys Should Stay in Your Vault' 
+              : 'Why Certificate Automation Matters Now'}
           </h2>
           <p className="text-muted-foreground text-center max-w-3xl mx-auto mb-6">
-            Certificate lifetimes are shrinking—from 90 days today to 47 days by
-            2029. Manual renewals become impossible at scale. DCVaaS automates
-            the entire lifecycle with delegated DNS-01 validation, keeping your
-            certificates valid without exposing root DNS credentials.
+            {brand.id === 'keylessssl'
+              ? 'To automate wildcard SSL today, you expose AWS Route53 or Cloudflare Global API keys on web servers. One compromised server = entire DNS zone gone. KeylessSSL uses delegated CNAME validation: your root keys never leave your infrastructure.'
+              : 'Certificate lifetimes are shrinking—from 90 days today to 47 days by 2029. Manual renewals become impossible at scale. DCVaaS automates the entire lifecycle with delegated DNS-01 validation, keeping your certificates valid without exposing root DNS credentials.'}
           </p>
           <div className="text-center">
             <Button variant="outline" onClick={() => onNavigate('docs')}>
-              Learn More About Delegated DCV
+              {brand.id === 'keylessssl' ? 'Read the Quickstart' : 'Learn More About Delegated DCV'}
             </Button>
           </div>
         </Card>
