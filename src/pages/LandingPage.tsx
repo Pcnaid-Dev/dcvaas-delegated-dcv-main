@@ -76,6 +76,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
               <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
               <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
+              <button onClick={() => onNavigate('debugger')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Debugger</button>
             </nav>
             {/* Login Button */}
             <Button onClick={() => loginWithRedirect()}>
@@ -237,6 +238,30 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               ]}
               orientation="vertical"
             />
+          </Card>
+        </section>
+
+        {/* Debugger Tool CTA */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card className="p-8 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 border-primary/20">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+                  <Lock size={32} weight="fill" className="text-primary-foreground" />
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-foreground mb-2">
+                  Having Validation Issues?
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Use our free Stuck Validation Debugger to diagnose DNS and CAA configuration problems instantly.
+                </p>
+                <Button size="lg" variant="outline" onClick={() => onNavigate('debugger')}>
+                  Try the Debugger Tool
+                </Button>
+              </div>
+            </div>
           </Card>
         </section>
 
