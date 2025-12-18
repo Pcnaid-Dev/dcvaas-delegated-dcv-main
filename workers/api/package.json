@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "hono": "^4.10.7",
+    "resend": "^6.6.0",
     "stripe": "^20.0.0"
   },
   "devDependencies": {

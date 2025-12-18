@@ -7,6 +7,11 @@ export type Env = {
   // Wrangler secrets
   CLOUDFLARE_API_TOKEN: string;
   ENCRYPTION_KEY: string;          // AES-GCM encryption key for OAuth tokens
+  QUEUE: Queue;
+
+  // Wrangler secrets
+  CLOUDFLARE_API_TOKEN: string;
+  RESEND_API_KEY: string;
 
   // Wrangler vars
   CLOUDFLARE_ZONE_ID: string;      // pcnaid.com zone id
