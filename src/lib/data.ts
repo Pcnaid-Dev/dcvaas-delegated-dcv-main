@@ -395,3 +395,33 @@ export async function createStripeCheckoutSession(priceId: string): Promise<{ ur
   });
   return res;
 }
+
+// ===== OAUTH CONNECTIONS =====
+
+export interface OAuthConnection {
+  id: string;
+  org_id: string;
+  provider: string;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<OAuthConnection> {
+  const res = await api<{ connection: OAuthConnection }>('/api/oauth/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ provider, code, redirectUri }),
+  });
+  return res.connection;
+}
+
+export async function listOAuthConnections(): Promise<OAuthConnection[]> {
+  const res = await api<{ connections: OAuthConnection[] }>('/api/oauth/connections');
+  return res.connections;
+}
+
+export async function deleteOAuthConnection(provider: string): Promise<void> {
+  await api(`/api/oauth/connections/${encodeURIComponent(provider)}`, {
+    method: 'DELETE',
+  });
+}

@@ -1,0 +1,28 @@
+name: Copilot Agent
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  metadata: read
+
+jobs:
+  swe_agent:
+    name: Run Copilot Agent
+    # Downgrading to 22.04 fixes the 'LandlockRestrict' sandbox error
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # This step ensures the agent has the correct environment to run
+      - name: Run Copilot Agent
+        uses: github/copilot-action@v1
+        with:
+          # These inputs match standard Copilot agent requirements
+          # You can adjust or remove inputs if your specific agent setup differs
+          token: ${{ secrets.GITHUB_TOKEN }}
