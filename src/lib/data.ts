@@ -429,24 +429,7 @@ export async function deleteWebhook(id: string): Promise<void> {
 }
 
 // ===== OAUTH CONNECTIONS (real API) =====
-
-export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<any> {
-  const res = await api('/api/oauth/exchange', {
-    method: 'POST',
-    body: JSON.stringify({ provider, code, redirectUri }),
-  });
-  return res;
-}
-
-export async function getOAuthConnections(): Promise<any[]> {
-  try {
-    const res = await api<{ connections: any[] }>('/api/oauth/connections');
-    return res?.connections ?? [];
-  } catch (err) {
-    console.warn('getOAuthConnections failed', err);
-    return [];
-  }
-}
+// Functions defined later in this file
 
 export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
