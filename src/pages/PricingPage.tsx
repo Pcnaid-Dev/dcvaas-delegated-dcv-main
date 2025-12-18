@@ -5,6 +5,7 @@ import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useBrand } from '@/contexts/BrandContext';
 
 type PricingPageProps = {
   onNavigate: (page: string) => void;
@@ -12,9 +13,10 @@ type PricingPageProps = {
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
   const [loading, setLoading] = useState<string | null>(null);
+  const { brand } = useBrand();
 
   const handleSubscribe = async (planName: string, priceId: string) => {
-    if (planName === 'Free') {
+    if (planName === 'Free' || planName === 'Agency Plan') {
       onNavigate('dashboard');
       return;
     }
@@ -38,60 +40,8 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
     }
   };
 
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      period: 'forever',
-      description: 'Perfect for developers and small projects',
-      features: [
-        'Up to 3 domains',
-        'Automatic renewals',
-        'DNS-01 validation',
-        'Community support',
-        'Basic audit logs',
-      ],
-      cta: 'Get Started',
-      highlighted: false,
-      priceId: '',
-    },
-    {
-      name: 'Pro',
-      price: '$29',
-      period: 'per month',
-      description: 'For growing businesses and teams',
-      features: [
-        'Up to 15 domains',
-        'All Free features',
-        'API access',
-        'Email support',
-        'Priority renewals',
-        'Custom CA support',
-      ],
-      cta: 'Start Trial',
-      highlighted: true,
-      priceId: STRIPE_PRICE_IDS.pro,
-    },
-    {
-      name: 'Agency',
-      price: '$99',
-      period: 'per month',
-      description: 'For agencies and enterprises',
-      features: [
-        'Up to 50 domains',
-        'All Pro features',
-        'Team management & RBAC',
-        'Single-click CNAME setup (OAuth)',
-        'White-label branding',
-        'Full audit logs',
-        'Priority support',
-        'Custom domain',
-      ],
-      cta: 'Contact Sales',
-      highlighted: false,
-      priceId: STRIPE_PRICE_IDS.agency,
-    },
-  ];
+  // Use brand-specific pricing plans
+  const plans = brand.pricing.plans;
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,7 +53,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               className="flex items-center gap-2"
             >
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.name}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
@@ -135,10 +85,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+            {brand.name === 'DelegatedSSL' ? 'Agency-Focused Pricing' : 'Simple, Transparent Pricing'}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start free and scale as you grow. No hidden fees, cancel anytime.
+            {brand.name === 'DelegatedSSL' 
+              ? 'Flat-rate plans that protect your margins as you scale.'
+              : 'Start free and scale as you grow. No hidden fees, cancel anytime.'}
           </p>
         </div>
 
@@ -201,17 +153,18 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
 
         <Card className="p-8 bg-muted/30">
           <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
-            Why Certificate Automation Matters Now
+            {brand.name === 'DelegatedSSL' 
+              ? 'Built for Agencies & MSPs'
+              : 'Why Certificate Automation Matters Now'}
           </h2>
           <p className="text-muted-foreground text-center max-w-3xl mx-auto mb-6">
-            Certificate lifetimes are shrinking—from 90 days today to 47 days by
-            2029. Manual renewals become impossible at scale. DCVaaS automates
-            the entire lifecycle with delegated DNS-01 validation, keeping your
-            certificates valid without exposing root DNS credentials.
+            {brand.name === 'DelegatedSSL'
+              ? 'Stop absorbing SSL costs. Our flat-rate pricing lets you bundle "Premium Security Monitoring" into your maintenance packages. You pay pennies per domain; charge clients $10/mo for peace of mind. Turn SSL from a cost center into a profit center.'
+              : 'Certificate lifetimes are shrinking—from 90 days today to 47 days by 2029. Manual renewals become impossible at scale. DCVaaS automates the entire lifecycle with delegated DNS-01 validation, keeping your certificates valid without exposing root DNS credentials.'}
           </p>
           <div className="text-center">
             <Button variant="outline" onClick={() => onNavigate('docs')}>
-              Learn More About Delegated DCV
+              {brand.name === 'DelegatedSSL' ? 'See Agency Playbook' : 'Learn More About Delegated DCV'}
             </Button>
           </div>
         </Card>
