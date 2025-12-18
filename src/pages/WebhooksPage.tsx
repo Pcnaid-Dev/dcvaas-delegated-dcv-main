@@ -219,8 +219,8 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     } catch (error) {
       console.error('Failed to delete webhook:', error);
       toast.error('Failed to delete webhook');
-    },
-  });
+    }
+  };
 
   // Mutation for toggling webhook enabled status
   const updateWebhookMutation = useMutation({
@@ -231,21 +231,19 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
     },
     onError: () => {
-  const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
-    // Optimistic UI update: update state immediately
-    const previousWebhooks = webhooks;
-    setWebhooks((current) =>
-      current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-    );
-    toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-
-    try {
-      await apiUpdateWebhookEnabled(webhookId, enabled);
-    } catch (error) {
-      // Revert on error
-      console.error('Failed to update webhook:', error);
-      setWebhooks(previousWebhooks);
       toast.error('Failed to update webhook');
+    },
+  });
+
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (webhookId: string) => apiDeleteWebhook(webhookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setDeleteWebhookId(null);
+      toast.success('Webhook deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete webhook');
     },
   });
 

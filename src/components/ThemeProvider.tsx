@@ -1,6 +1,7 @@
 // src/components/ThemeProvider.tsx
 import { useEffect, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 
 type ThemeProviderProps = {
   children: ReactNode;
@@ -8,6 +9,7 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { currentOrg } = useAuth();
+  const { brand } = useBrand();
 
   // Apply dark mode based on system preference
   useEffect(() => {
@@ -34,6 +36,21 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
+
+  // Apply brand theme colors
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    if (brand?.theme) {
+      // Apply brand-specific theme colors
+      root.style.setProperty('--brand-primary', brand.theme.primary);
+      root.style.setProperty('--brand-accent', brand.theme.accent);
+      root.style.setProperty('--brand-success', brand.theme.success);
+      root.style.setProperty('--brand-warning', brand.theme.warning);
+      root.style.setProperty('--brand-danger', brand.theme.danger);
+      root.style.setProperty('--brand-radius', brand.theme.radius);
+    }
+  }, [brand]);
 
   useEffect(() => {
     const root = document.documentElement;
