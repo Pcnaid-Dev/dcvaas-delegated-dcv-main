@@ -249,6 +249,61 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         }
       }
 
+copilot/add-webhook-system-migration
+      // GET /api/webhooks - List webhooks for the authenticated org
+      if (method === 'GET' && url.pathname === '/api/webhooks') {
+        const webhooks = await listWebhooks(env, auth.orgId);
+        return withCors(req, env, json({ webhooks }));
+      }
+
+      // POST /api/webhooks - Create a new webhook endpoint
+      if (method === 'POST' && url.pathname === '/api/webhooks') {
+        const body = await req.json().catch(() => ({} as any));
+        const url_param = String(body.url ?? '').trim();
+        const secret = String(body.secret ?? '').trim();
+        const events = body.events as string[];
+
+        if (!url_param) {
+          return withCors(req, env, badRequest('url is required'));
+        }
+
+        if (!url_param.startsWith('https://')) {
+          return withCors(req, env, badRequest('url must start with https://'));
+        }
+
+        if (!secret) {
+          return withCors(req, env, badRequest('secret is required'));
+        }
+
+        if (!events || !Array.isArray(events) || events.length === 0) {
+          return withCors(req, env, badRequest('events array is required and must not be empty'));
+        }
+
+        const webhook = await createWebhook(env, auth.orgId, url_param, secret, events);
+        return withCors(req, env, json({ webhook }, 201));
+      }
+
+      // DELETE /api/webhooks/:id - Delete a webhook endpoint
+      // PATCH /api/webhooks/:id - Update webhook enabled status
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m) {
+          const webhookId = decodeURIComponent(m[1]);
+          
+          if (method === 'DELETE') {
+            await deleteWebhook(env, auth.orgId, webhookId);
+            return withCors(req, env, json({ success: true }));
+          }
+          
+          if (method === 'PATCH') {
+            const body = await req.json().catch(() => ({} as any));
+            
+            if (typeof body.enabled !== 'boolean') {
+              return withCors(req, env, badRequest('enabled field is required and must be a boolean'));
+            }
+
+            await updateWebhookEnabled(env, auth.orgId, webhookId, body.enabled);
+            return withCors(req, env, json({ success: true }));
       // POST /api/oauth/exchange - Exchange OAuth code for tokens
       if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
         const body = await req.json().catch(() => ({} as any));
@@ -302,6 +357,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           } catch (err: any) {
             console.error('Delete OAuth connection error:', err);
             return withCors(req, env, badRequest(err.message || 'Failed to delete OAuth connection'));
+main
           }
         }
       }
