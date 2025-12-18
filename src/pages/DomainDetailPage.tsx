@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -29,6 +30,8 @@ const POLLING_STATUSES: DomainStatus[] = ['pending_cname', 'issuing', 'pending_v
 
 export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps) {
   const { user, currentOrg } = useAuth();
+  const { brand } = useBrand();
+  const isAutoCertify = brand.id === 'autocertify';
   const queryClient = useQueryClient();
   const previousStatusRef = React.useRef<DomainStatus | null>(null);
 
@@ -68,12 +71,16 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     // Only show toasts if we have a previous status and it changed
     if (previousStatus && previousStatus !== currentStatus) {
       if (currentStatus === 'active') {
-        toast.success('🎉 Certificate is now active!', {
-          description: `${domain.domainName} is ready to use`,
+        toast.success(isAutoCertify ? '✅ Your Site is Secure!' : '🎉 Certificate is now active!', {
+          description: isAutoCertify 
+            ? `${domain.domainName} now has the green padlock` 
+            : `${domain.domainName} is ready to use`,
         });
       } else if (currentStatus === 'error') {
-        toast.error('Domain verification failed', {
-          description: 'Please check your DNS configuration',
+        toast.error(isAutoCertify ? 'Setup Issue' : 'Domain verification failed', {
+          description: isAutoCertify
+            ? 'Please double-check the record you added'
+            : 'Please check your DNS configuration',
         });
       }
     }
@@ -259,8 +266,15 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
               <>
                 <Card className="p-6 space-y-4">
                   <h3 className="text-lg font-semibold text-foreground">
-                    Step 1: Configure DNS
+                    {isAutoCertify 
+                      ? 'Action Needed: Add One Record'
+                      : 'Step 1: Configure DNS'}
                   </h3>
+                  {isAutoCertify && (
+                    <p className="text-sm text-muted-foreground">
+                      Please login to your domain registrar (like GoDaddy, Namecheap, or Cloudflare) and add this record. We'll guide you step-by-step.
+                    </p>
+                  )}
                   <DNSRecordDisplay
                     domain={domain.domainName}
                     cnameTarget={domain.cnameTarget}
@@ -270,28 +284,46 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
                     disabled={syncMutation.isPending}
                     className="w-full"
                   >
-                    {syncMutation.isPending ? 'Checking DNS...' : 'Check DNS Now'}
+                    {syncMutation.isPending 
+                      ? (isAutoCertify ? 'Checking Connection...' : 'Checking DNS...') 
+                      : (isAutoCertify ? brand.dashboard.checkConnection : 'Check DNS Now')}
                   </Button>
                 </Card>
                 
                 {/* DNS Troubleshooting Tips */}
                 <Card className="p-6 space-y-3 bg-blue-50/50 border-blue-200">
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <span className="text-blue-600">💡</span> DNS Propagation Tips
+                    <span className="text-blue-600">💡</span> {isAutoCertify ? 'Need Help?' : 'DNS Propagation Tips'}
                   </h4>
                   <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                    <li>
-                      DNS propagation can take <strong>5-15 minutes</strong> after adding the CNAME record
-                    </li>
-                    <li>
-                      If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
-                    </li>
-                    <li>
-                      The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
-                    </li>
-                    <li>
-                      If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
-                    </li>
+                    {isAutoCertify ? (
+                      <>
+                        <li>
+                          After adding the record, it can take <strong>5-15 minutes</strong> to take effect
+                        </li>
+                        <li>
+                          Don't worry - your site stays online during this process. <strong>Zero downtime guaranteed.</strong>
+                        </li>
+                        <li>
+                          Need step-by-step instructions for your registrar? Check our guides for GoDaddy, Namecheap, and Cloudflare.
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li>
+                          DNS propagation can take <strong>5-15 minutes</strong> after adding the CNAME record
+                        </li>
+                        <li>
+                          If using Cloudflare, ensure the CNAME is <strong>DNS Only (gray cloud)</strong>, not proxied
+                        </li>
+                        <li>
+                          The system automatically checks your DNS every {AUTO_POLL_INTERVAL_SECONDS} seconds
+                        </li>
+                        <li>
+                          If the record doesn't verify after 30 minutes, double-check the CNAME target matches exactly
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </Card>
               </>
