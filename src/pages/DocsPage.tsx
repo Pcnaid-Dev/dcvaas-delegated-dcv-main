@@ -39,6 +39,12 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
               >
                 Docs
               </button>
+              <button
+                onClick={() => onNavigate('debugger')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Debugger
+              </button>
               <Button onClick={() => onNavigate('dashboard')}>
                 Sign In
               </Button>
