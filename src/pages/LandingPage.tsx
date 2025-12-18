@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/accordion';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stepper } from '@/components/common';
+import { TerminalWindow } from '@/components/TerminalWindow';
+// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
 import {
   Certificate,
   Shield,
@@ -111,17 +113,12 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </Button>
             </div>
 
-            {/* Product Preview Card */}
-            <Card className="p-8 max-w-4xl mx-auto bg-muted/30">
-              <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center border border-border">
-                <div className="text-center">
-                  <Certificate size={64} weight="duotone" className="text-primary mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    Dashboard Preview
-                  </p>
-                </div>
+{/* Terminal Window Animation */}
+            <div className="mt-16 relative">
+              <div className="mx-auto max-w-4xl transform scale-100 hover:scale-105 transition-transform duration-500 shadow-2xl rounded-lg overflow-hidden">
+                <TerminalWindow />
               </div>
-            </Card>
+            </div>
           </div>
         </section>
 
@@ -155,7 +152,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Shield size={24} weight="fill" className="text-primary" />
               </div>
@@ -169,7 +166,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
                 <ArrowsClockwise
                   size={24}
@@ -187,7 +184,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
               <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
                 <Globe size={24} weight="fill" className="text-success" />
               </div>

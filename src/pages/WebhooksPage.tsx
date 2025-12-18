@@ -32,10 +32,10 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useKV } from '@github/spark/hooks';
 import { generateWebhookSecret } from '@/lib/crypto';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getWebhooks, createWebhook as apiCreateWebhook, deleteWebhook as apiDeleteWebhook, updateWebhookEnabled as apiUpdateWebhookEnabled } from '@/lib/data';
 
 type WebhooksPageProps = {
   onNavigate: (page: string) => void;
@@ -96,7 +96,8 @@ const AVAILABLE_EVENTS = [
 
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
-  const [webhooks, setWebhooks] = useKV<WebhookEndpoint[]>('webhooks', []);
+  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -107,7 +108,26 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
 
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
-  const orgWebhooks = (webhooks || []).filter((wh) => wh.orgId === currentOrg?.id);
+  // Load webhooks from API on mount
+  useEffect(() => {
+    if (!hasApiAccess) return;
+    
+    const loadWebhooks = async () => {
+      try {
+        const data = await getWebhooks();
+        setWebhooks(data);
+      } catch (error) {
+        console.error('Failed to load webhooks:', error);
+        toast.error('Failed to load webhooks');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadWebhooks();
+  }, [hasApiAccess]);
+
+  const orgWebhooks = webhooks;
 
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
@@ -129,17 +149,9 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
 
     try {
       const secret = generateWebhookSecret();
-      const webhook: WebhookEndpoint = {
-        id: crypto.randomUUID(),
-        orgId: currentOrg.id,
-        url: newWebhook.url,
-        events: newWebhook.events,
-        secret,
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
+      const webhook = await apiCreateWebhook(newWebhook.url, secret, newWebhook.events);
 
-      setWebhooks((current) => [...(current || []), webhook]);
+      setWebhooks((current) => [...current, webhook]);
       setIsCreateOpen(false);
       setNewWebhook({ url: '', events: [] });
       toast.success('Webhook endpoint created');
@@ -150,6 +162,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
         });
       }, 500);
     } catch (error) {
+      console.error('Failed to create webhook:', error);
       toast.error('Failed to create webhook');
     }
   };
@@ -158,21 +171,30 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     if (!deleteWebhookId) return;
 
     try {
-      setWebhooks((current) => (current || []).filter((wh) => wh.id !== deleteWebhookId));
+      await apiDeleteWebhook(deleteWebhookId);
+      setWebhooks((current) => current.filter((wh) => wh.id !== deleteWebhookId));
       setDeleteWebhookId(null);
       toast.success('Webhook deleted');
     } catch (error) {
+      console.error('Failed to delete webhook:', error);
       toast.error('Failed to delete webhook');
     }
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
+    // Optimistic UI update: update state immediately
+    const previousWebhooks = webhooks;
+    setWebhooks((current) =>
+      current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
+    );
+    toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+
     try {
-      setWebhooks((current) =>
-        (current || []).map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-      );
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+      await apiUpdateWebhookEnabled(webhookId, enabled);
     } catch (error) {
+      // Revert on error
+      console.error('Failed to update webhook:', error);
+      setWebhooks(previousWebhooks);
       toast.error('Failed to update webhook');
     }
   };
@@ -336,7 +358,16 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
           </Dialog>
         </div>
 
-        {orgWebhooks.length === 0 ? (
+        {isLoading ? (
+          <Card className="p-12">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <Bell size={32} className="text-muted-foreground animate-pulse" />
+              </div>
+              <p className="text-muted-foreground">Loading webhooks...</p>
+            </div>
+          </Card>
+        ) : orgWebhooks.length === 0 ? (
           <Card className="p-12">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">

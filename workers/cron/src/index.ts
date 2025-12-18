@@ -27,32 +27,34 @@ interface MemberRow {
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     // 1. Find domains that are NOT active yet (stuck in pending/issuing)
+    // OR active domains that haven't been updated in > 24 hours
     // Use LIMIT to avoid overwhelming the queue with large batches
     const BATCH_SIZE = 100;
-    const res = await env.DB.prepare(
-      `SELECT * FROM domains 
-       WHERE status IN ('pending_cname', 'issuing')
-       ORDER BY updated_at ASC 
-       LIMIT ?`
-    ).bind(BATCH_SIZE).all<DomainRow>();
+  const res = await env.DB.prepare(
+    `SELECT * FROM domains 
+     WHERE status != 'active' 
+        OR (status = 'active' AND updated_at < datetime('now', '-1 day'))
+     ORDER BY updated_at ASC 
+     LIMIT ?`
+  ).bind(BATCH_SIZE).all<DomainRow>();
 
-    const domains = res.results ?? [];
-    console.log(`Cron: Processing ${domains.length} pending/issuing domains`);
+  const domains = res.results ?? [];
+  console.log(`Cron: Processing ${domains.length} domains (non-active or active domains needing refresh)`);
 
-    // Batch send to queue for better performance
-    const syncMessages = domains.map(domain => ({
-      body: {
-        id: crypto.randomUUID(),
-        type: 'sync_status' as const,
-        domain_id: domain.id,
-        attempts: 0
-      }
-    }));
-
-    // Send messages in batches
-    if (syncMessages.length > 0) {
-      await env.QUEUE.sendBatch(syncMessages);
+  // Batch send to queue for better performance
+  const messages = domains.map(domain => ({
+    body: {
+      id: crypto.randomUUID(),
+      type: 'sync_status' as const,
+      domain_id: domain.id,
+      attempts: 0
     }
+  }));
+
+  // Send messages in batches
+  if (messages.length > 0) {
+    await env.QUEUE.sendBatch(messages);
+  }
 
     // 2. Check for certificates expiring in the next 7 days
     await checkExpiringCertificates(env);

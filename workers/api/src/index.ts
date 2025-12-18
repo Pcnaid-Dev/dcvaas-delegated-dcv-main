@@ -249,6 +249,119 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         }
       }
 
+copilot/add-webhook-system-migration
+      // GET /api/webhooks - List webhooks for the authenticated org
+      if (method === 'GET' && url.pathname === '/api/webhooks') {
+        const webhooks = await listWebhooks(env, auth.orgId);
+        return withCors(req, env, json({ webhooks }));
+      }
+
+      // POST /api/webhooks - Create a new webhook endpoint
+      if (method === 'POST' && url.pathname === '/api/webhooks') {
+        const body = await req.json().catch(() => ({} as any));
+        const url_param = String(body.url ?? '').trim();
+        const secret = String(body.secret ?? '').trim();
+        const events = body.events as string[];
+
+        if (!url_param) {
+          return withCors(req, env, badRequest('url is required'));
+        }
+
+        if (!url_param.startsWith('https://')) {
+          return withCors(req, env, badRequest('url must start with https://'));
+        }
+
+        if (!secret) {
+          return withCors(req, env, badRequest('secret is required'));
+        }
+
+        if (!events || !Array.isArray(events) || events.length === 0) {
+          return withCors(req, env, badRequest('events array is required and must not be empty'));
+        }
+
+        const webhook = await createWebhook(env, auth.orgId, url_param, secret, events);
+        return withCors(req, env, json({ webhook }, 201));
+      }
+
+      // DELETE /api/webhooks/:id - Delete a webhook endpoint
+      // PATCH /api/webhooks/:id - Update webhook enabled status
+      {
+        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
+        if (m) {
+          const webhookId = decodeURIComponent(m[1]);
+          
+          if (method === 'DELETE') {
+            await deleteWebhook(env, auth.orgId, webhookId);
+            return withCors(req, env, json({ success: true }));
+          }
+          
+          if (method === 'PATCH') {
+            const body = await req.json().catch(() => ({} as any));
+            
+            if (typeof body.enabled !== 'boolean') {
+              return withCors(req, env, badRequest('enabled field is required and must be a boolean'));
+            }
+
+            await updateWebhookEnabled(env, auth.orgId, webhookId, body.enabled);
+            return withCors(req, env, json({ success: true }));
+      // POST /api/oauth/exchange - Exchange OAuth code for tokens
+      if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
+        const body = await req.json().catch(() => ({} as any));
+        const provider = String(body.provider ?? '').trim().toLowerCase();
+        const code = String(body.code ?? '').trim();
+        const redirectUri = String(body.redirectUri ?? '').trim();
+
+        if (!provider || !code || !redirectUri) {
+          return withCors(req, env, badRequest('provider, code, and redirectUri are required'));
+        }
+
+        // Validate provider
+        const validProviders = ['cloudflare', 'godaddy'];
+        if (!validProviders.includes(provider)) {
+          return withCors(req, env, badRequest(`Invalid provider. Must be one of: ${validProviders.join(', ')}`));
+        }
+
+        try {
+          const connection = await createOAuthConnection(env, auth.orgId, provider, code, redirectUri);
+          // Return connection without encrypted tokens
+          const { encrypted_access_token, encrypted_refresh_token, ...safeConnection } = connection;
+          return withCors(req, env, json({ connection: safeConnection }, 201));
+        } catch (err: any) {
+          console.error('OAuth exchange error:', err);
+          return withCors(req, env, badRequest(err.message || 'Failed to exchange OAuth code'));
+        }
+      }
+
+      // GET /api/oauth/connections - List OAuth connections
+      if (method === 'GET' && url.pathname === '/api/oauth/connections') {
+        try {
+          const connections = await listOAuthConnections(env, auth.orgId);
+          // Return connections without encrypted tokens
+          const safeConnections = connections.map(({ encrypted_access_token, encrypted_refresh_token, ...conn }) => conn);
+          return withCors(req, env, json({ connections: safeConnections }));
+        } catch (err: any) {
+          console.error('List OAuth connections error:', err);
+          return withCors(req, env, badRequest(err.message || 'Failed to list OAuth connections'));
+        }
+      }
+
+      // DELETE /api/oauth/connections/:provider - Delete OAuth connection
+      {
+        const m = url.pathname.match(/^\/api\/oauth\/connections\/([^/]+)$/);
+        if (m && method === 'DELETE') {
+          const provider = decodeURIComponent(m[1]).toLowerCase();
+
+          try {
+            await deleteOAuthConnection(env, auth.orgId, provider);
+            return withCors(req, env, json({ success: true }));
+          } catch (err: any) {
+            console.error('Delete OAuth connection error:', err);
+            return withCors(req, env, badRequest(err.message || 'Failed to delete OAuth connection'));
+main
+          }
+        }
+      }
+
       return withCors(req, env, notFound());
     } catch (err: any) {
       const message = err?.message ? String(err.message) : 'Internal error';

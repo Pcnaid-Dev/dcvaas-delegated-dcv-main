@@ -136,13 +136,14 @@ export async function syncDomain(env: Env, orgId: string, domainId: string) {
 
   await env.DB.prepare(`
     UPDATE domains 
-    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, updated_at = datetime('now')
+    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
     WHERE id = ?
   `).bind(
     internalStatus,
     cf.status,
     cf.ssl.status,
     JSON.stringify(cf.ssl.validation_errors || []),
+    cf.ssl.expires_on || null,
     domainId
   ).run();
 

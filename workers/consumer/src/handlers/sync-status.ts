@@ -2,6 +2,7 @@ import type { Env } from '../env';
 import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
 import { buildCertificateIssuedEmail } from '../lib/email-templates';
+import { dispatchWebhook } from '../../../api/src/lib/webhooks';
 
 export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
@@ -9,6 +10,9 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
 
   const previousStatus = domain.status;
   const cfData = await getCustomHostname(env, domain.cf_custom_hostname_id);
+
+  // Store the old status before updating
+  const oldStatus = domain.status;
 
   let internalStatus = 'pending_cname';
   if (cfData.status === 'active' && cfData.ssl.status === 'active') {
@@ -21,15 +25,36 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
 
   await env.DB.prepare(`
     UPDATE domains
-    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, updated_at = datetime('now')
+    SET status = ?, cf_status = ?, cf_ssl_status = ?, cf_verification_errors = ?, expires_at = ?, updated_at = datetime('now')
     WHERE id = ?
   `).bind(
     internalStatus,
     cfData.status,
     cfData.ssl.status,
     JSON.stringify(cfData.ssl.validation_errors || []),
+    cfData.ssl.expires_on || null,
     domain.id
   ).run();
+
+  // Dispatch webhook if domain became active (fire and forget - don't await)
+  if (oldStatus !== 'active' && internalStatus === 'active') {
+    dispatchWebhook(env, domain.org_id, 'domain.active', {
+      domain_id: domain.id,
+      domain_name: domain.domain_name,
+      status: internalStatus,
+      expires_at: domain.expires_at,
+    }).catch((err) => console.error('Failed to dispatch domain.active webhook:', err));
+  }
+
+  // Dispatch webhook if domain went into error state (fire and forget - don't await)
+  if (oldStatus !== 'error' && internalStatus === 'error') {
+    dispatchWebhook(env, domain.org_id, 'domain.error', {
+      domain_id: domain.id,
+      domain_name: domain.domain_name,
+      status: internalStatus,
+      error_message: cfData.ssl.validation_errors?.[0] || 'Unknown error',
+    }).catch((err) => console.error('Failed to dispatch domain.error webhook:', err));
+  }
 
   // Send email notification when certificate becomes active
   if (previousStatus !== 'active' && internalStatus === 'active') {

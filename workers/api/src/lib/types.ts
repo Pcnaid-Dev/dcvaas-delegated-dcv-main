@@ -58,3 +58,23 @@ export interface JobMessage {
   domain_id: string;
   attempts: number;
 }
+
+export interface WebhookEndpointRow {
+  id: string;
+  org_id: string;
+  url: string;
+  secret: string;
+  events: string; // JSON string
+  enabled: number; // SQLite boolean (0 or 1)
+  created_at: string;
+}
+
+export interface WebhookEndpointDTO {
+  id: string;
+  orgId: string;
+  url: string;
+  secret: string;
+  events: string[];
+  enabled: boolean;
+  createdAt: string;
+}
