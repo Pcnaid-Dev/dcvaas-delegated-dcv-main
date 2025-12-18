@@ -31,6 +31,7 @@ export type BrandConfig = {
       features: string[];
       cta: string;
       highlighted: boolean;
+      priceId: string;
     }[];
   };
   
@@ -112,6 +113,7 @@ export const DELEGATED_SSL_BRAND: BrandConfig = {
         ],
         cta: 'Start Agency Trial',
         highlighted: true,
+        priceId: 'price_delegatedssl_agency_monthly',
       },
       {
         name: 'Enterprise',
@@ -128,6 +130,7 @@ export const DELEGATED_SSL_BRAND: BrandConfig = {
         ],
         cta: 'Request Enterprise',
         highlighted: false,
+        priceId: 'price_delegatedssl_enterprise_monthly',
       },
     ],
   },
@@ -214,6 +217,7 @@ export const DEFAULT_BRAND: BrandConfig = {
         ],
         cta: 'Get Started',
         highlighted: false,
+        priceId: '',
       },
       {
         name: 'Pro',
@@ -230,6 +234,7 @@ export const DEFAULT_BRAND: BrandConfig = {
         ],
         cta: 'Start Trial',
         highlighted: true,
+        priceId: 'price_pro_monthly',
       },
       {
         name: 'Agency',
@@ -248,6 +253,7 @@ export const DEFAULT_BRAND: BrandConfig = {
         ],
         cta: 'Contact Sales',
         highlighted: false,
+        priceId: 'price_agency_monthly',
       },
     ],
   },

@@ -158,13 +158,16 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             {brand.valueProps.map((prop, idx) => {
               const icons = [Shield, ChartBar, Tag];
               const Icon = icons[idx] || Shield;
-              const colors = ['primary', 'accent', 'success'];
-              const colorClass = colors[idx] || 'primary';
+              // Use explicit Tailwind classes for proper compilation
+              const bgColorClasses = ['bg-primary/10', 'bg-accent/10', 'bg-success/10'];
+              const textColorClasses = ['text-primary', 'text-accent', 'text-success'];
+              const bgColorClass = bgColorClasses[idx] || 'bg-primary/10';
+              const textColorClass = textColorClasses[idx] || 'text-primary';
               
               return (
                 <Card key={idx} className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-                  <div className={`w-12 h-12 rounded-lg bg-${colorClass}/10 flex items-center justify-center`}>
-                    <Icon size={24} weight="fill" className={`text-${colorClass}`} />
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${bgColorClass}`}>
+                    <Icon size={24} weight="fill" className={textColorClass} />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground">
                     {prop.title}
