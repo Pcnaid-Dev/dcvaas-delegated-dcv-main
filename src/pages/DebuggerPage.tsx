@@ -19,6 +19,19 @@ type DebuggerPageProps = {
   onNavigate: (page: string) => void;
 };
 
+/**
+ * Validates domain name format according to RFC standards
+ * - Must consist of labels separated by dots
+ * - Each label must be 1-63 characters
+ * - Labels can contain alphanumeric characters and hyphens
+ * - Labels cannot start or end with hyphens
+ * - TLD must be at least 2 characters
+ */
+function isValidDomain(domain: string): boolean {
+  const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+  return domainRegex.test(domain);
+}
+
 type ValidationResult = {
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
@@ -47,6 +60,10 @@ type DiagnosticResults = {
   overallStatus: 'valid' | 'issues_found' | 'blocked';
   recommendations: string[];
 };
+
+// Configuration constants
+const ACME_CNAME_TARGET = 'acme-verify.dcvaas.com';
+const ALLOWED_CA_AUTHORITIES = ['letsencrypt.org', 'sectigo.com', 'zerossl.com'];
 
 export function DebuggerPage({ onNavigate }: DebuggerPageProps) {
   const [domain, setDomain] = useState('');
@@ -85,13 +102,22 @@ export function DebuggerPage({ onNavigate }: DebuggerPageProps) {
             const caaData = record.data;
             records.push(caaData);
             
-            // Check if CAA record blocks Let's Encrypt or ZeroSSL
-            if (caaData.includes('issue') || caaData.includes('issuewild')) {
-              const allowsLE = caaData.includes('letsencrypt.org');
-              const allowsZeroSSL = caaData.includes('sectigo.com') || caaData.includes('zerossl.com');
+            // CAA records have format: <flags> <tag> "<value>"
+            // Parse the tag to check if it's 'issue' or 'issuewild'
+            const caaMatch = caaData.match(/^\d+\s+(issue|issuewild)\s+"([^"]+)"/);
+            if (caaMatch) {
+              const tag = caaMatch[1];
+              const value = caaMatch[2];
               
-              if (!allowsLE && !allowsZeroSSL) {
-                blocksIssuance = true;
+              // Only check issue/issuewild tags
+              if (tag === 'issue' || tag === 'issuewild') {
+                // Check if any allowed CA is present in the value
+                const allowsCA = ALLOWED_CA_AUTHORITIES.some(ca => value.includes(ca));
+                
+                // If this is a restrictive record (not ";") and doesn't allow our CAs, block issuance
+                if (value !== ';' && !allowsCA) {
+                  blocksIssuance = true;
+                }
               }
             }
           }
@@ -130,8 +156,7 @@ export function DebuggerPage({ onNavigate }: DebuggerPageProps) {
 
     try {
       // Validate domain format
-      const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-      if (!domainRegex.test(domain.trim())) {
+      if (!isValidDomain(domain.trim())) {
         setError('Invalid domain format. Please enter a valid domain (e.g., example.com)');
         setIsChecking(false);
         return;
@@ -139,9 +164,8 @@ export function DebuggerPage({ onNavigate }: DebuggerPageProps) {
 
       const cleanDomain = domain.trim().toLowerCase();
       
-      // Perform CNAME check (using example target)
-      const cnameTarget = 'acme-verify.dcvaas.com';
-      const cnameResult = await checkCNAME(cleanDomain, cnameTarget);
+      // Perform CNAME check
+      const cnameResult = await checkCNAME(cleanDomain, ACME_CNAME_TARGET);
       
       // Perform CAA check
       const caaResult = await checkCAA(cleanDomain);
@@ -170,10 +194,10 @@ export function DebuggerPage({ onNavigate }: DebuggerPageProps) {
       const recommendations: string[] = [];
       
       if (!cnameResult.found) {
-        recommendations.push('Add a CNAME record: _acme-challenge.' + cleanDomain + ' CNAME ' + cnameTarget);
+        recommendations.push('Add a CNAME record: _acme-challenge.' + cleanDomain + ' CNAME ' + ACME_CNAME_TARGET);
         recommendations.push('Wait 5-15 minutes for DNS propagation after adding the record');
       } else if (!cnameResult.success) {
-        recommendations.push('Update your CNAME record to point to: ' + cnameTarget);
+        recommendations.push('Update your CNAME record to point to: ' + ACME_CNAME_TARGET);
         recommendations.push('Current target (' + cnameResult.target + ') is incorrect');
       }
       
