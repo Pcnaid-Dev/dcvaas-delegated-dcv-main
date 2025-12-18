@@ -43,35 +43,18 @@ export default {
 
   // Batch send to queue for better performance
   const messages = domains.map(domain => ({
-    body: { // <--- THIS FIXES THE TYPE ERROR
+    body: {
       id: crypto.randomUUID(),
       type: 'sync_status' as const,
       domain_id: domain.id,
       attempts: 0
-    const res = await env.DB.prepare(
-      `SELECT * FROM domains 
-       WHERE status IN ('pending_cname', 'issuing')
-       ORDER BY updated_at ASC 
-       LIMIT ?`
-    ).bind(BATCH_SIZE).all<DomainRow>();
-
-    const domains = res.results ?? [];
-    console.log(`Cron: Processing ${domains.length} pending/issuing domains`);
-
-    // Batch send to queue for better performance
-    const syncMessages = domains.map(domain => ({
-      body: {
-        id: crypto.randomUUID(),
-        type: 'sync_status' as const,
-        domain_id: domain.id,
-        attempts: 0
-      }
-    }));
-
-    // Send messages in batches
-    if (syncMessages.length > 0) {
-      await env.QUEUE.sendBatch(syncMessages);
     }
+  }));
+
+  // Send messages in batches
+  if (messages.length > 0) {
+    await env.QUEUE.sendBatch(messages);
+  }
 
     // 2. Check for certificates expiring in the next 7 days
     await checkExpiringCertificates(env);
