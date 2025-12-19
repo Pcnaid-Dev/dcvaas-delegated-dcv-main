@@ -9,6 +9,7 @@ import { listWebhooks, createWebhook, updateWebhook, deleteWebhook } from './lib
 import { exchangeOAuthCode, listOAuthConnections } from './lib/oauth';
 import { getOrganization } from './lib/organizations';
 import { snakeToCamel } from './lib/utils';
+import { testHTTP01Reachability } from './lib/http01-tester';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -455,8 +456,26 @@ copilot/add-webhook-system-migration
           } catch (err: any) {
             console.error('Delete OAuth connection error:', err);
             return withCors(req, env, badRequest(err.message || 'Failed to delete OAuth connection'));
-main
           }
+        }
+      }
+
+      // POST /api/tools/http01-test - Test HTTP-01 challenge reachability
+      if (method === 'POST' && url.pathname === '/api/tools/http01-test') {
+        const body = await req.json().catch(() => ({} as any));
+        const domain = String(body.domain ?? '').trim();
+        const token = String(body.token ?? 'test').trim();
+
+        if (!domain) {
+          return withCors(req, env, badRequest('domain is required'));
+        }
+
+        try {
+          const result = await testHTTP01Reachability(domain, token);
+          return withCors(req, env, json({ result }));
+        } catch (err: any) {
+          console.error('HTTP-01 test error:', err);
+          return withCors(req, env, badRequest(err.message || 'Failed to test HTTP-01 reachability'));
         }
       }
 
