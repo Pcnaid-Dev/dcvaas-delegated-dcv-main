@@ -18,6 +18,13 @@ import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { ToolsPage } from './pages/ToolsPage';
+import { TLSConfigScanPage } from './pages/tools/TLSConfigScanPage';
+import { OCSPStaplingCheckPage } from './pages/tools/OCSPStaplingCheckPage';
+import { HSTSCheckPage } from './pages/tools/HSTSCheckPage';
+import { CTCheckPage } from './pages/tools/CTCheckPage';
+import { SANPlannerPage } from './pages/tools/SANPlannerPage';
+import { BrowserSecurityPage } from './pages/tools/BrowserSecurityPage';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -67,6 +74,29 @@ function AppContent() {
     return <DocsPage onNavigate={setCurrentPage} />;
   }
 
+  // Tool pages are public
+  if (!isAuthenticated && currentPage === 'tools') {
+    return <ToolsPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'tls-scan') {
+    return <TLSConfigScanPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'ocsp-check') {
+    return <OCSPStaplingCheckPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'hsts-check') {
+    return <HSTSCheckPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'ct-check') {
+    return <CTCheckPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'san-planner') {
+    return <SANPlannerPage onNavigate={setCurrentPage} />;
+  }
+  if (!isAuthenticated && currentPage === 'browser-security') {
+    return <BrowserSecurityPage onNavigate={setCurrentPage} />;
+  }
+
   if (!isAuthenticated) {
     return <LandingPage onNavigate={setCurrentPage} />;
   }
@@ -114,6 +144,20 @@ function AppContent() {
         return <PricingPage onNavigate={setCurrentPage} />;
       case 'docs':
         return <DocsPage onNavigate={setCurrentPage} />;
+      case 'tools':
+        return <ToolsPage onNavigate={setCurrentPage} />;
+      case 'tls-scan':
+        return <TLSConfigScanPage onNavigate={setCurrentPage} />;
+      case 'ocsp-check':
+        return <OCSPStaplingCheckPage onNavigate={setCurrentPage} />;
+      case 'hsts-check':
+        return <HSTSCheckPage onNavigate={setCurrentPage} />;
+      case 'ct-check':
+        return <CTCheckPage onNavigate={setCurrentPage} />;
+      case 'san-planner':
+        return <SANPlannerPage onNavigate={setCurrentPage} />;
+      case 'browser-security':
+        return <BrowserSecurityPage onNavigate={setCurrentPage} />;
       default:
         return (
           <OverviewPage
