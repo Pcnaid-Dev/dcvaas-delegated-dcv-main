@@ -33,7 +33,7 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getOrgWebhooks, createWebhook, updateWebhook, deleteWebhook, updateWebhookEnabled } from '@/lib/data';
+import { getOrgWebhooks, createWebhook, deleteWebhook, updateWebhookEnabled } from '@/lib/data';
 import { generateWebhookSecret } from '@/lib/crypto';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';

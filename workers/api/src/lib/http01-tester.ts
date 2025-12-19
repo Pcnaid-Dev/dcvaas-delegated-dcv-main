@@ -139,7 +139,7 @@ export async function testHTTP01Reachability(
       }
 
       // Check caching headers
-      const cacheControl = headers['cache-control'];
+      const cacheControl = response.headers.get('cache-control');
       if (cacheControl && !cacheControl.includes('no-cache') && !cacheControl.includes('no-store')) {
         result.flags.hasCaching = true;
         result.suggestions.push('Caching headers detected. May interfere with ACME validation.');
