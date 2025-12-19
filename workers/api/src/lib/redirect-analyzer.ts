@@ -69,6 +69,10 @@ function getProtocol(url: string): string {
  * Returns array of redirect hops with details
  */
 async function followRedirects(startUrl: string, maxHops: number = 10): Promise<RedirectHop[]> {
+  // Validate maxHops parameter
+  if (maxHops <= 0 || maxHops > 50) {
+    throw new Error('maxHops must be between 1 and 50');
+  }
   const hops: RedirectHop[] = [];
   let currentUrl = startUrl;
   let hopCount = 0;
@@ -114,13 +118,14 @@ async function followRedirects(startUrl: string, maxHops: number = 10): Promise<
       hops.push(hop);
       break;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
       hops.push({
         url: currentUrl,
         statusCode: 0,
         protocol: getProtocol(currentUrl),
         host: getHost(currentUrl),
-        error: error.message || 'Network error',
+        error: errorMessage,
       });
       break;
     }
@@ -129,10 +134,10 @@ async function followRedirects(startUrl: string, maxHops: number = 10): Promise<
   // Check if we hit max hops (redirect loop)
   if (hopCount >= maxHops) {
     hops.push({
-      url: 'MAX_HOPS_REACHED',
+      url: currentUrl,
       statusCode: 0,
-      protocol: '',
-      host: '',
+      protocol: getProtocol(currentUrl),
+      host: getHost(currentUrl),
       error: `Redirect loop detected (${maxHops}+ redirects)`,
     });
   }
@@ -190,7 +195,7 @@ export async function analyzeRedirectChain(input: string): Promise<RedirectAnaly
   }
 
   // Check for redirect loops
-  if (hops.some(h => h.error?.includes('redirect loop'))) {
+  if (hops.some(h => h.error?.includes('Redirect loop detected'))) {
     validationBreaks.push(
       'Redirect loop detected. Certificate validation will timeout and fail.'
     );

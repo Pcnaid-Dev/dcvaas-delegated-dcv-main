@@ -500,9 +500,13 @@ export interface RedirectAnalysis {
 }
 
 export async function analyzeRedirects(input: string): Promise<RedirectAnalysis> {
+  if (!input || !input.trim()) {
+    throw new Error('Input domain or URL is required');
+  }
+  
   const res = await api<{ analysis: RedirectAnalysis }>('/api/analyze-redirects', {
     method: 'POST',
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ input: input.trim() }),
   });
   return res.analysis;
 }
