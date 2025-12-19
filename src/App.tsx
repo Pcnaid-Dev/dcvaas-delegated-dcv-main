@@ -18,6 +18,7 @@ import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { CAAInspectorPage } from './pages/CAAInspectorPage';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -65,6 +66,10 @@ function AppContent() {
 
   if (!isAuthenticated && currentPage === 'docs') {
     return <DocsPage onNavigate={setCurrentPage} />;
+  }
+
+  if (!isAuthenticated && currentPage === 'caa-inspector') {
+    return <CAAInspectorPage onNavigate={setCurrentPage} />;
   }
 
   if (!isAuthenticated) {

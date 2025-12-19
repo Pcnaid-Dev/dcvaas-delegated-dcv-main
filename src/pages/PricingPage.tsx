@@ -124,6 +124,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               >
                 Docs
               </button>
+              <button
+                onClick={() => onNavigate('caa-inspector')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                CAA Inspector
+              </button>
               <Button onClick={() => onNavigate('dashboard')}>
                 Sign In
               </Button>

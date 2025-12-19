@@ -74,3 +74,70 @@ export function generateTXTChallengeValue(): string {
 export function formatDNSInstruction(domain: string, cnameTarget: string): string {
   return `_acme-challenge.${domain} CNAME ${cnameTarget}`;
 }
+
+/**
+ * CAA Record lookup result
+ */
+export type CAALookupResult = {
+  success: boolean;
+  found: boolean;
+  records: string[];
+  error?: string;
+};
+
+/**
+ * Query CAA records for a domain using DNS-over-HTTPS
+ */
+export async function lookupCAA(domain: string): Promise<CAALookupResult> {
+  try {
+    const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(
+      domain
+    )}&type=CAA`;
+    
+    const response = await fetch(dohUrl, {
+      headers: {
+        Accept: 'application/dns-json',
+      },
+    });
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        found: false,
+        records: [],
+        error: 'DNS query failed',
+      };
+    }
+    
+    const data = await response.json();
+    
+    if (data.Answer && data.Answer.length > 0) {
+      // CAA record type is 257
+      const caaRecords = data.Answer.filter((r: any) => r.type === 257);
+      
+      if (caaRecords.length > 0) {
+        const records = caaRecords.map((r: any) => r.data);
+        
+        return {
+          success: true,
+          found: true,
+          records,
+        };
+      }
+    }
+    
+    // No CAA records found
+    return {
+      success: true,
+      found: false,
+      records: [],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      found: false,
+      records: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
