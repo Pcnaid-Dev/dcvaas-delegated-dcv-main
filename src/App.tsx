@@ -18,6 +18,13 @@ import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { ToolsPage } from './pages/ToolsPage';
+import { AcmeDns01CheckerPage } from './pages/tools/AcmeDns01CheckerPage';
+import { TlsAlpn01TesterPage } from './pages/tools/TlsAlpn01TesterPage';
+import { CdnInterferenceDetectorPage } from './pages/tools/CdnInterferenceDetectorPage';
+import { CnameChainValidatorPage } from './pages/tools/CnameChainValidatorPage';
+import { DnssecHealthCheckPage } from './pages/tools/DnssecHealthCheckPage';
+import { EmailDcvReadinessPage } from './pages/tools/EmailDcvReadinessPage';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -67,6 +74,28 @@ function AppContent() {
     return <DocsPage onNavigate={setCurrentPage} />;
   }
 
+  if (!isAuthenticated && currentPage === 'tools') {
+    return <ToolsPage onNavigate={setCurrentPage} />;
+  }
+
+  if (!isAuthenticated && currentPage.startsWith('tool-')) {
+    // Handle tool pages for unauthenticated users
+    switch (currentPage) {
+      case 'tool-acme-dns01':
+        return <AcmeDns01CheckerPage onNavigate={setCurrentPage} />;
+      case 'tool-tls-alpn01':
+        return <TlsAlpn01TesterPage onNavigate={setCurrentPage} />;
+      case 'tool-cdn-interference':
+        return <CdnInterferenceDetectorPage onNavigate={setCurrentPage} />;
+      case 'tool-cname-chain':
+        return <CnameChainValidatorPage onNavigate={setCurrentPage} />;
+      case 'tool-dnssec':
+        return <DnssecHealthCheckPage onNavigate={setCurrentPage} />;
+      case 'tool-email-dcv':
+        return <EmailDcvReadinessPage onNavigate={setCurrentPage} />;
+    }
+  }
+
   if (!isAuthenticated) {
     return <LandingPage onNavigate={setCurrentPage} />;
   }
@@ -114,6 +143,20 @@ function AppContent() {
         return <PricingPage onNavigate={setCurrentPage} />;
       case 'docs':
         return <DocsPage onNavigate={setCurrentPage} />;
+      case 'tools':
+        return <ToolsPage onNavigate={setCurrentPage} />;
+      case 'tool-acme-dns01':
+        return <AcmeDns01CheckerPage onNavigate={setCurrentPage} />;
+      case 'tool-tls-alpn01':
+        return <TlsAlpn01TesterPage onNavigate={setCurrentPage} />;
+      case 'tool-cdn-interference':
+        return <CdnInterferenceDetectorPage onNavigate={setCurrentPage} />;
+      case 'tool-cname-chain':
+        return <CnameChainValidatorPage onNavigate={setCurrentPage} />;
+      case 'tool-dnssec':
+        return <DnssecHealthCheckPage onNavigate={setCurrentPage} />;
+      case 'tool-email-dcv':
+        return <EmailDcvReadinessPage onNavigate={setCurrentPage} />;
       default:
         return (
           <OverviewPage
