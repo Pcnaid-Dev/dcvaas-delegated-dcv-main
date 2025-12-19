@@ -99,8 +99,6 @@ const AVAILABLE_EVENTS = [
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -113,7 +111,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
   // Fetch webhooks with React Query
-  const { data: orgWebhooks = [] } = useQuery({
+  const { data: orgWebhooks = [], isLoading } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
     enabled: !!currentOrg,
@@ -137,27 +135,6 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.error(error.message || 'Failed to create webhook');
     },
   });
-  // Load webhooks from API on mount
-  useEffect(() => {
-    if (!hasApiAccess) return;
-    
-    const loadWebhooks = async () => {
-      try {
-        const data = await getWebhooks();
-        setWebhooks(data);
-      } catch (error) {
-        console.error('Failed to load webhooks:', error);
-        toast.error('Failed to load webhooks');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadWebhooks();
-  }, [hasApiAccess]);
-
-  const orgWebhooks = webhooks;
-
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
 
@@ -188,36 +165,6 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.success('Webhook deleted');
     },
     onError: () => {
-    try {
-      const secret = generateWebhookSecret();
-      const webhook = await apiCreateWebhook(newWebhook.url, secret, newWebhook.events);
-
-      setWebhooks((current) => [...current, webhook]);
-      setIsCreateOpen(false);
-      setNewWebhook({ url: '', events: [] });
-      toast.success('Webhook endpoint created');
-
-      setTimeout(() => {
-        toast.info('Save your webhook secret securely - it will only be shown once', {
-          duration: 8000,
-        });
-      }, 500);
-    } catch (error) {
-      console.error('Failed to create webhook:', error);
-      toast.error('Failed to create webhook');
-    }
-  };
-
-  const handleDeleteWebhook = async () => {
-    if (!deleteWebhookId) return;
-
-    try {
-      await apiDeleteWebhook(deleteWebhookId);
-      setWebhooks((current) => current.filter((wh) => wh.id !== deleteWebhookId));
-      setDeleteWebhookId(null);
-      toast.success('Webhook deleted');
-    } catch (error) {
-      console.error('Failed to delete webhook:', error);
       toast.error('Failed to delete webhook');
     },
   });
@@ -231,20 +178,6 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
     },
     onError: () => {
-  const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
-    // Optimistic UI update: update state immediately
-    const previousWebhooks = webhooks;
-    setWebhooks((current) =>
-      current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-    );
-    toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-
-    try {
-      await apiUpdateWebhookEnabled(webhookId, enabled);
-    } catch (error) {
-      // Revert on error
-      console.error('Failed to update webhook:', error);
-      setWebhooks(previousWebhooks);
       toast.error('Failed to update webhook');
     },
   });

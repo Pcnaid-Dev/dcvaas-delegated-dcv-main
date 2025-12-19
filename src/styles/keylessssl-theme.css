@@ -1,0 +1,307 @@
+/* KeylessSSL Brand Theme - Dark-first infra UI */
+
+:root[data-brand="keylessssl.dev"] {
+  /* Brand identity */
+  --brand-name: "KeylessSSL";
+  --brand-domain: "keylessssl.dev";
+  color-scheme: dark;
+  
+  /* Typography */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  /* Core colors (dark-first infra UI) */
+  --color-bg: #070A10; /* near-black w/ slight blue cast */
+  --color-bg-2: #0B0F17; /* depth gradient */
+  --color-surface: #0B1220; /* panels */
+  --color-surface-2: #0E1522; /* elevated panels */
+  --color-surface-3: rgba(0,0,0,.20); /* input fill / inset */
+  --color-text: #E7EEF9;
+  --color-text-muted: #A7B4C9;
+  --color-text-faint: #7F8AA0;
+  
+  /* Lines / borders */
+  --color-border: rgba(255,255,255,.10);
+  --color-border-subtle: rgba(255,255,255,.06);
+  
+  /* Brand accents */
+  --color-primary: #00D084; /* secure green (primary action + success) */
+  --color-primary-weak: rgba(0,208,132,.18);
+  --color-primary-weak-2: rgba(0,208,132,.08);
+  --color-secondary: #39B7FF; /* dev-blue (links + focus) */
+  --color-secondary-weak: rgba(57,183,255,.12);
+  --color-danger: #FF4D6D;
+  --color-danger-weak: rgba(255,77,109,.10);
+  --color-warning: #FFCD4A; /* amber (pending) */
+  --color-warning-weak: rgba(255,205,74,.06);
+  
+  /* On-colors */
+  --color-on-primary: var(--color-text);
+  --color-on-danger: var(--color-text);
+  
+  /* Shadows */
+  --shadow-1: 0 1px 0 rgba(0,0,0,.35);
+  --shadow-2: 0 18px 50px rgba(0,0,0,.35);
+  --shadow-3: 0 20px 60px rgba(0,0,0,.55);
+  
+  /* Radii */
+  --radius-xs: 10px;
+  --radius-sm: 12px; /* buttons/inputs */
+  --radius-md: 16px; /* cards */
+  --radius-lg: 22px; /* hero/price cards */
+  --radius-pill: 999px;
+  
+  /* Spacing (4px base) */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  
+  /* Breakpoints + layout */
+  --container-max: 1140px;
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 960px;
+  --bp-xl: 1280px;
+  --app-sidebar-w: 280px;
+  --topbar-h: 56px;
+  
+  /* Focus + motion */
+  --focus-ring: 0 0 0 4px rgba(57,183,255,.18);
+  --focus-border: rgba(57,183,255,.40);
+  --motion-fast: 80ms;
+  --motion-med: 120ms;
+  
+  /* Iconography */
+  --icon-stroke: 1.8px;
+  
+  /* Map to Tailwind/shadcn color system */
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-surface-2);
+  --popover-foreground: var(--color-text);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-text);
+  --muted: var(--color-surface-2);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-secondary);
+  --accent-foreground: var(--color-text);
+  --destructive: var(--color-danger);
+  --destructive-foreground: var(--color-on-danger);
+  --border: var(--color-border);
+  --input: var(--color-border-subtle);
+  --ring: var(--color-secondary);
+  --success: var(--color-primary);
+  --success-foreground: var(--color-on-primary);
+  --warning: var(--color-warning);
+  --warning-foreground: var(--color-bg);
+  
+  /* Additional mappings for existing components */
+  --primary-color: var(--color-primary);
+}
+
+/* Typography scale and styles for KeylessSSL */
+:root[data-brand="keylessssl.dev"] h1 {
+  font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+:root[data-brand="keylessssl.dev"] h2 {
+  font-size: 1.7rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 650;
+}
+
+:root[data-brand="keylessssl.dev"] h3 {
+  font-size: 1.15rem;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+:root[data-brand="keylessssl.dev"] body {
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+:root[data-brand="keylessssl.dev"] code,
+:root[data-brand="keylessssl.dev"] pre,
+:root[data-brand="keylessssl.dev"] .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Kicker labels (section eyebrow) */
+:root[data-brand="keylessssl.dev"] .kicker {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Button styles for KeylessSSL */
+:root[data-brand="keylessssl.dev"] .btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: rgba(255,255,255,.02);
+  font-weight: 650;
+  transition: all var(--motion-med) ease;
+}
+
+:root[data-brand="keylessssl.dev"] .btn:active {
+  transform: translateY(1px);
+}
+
+:root[data-brand="keylessssl.dev"] .btn-primary {
+  border-color: rgba(0,208,132,.45);
+  background: linear-gradient(180deg, rgba(0,208,132,.15) 0%, rgba(0,208,132,.08) 100%);
+  box-shadow: 0 0 20px rgba(0,208,132,.12);
+  color: var(--color-text);
+}
+
+:root[data-brand="keylessssl.dev"] .btn-primary:hover {
+  border-color: rgba(0,208,132,.70);
+  background: linear-gradient(180deg, rgba(0,208,132,.25) 0%, rgba(0,208,132,.15) 100%);
+}
+
+:root[data-brand="keylessssl.dev"] .btn-destructive {
+  border-color: var(--color-danger);
+  background: var(--color-danger-weak);
+  color: var(--color-text);
+}
+
+:root[data-brand="keylessssl.dev"] .btn-ghost {
+  border-color: var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+/* Input styles */
+:root[data-brand="keylessssl.dev"] input,
+:root[data-brand="keylessssl.dev"] select,
+:root[data-brand="keylessssl.dev"] textarea {
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+}
+
+:root[data-brand="keylessssl.dev"] input:focus,
+:root[data-brand="keylessssl.dev"] select:focus,
+:root[data-brand="keylessssl.dev"] textarea:focus {
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+/* DNS/API key inputs use monospace */
+:root[data-brand="keylessssl.dev"] .dns-field,
+:root[data-brand="keylessssl.dev"] .api-key-field {
+  font-family: var(--font-mono);
+}
+
+/* Status badge styles */
+:root[data-brand="keylessssl.dev"] .status-active {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  border-color: rgba(0,208,132,.20);
+}
+
+:root[data-brand="keylessssl.dev"] .status-pending {
+  background: var(--color-warning-weak);
+  color: var(--color-warning);
+  border-color: rgba(255,205,74,.20);
+}
+
+:root[data-brand="keylessssl.dev"] .status-error {
+  background: var(--color-danger-weak);
+  color: var(--color-danger);
+  border-color: rgba(255,77,109,.20);
+}
+
+/* Card styles */
+:root[data-brand="keylessssl.dev"] .card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+:root[data-brand="keylessssl.dev"] .card-featured {
+  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-lg);
+}
+
+/* Table styles */
+:root[data-brand="keylessssl.dev"] table thead {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+:root[data-brand="keylessssl.dev"] table thead th {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+:root[data-brand="keylessssl.dev"] table tbody tr:hover {
+  background: rgba(255,255,255,.02);
+}
+
+/* Modal styles */
+:root[data-brand="keylessssl.dev"] [role="dialog"] {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-3);
+  max-width: 760px;
+}
+
+/* Tooltip styles */
+:root[data-brand="keylessssl.dev"] [role="tooltip"] {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-sm);
+}
+
+/* Callout/Alert styles */
+:root[data-brand="keylessssl.dev"] .alert-danger {
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger-weak);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+:root[data-brand="keylessssl.dev"] .alert-info {
+  border: 1px solid var(--color-border);
+  background: rgba(57,183,255,.05);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+/* Ensure dark mode is always on for KeylessSSL */
+:root[data-brand="keylessssl.dev"] {
+  color-scheme: dark;
+}
+
+/* Override any light mode classes */
+:root[data-brand="keylessssl.dev"]:not(.dark) {
+  color-scheme: dark;
+}
