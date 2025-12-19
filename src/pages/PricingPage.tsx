@@ -124,6 +124,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               >
                 Docs
               </button>
+              <button
+                onClick={() => onNavigate('dns-builder')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                DNS Builder
+              </button>
               <Button onClick={() => onNavigate('dashboard')}>
                 Sign In
               </Button>

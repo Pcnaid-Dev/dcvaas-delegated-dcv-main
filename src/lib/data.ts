@@ -424,27 +424,14 @@ export async function updateWebhook(id: string, updates: { url?: string; events?
 
 export async function deleteWebhook(id: string): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(id)}`, {
-
-// ===== WEBHOOKS =====
-
-import type { WebhookEndpoint } from '@/types';
-
-export async function getWebhooks(): Promise<WebhookEndpoint[]> {
-  const res = await api<{ webhooks: WebhookEndpoint[] }>('/api/webhooks');
-  return res.webhooks;
-}
-
-export async function createWebhook(url: string, secret: string, events: string[]): Promise<WebhookEndpoint> {
-  const res = await api<{ webhook: WebhookEndpoint }>('/api/webhooks', {
-    method: 'POST',
-    body: JSON.stringify({ url, secret, events }),
-  });
-  return res.webhook;
-}
-
-export async function deleteWebhook(webhookId: string): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
     method: 'DELETE',
+  });
+}
+
+export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
   });
 }
 
@@ -466,11 +453,6 @@ export async function getOAuthConnections(): Promise<any[]> {
     console.warn('getOAuthConnections failed', err);
     return [];
   }
-export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ enabled }),
-  });
 }
 
 // ===== BILLING / STRIPE =====
