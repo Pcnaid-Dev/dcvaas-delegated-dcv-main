@@ -264,6 +264,13 @@ export async function checkCertChain(hostname: string, port: number = 443): Prom
     recommendations.push('Set up automated renewal at least 30 days before expiration');
     recommendations.push('Consider monitoring services like DCVaaS for automated management');
     
+    // Note: Cloudflare Workers cannot access detailed certificate information
+    // We can only verify that the TLS connection succeeded, which implies:
+    // - Certificate is trusted
+    // - Certificate chain is complete
+    // - Hostname matches
+    // - Certificate is not expired
+    
     return {
       success: true,
       domain: hostname,
@@ -271,14 +278,6 @@ export async function checkCertChain(hostname: string, port: number = 443): Prom
       timestamp: new Date().toISOString(),
       issues,
       recommendations,
-      certificateInfo: {
-        subject: `CN=${hostname}`,
-        issuer: 'Trusted Certificate Authority',
-        validFrom: 'Valid',
-        validTo: 'Valid',
-        daysUntilExpiry: -1, // Unknown without cert API access
-        subjectAltNames: [hostname],
-      },
     };
     
   } catch (error: any) {

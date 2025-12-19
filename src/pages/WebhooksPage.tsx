@@ -98,8 +98,6 @@ const AVAILABLE_EVENTS = [
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -112,7 +110,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
   // Fetch webhooks with React Query
-  const { data: orgWebhooks = [] } = useQuery({
+  const { data: orgWebhooks = [], isLoading } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
     enabled: !!currentOrg,
@@ -137,24 +135,6 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     },
   });
   // Load webhooks from API on mount
-  useEffect(() => {
-    if (!hasApiAccess) return;
-    
-    const loadWebhooks = async () => {
-      try {
-        const data = await getWebhooks();
-        setWebhooks(data);
-      } catch (error) {
-        console.error('Failed to load webhooks:', error);
-        toast.error('Failed to load webhooks');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadWebhooks();
-  }, [hasApiAccess]);
-
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
 
