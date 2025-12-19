@@ -7,54 +7,56 @@ type DNSRecordDisplayProps = {
 };
 
 export function DNSRecordDisplay({ domain, cnameTarget }: DNSRecordDisplayProps) {
-  // Cloudflare typically requires CNAMEing the hostname to your SaaS fallback
-  const instruction = `${domain} CNAME ${cnameTarget}`;
+  const acmeChallengeDomain = `_acme-challenge.${domain}`;
   
-  // OR if you are doing TXT verification (if they can't CNAME root)
-  // const instruction = `_cf-custom-hostname.${domain} TXT ${verificationValue}`;
-
   return (
-    <Card className="p-6 border-border bg-card">
+    <Card className="card p-6 border-border bg-card">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-1">
-              DNS Configuration Required
+            <h4 className="text-sm font-semibold text-foreground mb-1 font-mono uppercase tracking-wide">
+              Delegation Record
             </h4>
             <p className="text-xs text-muted-foreground">
-              Add this CNAME record to your DNS provider
+              Add this CNAME once. We handle rotations forever.
             </p>
           </div>
         </div>
         
-        {/* High-contrast code block - intentionally using fixed terminal colors for code aesthetic */}
-        <div className="relative">
-          <div className="font-mono text-sm bg-slate-950 dark:bg-black text-green-400 p-4 rounded-lg border border-slate-800 dark:border-slate-900 overflow-x-auto">
-            <div className="whitespace-nowrap">
-              <span className="text-slate-500"># </span>
-              <span className="text-blue-400">Type:</span>
-              <span className="text-slate-300"> CNAME</span>
+        {/* KeylessSSL branded DNS display - monospace, technical aesthetic */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-surface-3 rounded-md border border-border-subtle">
+            <div className="space-y-1 flex-1">
+              <div className="text-[0.7rem] font-mono uppercase tracking-wider text-muted-foreground">Host</div>
+              <div className="font-mono text-sm text-secondary dns-field select-all">
+                {acmeChallengeDomain}
+              </div>
             </div>
-            <div className="whitespace-nowrap mt-1">
-              <span className="text-slate-500"># </span>
-              <span className="text-blue-400">Host:</span>
-              <span className="text-amber-300"> {domain}</span>
-            </div>
-            <div className="whitespace-nowrap mt-1">
-              <span className="text-slate-500"># </span>
-              <span className="text-blue-400">Value:</span>
-              <span className="text-green-400"> {cnameTarget}</span>
+            <CopyButton text={acmeChallengeDomain} size="sm" variant="ghost" />
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-surface-3 rounded-md border border-border-subtle">
+            <div className="space-y-1 flex-1">
+              <div className="text-[0.7rem] font-mono uppercase tracking-wider text-muted-foreground">Type</div>
+              <div className="font-mono text-sm text-foreground">CNAME</div>
             </div>
           </div>
-          <div className="absolute top-2 right-2">
+          
+          <div className="flex items-center justify-between p-3 bg-surface-3 rounded-md border border-border-subtle">
+            <div className="space-y-1 flex-1">
+              <div className="text-[0.7rem] font-mono uppercase tracking-wider text-muted-foreground">Target</div>
+              <div className="font-mono text-sm text-primary dns-field select-all">
+                {cnameTarget}
+              </div>
+            </div>
             <CopyButton text={cnameTarget} size="sm" variant="ghost" />
           </div>
         </div>
         
-        <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            💡 <strong>Tip:</strong> DNS changes typically propagate within 5-15 minutes. 
-            Once configured, click "Check DNS Now" to verify and proceed with certificate issuance.
+        <div className="alert-info p-3 border border-border-subtle rounded-md">
+          <div className="text-xs text-muted-foreground leading-relaxed font-mono">
+            <span className="text-secondary">→</span> CNAME propagation: 5-15 minutes. 
+            <span className="text-secondary">→</span> Verification timeout: 60 seconds.
           </div>
         </div>
       </div>

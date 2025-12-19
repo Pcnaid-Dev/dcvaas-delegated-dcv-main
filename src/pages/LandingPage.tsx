@@ -20,6 +20,7 @@ import {
   Sparkle,
   Lock,
   Lightning,
+  Warning,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
