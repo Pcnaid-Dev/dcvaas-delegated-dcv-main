@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Bell,
   SignOut,
+  Lock,
 } from '@phosphor-icons/react';
 
 type AppShellProps = {
@@ -65,8 +66,8 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
               onClick={() => onNavigate('overview')}
               className="flex items-center gap-2"
             >
-              <Certificate size={28} weight="bold" className="text-primary" />
-              <span className="text-lg font-bold text-foreground">DCVaaS</span>
+              <Lock size={28} weight="bold" className="text-primary" />
+              <span className="text-lg font-bold text-foreground font-mono">KeylessSSL</span>
             </button>
 
             {currentOrg && (

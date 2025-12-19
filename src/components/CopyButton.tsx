@@ -22,10 +22,13 @@ export function CopyButton({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success('Copied to clipboard');
+      toast.success('Copied', {
+        duration: 1500,
+        className: 'font-mono',
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast.error('Failed to copy');
+      toast.error('Copy failed');
     }
   };
 
@@ -34,14 +37,14 @@ export function CopyButton({
       variant={variant}
       size={size}
       onClick={handleCopy}
-      className="gap-2"
+      className="gap-2 btn-ghost hover:bg-primary/10 transition-all"
     >
       {copied ? (
-        <Check size={16} weight="bold" />
+        <Check size={16} weight="bold" className="text-primary" />
       ) : (
-        <Copy size={16} />
+        <Copy size={16} className="text-muted-foreground" />
       )}
-      {label && <span>{label}</span>}
+      {label && <span className="font-mono text-xs uppercase tracking-wide">{label}</span>}
     </Button>
   );
 }

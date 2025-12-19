@@ -9,30 +9,15 @@ type ThemeProviderProps = {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { currentOrg } = useAuth();
 
-  // Apply dark mode based on system preference
+  // Apply KeylessSSL branding by default (dark-first infra UI)
   useEffect(() => {
     const root = document.documentElement;
     
-    // Check system preference for dark mode
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-
-    // Listen for changes in system preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (e.matches) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-    };
+    // Always apply KeylessSSL brand
+    root.setAttribute('data-brand', 'keylessssl.dev');
     
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    // KeylessSSL is dark-first, always apply dark mode
+    root.classList.add('dark');
   }, []);
 
   useEffect(() => {
