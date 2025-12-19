@@ -435,26 +435,6 @@ export async function updateWebhookEnabled(webhookId: string, enabled: boolean):
   });
 }
 
-// ===== OAUTH CONNECTIONS (real API) =====
-
-export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<any> {
-  const res = await api('/api/oauth/exchange', {
-    method: 'POST',
-    body: JSON.stringify({ provider, code, redirectUri }),
-  });
-  return res;
-}
-
-export async function getOAuthConnections(): Promise<any[]> {
-  try {
-    const res = await api<{ connections: any[] }>('/api/oauth/connections');
-    return res?.connections ?? [];
-  } catch (err) {
-    console.warn('getOAuthConnections failed', err);
-    return [];
-  }
-}
-
 // ===== BILLING / STRIPE =====
 
 export async function createStripeCheckoutSession(priceId: string): Promise<{ url: string }> {
