@@ -39,6 +39,12 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
               >
                 Docs
               </button>
+              <button
+                onClick={() => onNavigate('csr-decoder')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                CSR Decoder
+              </button>
               <Button onClick={() => onNavigate('dashboard')}>
                 Sign In
               </Button>
