@@ -74,6 +74,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </div>
             <nav className="hidden md:flex items-center gap-6">
               <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
+              <button onClick={() => onNavigate('cert-checker')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Cert Checker</button>
               <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
               <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
             </nav>
