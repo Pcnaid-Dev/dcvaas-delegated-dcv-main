@@ -76,6 +76,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
               <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
               <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
+              <button onClick={() => onNavigate('dns-builder')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">DNS Builder</button>
             </nav>
             {/* Login Button */}
             <Button onClick={() => loginWithRedirect()}>
