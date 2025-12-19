@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, Certificate } from '@phosphor-icons/react';
+import { CheckCircle, Lock } from '@phosphor-icons/react';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
@@ -40,35 +40,35 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
 
   const plans = [
     {
-      name: 'Free',
+      name: 'Hacker',
       price: '$0',
       period: 'forever',
-      description: 'Perfect for developers and small projects',
+      description: 'For developers building multi-tenant SaaS',
       features: [
-        'Up to 3 domains',
-        'Automatic renewals',
+        '3 domains',
+        'Full automation',
+        'API access',
         'DNS-01 validation',
-        'Community support',
-        'Basic audit logs',
+        'Audit logs',
       ],
-      cta: 'Get Started',
+      cta: 'Get API Key',
       highlighted: false,
       priceId: '',
     },
     {
       name: 'Pro',
-      price: '$29',
+      price: '$15',
       period: 'per month',
-      description: 'For growing businesses and teams',
+      description: 'Unlimited domains + priority support',
       features: [
-        'Up to 15 domains',
-        'All Free features',
-        'API access',
+        'Unlimited domains',
+        'All Hacker features',
+        'Priority queue',
         'Email support',
-        'Priority renewals',
-        'Custom CA support',
+        'SLA guarantee',
+        'Rate limit increase',
       ],
-      cta: 'Start Trial',
+      cta: 'Start Pro',
       highlighted: true,
       priceId: STRIPE_PRICE_IDS.pro,
     },
@@ -76,16 +76,14 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       name: 'Agency',
       price: '$99',
       period: 'per month',
-      description: 'For agencies and enterprises',
+      description: 'White-label + team management',
       features: [
-        'Up to 50 domains',
+        'Unlimited domains',
         'All Pro features',
-        'Team management & RBAC',
-        'Single-click CNAME setup (OAuth)',
+        'Team RBAC',
         'White-label branding',
-        'Full audit logs',
-        'Priority support',
-        'Custom domain',
+        'Dedicated support',
+        'Custom CA',
       ],
       cta: 'Contact Sales',
       highlighted: false,
@@ -102,29 +100,29 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               onClick={() => onNavigate('home')}
               className="flex items-center gap-2"
             >
-              <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <Lock size={32} weight="bold" className="text-primary" />
+              <span className="text-xl font-bold text-foreground font-mono">KeylessSSL</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
                 onClick={() => onNavigate('home')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-sm font-medium text-foreground hover:text-secondary transition-colors"
               >
                 Home
               </button>
               <button
                 onClick={() => onNavigate('pricing')}
-                className="text-sm font-medium text-primary"
+                className="text-sm font-medium text-secondary"
               >
                 Pricing
               </button>
               <button
                 onClick={() => onNavigate('docs')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-sm font-medium text-foreground hover:text-secondary transition-colors"
               >
                 Docs
               </button>
-              <Button onClick={() => onNavigate('dashboard')}>
+              <Button onClick={() => onNavigate('dashboard')} variant="outline">
                 Sign In
               </Button>
             </nav>
@@ -134,11 +132,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
+          <span className="kicker text-secondary mb-4 block">Pricing</span>
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+            Hacker Free, Pro $15
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start free and scale as you grow. No hidden fees, cancel anytime.
+            API-first pricing. No per-certificate fees. Predictable costs for SaaS platforms.
           </p>
         </div>
 
@@ -146,29 +145,29 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`p-8 relative ${
+              className={`card p-8 relative ${
                 plan.highlighted
-                  ? 'ring-2 ring-primary shadow-xl'
+                  ? 'card-featured ring-2 ring-primary'
                   : ''
               }`}
             >
               {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                  Most Popular
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-xs font-mono uppercase tracking-wide">
+                  Recommended
                 </div>
               )}
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">
+                <h3 className="text-2xl font-bold text-foreground mb-2 font-mono">
                   {plan.name}
                 </h3>
-                <p className="text-muted-foreground text-sm mb-4">
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
                   {plan.description}
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-foreground">
+                  <span className="text-4xl font-bold text-primary">
                     {plan.price}
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground font-mono text-sm">
                     /{plan.period}
                   </span>
                 </div>
