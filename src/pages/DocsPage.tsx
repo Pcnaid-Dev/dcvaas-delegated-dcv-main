@@ -63,6 +63,7 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
             <TabsTrigger value="concepts">Concepts</TabsTrigger>
             <TabsTrigger value="api">API Reference</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="tools">Tools</TabsTrigger>
             <TabsTrigger value="architecture">Architecture</TabsTrigger>
           </TabsList>
 
@@ -366,6 +367,54 @@ app.post('/webhooks/dcvaas', (req, res) => {
                   </ul>
                   <p className="text-muted-foreground mt-2">
                     After 4 failed attempts, the webhook will be automatically disabled and you'll receive a notification.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tools" className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                Diagnostic Tools
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Use these tools to troubleshoot and validate your certificate setup.
+              </p>
+
+              <div className="space-y-4">
+                <div className="p-4 border border-border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-2">HTTP-01 Reachability Tester</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Test if your domain can serve ACME HTTP-01 challenges. This tool checks the{' '}
+                        <code className="px-1.5 py-0.5 bg-muted rounded">/.well-known/acme-challenge/</code>{' '}
+                        path, follows redirects, and identifies common issues like:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Forced HTTPS redirects</li>
+                        <li>403/404 errors on the challenge path</li>
+                        <li>WAF or security challenges blocking validation</li>
+                        <li>Incorrect virtual host configuration</li>
+                        <li>Caching issues that may interfere with ACME</li>
+                      </ul>
+                    </div>
+                    <Button 
+                      onClick={() => onNavigate('http01-tester')}
+                      variant="outline"
+                      className="ml-4"
+                    >
+                      Open Tool
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <h4 className="font-semibold mb-2">💡 Pro Tip</h4>
+                  <p className="text-sm text-muted-foreground">
+                    If you encounter HTTP-01 validation issues, DNS-01 validation is often more reliable.
+                    With DCVaaS, you only need to create a single CNAME record, and we handle all the DNS challenges.
                   </p>
                 </div>
               </div>

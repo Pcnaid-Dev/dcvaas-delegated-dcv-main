@@ -488,3 +488,38 @@ export async function deleteOAuthConnection(provider: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+// ===== HTTP-01 TESTER =====
+
+export interface RedirectStep {
+  url: string;
+  status: number;
+  headers: Record<string, string>;
+}
+
+export interface HTTP01TestResult {
+  success: boolean;
+  finalUrl: string;
+  finalStatus: number;
+  bodyPreview: string;
+  redirectChain: RedirectStep[];
+  flags: {
+    forcedHttps: boolean;
+    is403: boolean;
+    is404: boolean;
+    blockedPath: boolean;
+    wrongVhost: boolean;
+    hasCaching: boolean;
+    hasWafChallenge: boolean;
+  };
+  error?: string;
+  suggestions: string[];
+}
+
+export async function testHTTP01(domain: string, token: string = 'test'): Promise<HTTP01TestResult> {
+  const res = await api<{ result: HTTP01TestResult }>('/api/tools/http01-test', {
+    method: 'POST',
+    body: JSON.stringify({ domain, token }),
+  });
+  return res.result;
+}
