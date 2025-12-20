@@ -1,6 +1,7 @@
 // src/components/ThemeProvider.tsx
 import { useEffect, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { applyBrandTheme } from '@/lib/brand';
 
 type ThemeProviderProps = {
   children: ReactNode;
@@ -9,32 +10,12 @@ type ThemeProviderProps = {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { currentOrg } = useAuth();
 
-  // Apply dark mode based on system preference
+  // Apply brand theme on mount
   useEffect(() => {
-    const root = document.documentElement;
-    
-    // Check system preference for dark mode
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-
-    // Listen for changes in system preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (e.matches) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    applyBrandTheme();
   }, []);
 
+  // Apply custom brand colors for organization if available
   useEffect(() => {
     const root = document.documentElement;
     
