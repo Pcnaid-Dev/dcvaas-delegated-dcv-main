@@ -10,7 +10,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stepper } from '@/components/common';
 import { TerminalWindow } from '@/components/TerminalWindow';
-// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
+import { getBrandConfig } from '@/lib/brand';
 import {
   Certificate,
   Shield,
@@ -20,6 +20,7 @@ import {
   Sparkle,
   Lock,
   Lightning,
+  Key,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
@@ -41,20 +42,21 @@ const FAQ_ITEMS = [
   },
   {
     question: 'What DNS providers are supported?',
-    answer: 'All DNS providers are supported! Since you only need to create a CNAME record, DCVaaS works with any DNS provider including Cloudflare, Route 53, Google Cloud DNS, and traditional registrar DNS services.',
+    answer: 'All DNS providers are supported! Since you only need to create a CNAME record, the service works with any DNS provider including Cloudflare, Route 53, Google Cloud DNS, and traditional registrar DNS services.',
   },
   {
     question: 'Is there a free tier?',
-    answer: 'Yes! Our free tier includes 3 domains with automated certificate issuance and renewal. Perfect for personal projects or trying out the service before upgrading to Pro or Agency plans.',
+    answer: 'Yes! Our free tier includes 3 domains with automated certificate issuance and renewal. Perfect for personal projects or trying out the service before upgrading.',
   },
   {
     question: 'Can I use this for wildcard certificates?',
-    answer: "Yes! DCVaaS supports both single-domain and wildcard certificates. Wildcard certificates require DNS-01 validation, which is exactly what our delegated validation system is designed for.",
+    answer: "Yes! The service supports both single-domain and wildcard certificates. Wildcard certificates require DNS-01 validation, which is exactly what our delegated validation system is designed for.",
   },
 ];
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
-  const { loginWithRedirect, isAuthenticated } = useAuth0(); // <--- USE THE HOOK
+  const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const brand = getBrandConfig();
 
   // If already logged in, go to dashboard
   if (isAuthenticated) {
@@ -69,18 +71,24 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <Shield size={32} weight="bold" className="text-primary" />
+              <span className="text-xl font-bold text-foreground">{brand.displayName}</span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
-              <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
-              <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
+              <a href="#architecture" className="text-sm font-medium text-foreground hover:text-primary transition-colors">Architecture</a>
+              <a href="#integration" className="text-sm font-medium text-foreground hover:text-primary transition-colors">Integration</a>
+              <a href="#pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</a>
               <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
             </nav>
             {/* Login Button */}
-            <Button onClick={() => loginWithRedirect()}>
-              Log In
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={() => loginWithRedirect()}>
+                Sign In
+              </Button>
+              <Button onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+                {brand.features.pricingCta}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -90,28 +98,29 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkle size={24} weight="fill" className="text-primary" />
-              <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                Automated Certificate Management
+              <Lock size={20} weight="fill" className="text-primary" />
+              <span className="text-sm font-mono font-semibold text-primary uppercase tracking-wider">
+                No DNS API Keys in CI/CD • Built for 47-Day Renewal Cycles • Cloudflare Edge Execution
               </span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground tracking-tight mb-6">
-              Secure SSL/TLS Automation via{' '}
-              <span className="text-primary">Delegated DCV</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-tight mb-6">
+              {brand.features.heroCopy}
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto mb-10">
-              Delegate once with CNAME. We'll handle every ACME DNS-01 challenge
-              securely—no root DNS API keys on your servers. Zero-touch renewals
-              for the era of 47-day certificates.
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto mb-8">
+              {brand.displayName} automates wildcard TLS via Delegated DCV. Delegate <code className="font-mono text-secondary">_acme-challenge</code> once (CNAME). 
+              Your high-privilege DNS credentials stay air-gapped in your vault. <strong>Add one CNAME. Ship renewals forever.</strong>
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                Get Started Free
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+                {brand.features.pricingCta}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
-                Read Documentation
+                View Integration
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              No credit card. Key shown once. Tokens are hashed server-side. Rotate any time.
+            </p>
 
 {/* Terminal Window Animation */}
             <div className="mt-16 relative">
@@ -139,64 +148,72 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section id="architecture" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Why Delegated DCV?
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              {brand.features.problemTitle}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Certificate lifetimes are shrinking—from 90 days today to 47 days
-              by 2029. Manual renewals are unsustainable. DCVaaS provides the
-              automation you need without compromising security.
+              Root DNS API keys on build agents/app servers/k8s secrets is a zone takeover waiting to happen. 
+              <strong className="text-danger"> If one server is compromised, your entire DNS zone is gone.</strong>
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
+            <Card className="p-6 space-y-4 border-primary/20 bg-primary-weak-2">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield size={24} weight="fill" className="text-primary" />
+                <Shield size={28} weight="fill" className="text-primary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Enhanced Security
+                Air-Gapped Validation
               </h3>
               <p className="text-muted-foreground">
-                No root DNS API keys on your servers. CNAME delegation isolates
-                ACME challenges to a controlled subdomain, minimizing attack
-                surface.
+                Delegate only <code className="font-mono text-secondary">_acme-challenge</code>. 
+                Root keys never touch {brand.displayName}, your servers, or CI. Zero DNS API credentials in production.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-              <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+            <Card className="p-6 space-y-4 border-warning/20 bg-warning-weak">
+              <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
                 <ArrowsClockwise
-                  size={24}
+                  size={28}
                   weight="fill"
-                  className="text-accent"
+                  className="text-warning"
                 />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Zero-Touch Renewals
+                47-Day Renewal Readiness
               </h3>
               <p className="text-muted-foreground">
-                Set it and forget it. Our orchestrator monitors expiration and
-                triggers renewals automatically, with retry logic and dead-letter
-                queue for reliability.
+                Designed for high-frequency renewals. No cron glue. Cloudflare handles certificate rotation at the edge. 
+                You get predictable, boring renewals.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-4 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50">
-              <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <Globe size={24} weight="fill" className="text-success" />
+            <Card className="p-6 space-y-4 border-secondary/20 bg-secondary-weak">
+              <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <Lightning size={28} weight="fill" className="text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Works with Any DNS Provider
+                Cloudflare-Powered Reliability
               </h3>
               <p className="text-muted-foreground">
-                Simply create a CNAME record in your existing DNS setup. No
-                migrations, no nameserver changes. Premium tier offers single-click
-                setup via OAuth.
+                Validation runs at the edge. Predictable execution. Enterprise-grade uptime without the enterprise price tag. 
+                Built on Cloudflare's global network.
               </p>
             </Card>
+          </div>
+        </section>
+
+        {/* Architecture/Integration Section */}
+        <section id="integration" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-muted/20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              {brand.features.architectureTitle}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Three steps. One CNAME. Forever automated.
+            </p>
           </div>
         </section>
 
@@ -238,6 +255,103 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               orientation="vertical"
             />
           </Card>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-muted/10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Pricing that doesn't punish automation
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Simple, transparent pricing. No hidden fees. No surprises.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Hacker Plan */}
+            <Card className="p-8 space-y-6 border-2 border-border hover:border-primary/50 transition-all">
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Hacker</h3>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-5xl font-bold text-foreground">$0</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Up to 3 domains</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Wildcards included</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Delegated DCV</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Community queue</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Standard rate limits</span>
+                </li>
+              </ul>
+              <Button className="w-full" size="lg" variant="outline" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+                Get API Key — Free
+              </Button>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="p-8 space-y-6 border-2 border-primary bg-primary/5 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                  Popular
+                </span>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Pro</h3>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-5xl font-bold text-foreground">$15</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Up to 50 domains</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Wildcards included</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Priority queue</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Higher rate limits</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle size={20} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Team access + audit events</span>
+                </li>
+              </ul>
+              <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+                Start Pro
+              </Button>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Cheaper than BrandSSL's $29/mo starter</span> — without shipping your root keys.
+            </p>
+          </div>
         </section>
 
         {/* FAQ Section */}

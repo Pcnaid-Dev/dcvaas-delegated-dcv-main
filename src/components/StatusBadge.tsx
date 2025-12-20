@@ -19,17 +19,17 @@ export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={`${config.className} inline-flex items-center gap-1.5`}
+      className={`${config.className} inline-flex items-center gap-1.5 font-mono text-xs rounded-full px-3 py-1`}
     >
       {showIcon && config.animated ? (
-        <span className="relative flex h-3 w-3">
+        <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-current"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
         </span>
       ) : showIcon ? (
-        <config.icon size={14} weight="fill" />
+        <span className="inline-flex rounded-full h-2 w-2 bg-current"></span>
       ) : null}
-      <span>{config.label}</span>
+      <span className="uppercase tracking-wide">{config.label}</span>
     </Badge>
   );
 }
@@ -38,9 +38,9 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
   switch (status) {
     case 'pending_cname':
       return {
-        label: 'Pending CNAME',
+        label: 'Pending',
         icon: Clock,
-        className: 'bg-warning/10 text-warning border-warning/20',
+        className: 'bg-warning/10 text-warning border-warning/30',
         animated: true,
       };
     case 'issuing':
@@ -48,15 +48,15 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
       return {
         label: status === 'issuing' ? 'Issuing' : 'Running',
         icon: ArrowsClockwise,
-        className: 'bg-primary/10 text-primary border-primary/20',
+        className: 'bg-primary/10 text-primary border-primary/30',
         animated: true,
       };
     case 'active':
     case 'succeeded':
       return {
-        label: status === 'active' ? 'Active' : 'Succeeded',
+        label: status === 'active' ? 'Active' : 'Success',
         icon: CheckCircle,
-        className: 'bg-success/10 text-success border-success/20',
+        className: 'bg-success/10 text-success border-success/30',
         animated: false,
       };
     case 'error':
@@ -64,7 +64,7 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
       return {
         label: status === 'error' ? 'Error' : 'Failed',
         icon: XCircle,
-        className: 'bg-destructive/10 text-destructive border-destructive/20',
+        className: 'bg-destructive/10 text-destructive border-destructive/30',
         animated: false,
       };
     case 'queued':
@@ -72,6 +72,13 @@ function getStatusConfig(status: DomainStatus | JobStatus) {
         label: 'Queued',
         icon: Clock,
         className: 'bg-muted text-muted-foreground border-border',
+        animated: true,
+      };
+    case 'pending_validation':
+      return {
+        label: 'Validating',
+        icon: Clock,
+        className: 'bg-warning/10 text-warning border-warning/30',
         animated: true,
       };
     default:

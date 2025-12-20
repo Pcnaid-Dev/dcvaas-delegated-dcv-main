@@ -118,7 +118,11 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Create API Token</DialogTitle>
+                      <DialogTitle>Generate Scoped API Token</DialogTitle>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        <span className="text-warning font-semibold">Warning:</span> This token is shown only once. 
+                        It is hashed using SHA-256 before storage.
+                      </p>
                     </DialogHeader>
                     {!newToken ? (
                       <div className="space-y-4 py-4">
@@ -126,17 +130,20 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                           <Label htmlFor="token-name">Token Name</Label>
                           <Input
                             id="token-name"
-                            placeholder="My API Token"
+                            placeholder="Production API Key"
                             value={tokenName}
                             onChange={(e) => setTokenName(e.target.value)}
                           />
+                          <p className="text-xs text-muted-foreground">
+                            Choose a descriptive name to identify this token later
+                          </p>
                         </div>
                         <Button
                           className="w-full"
                           onClick={handleCreate}
                           disabled={createTokenMutation.isPending}
                         >
-                          {createTokenMutation.isPending ? 'Creating...' : 'Create Token'}
+                          {createTokenMutation.isPending ? 'Generating...' : 'Generate Token'}
                         </Button>
                       </div>
                     ) : (
@@ -147,10 +154,14 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
                             <Input value={newToken} readOnly className="font-mono text-xs" />
                             <CopyButton text={newToken} />
                           </div>
-                          <p className="text-xs text-destructive">
-                            Make sure to copy your token now. You won't be able
-                            to see it again!
-                          </p>
+                          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                            <p className="text-xs text-destructive font-semibold">
+                              ⚠️ Save this token securely now. It will only be shown once.
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              This token is hashed with SHA-256 server-side. You can rotate it any time.
+                            </p>
+                          </div>
                         </div>
                         <Button
                           className="w-full"
