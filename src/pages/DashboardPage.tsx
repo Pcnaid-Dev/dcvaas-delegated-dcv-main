@@ -251,19 +251,23 @@ export function DashboardPage({ onNavigate, onSelectDomain }: DashboardPageProps
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Domain</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  Add this CNAME record to your DNS provider once. We will handle rotations forever.
+                </p>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="domain-name">Domain Name</Label>
                   <Input
                     id="domain-name"
-                    placeholder="example.com"
+                    placeholder="*.app.your-saas.com"
+                    className="font-mono"
                     value={newDomainName}
                     onChange={(e) => setNewDomainName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Enter your domain without protocol (e.g., example.com)
+                    Supports wildcards (*.domain.com) and apex domains (domain.com)
                   </p>
                 </div>
                 <Button
