@@ -18,6 +18,7 @@ import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { useBrandTheme } from './hooks/useBrandTheme';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -35,6 +36,9 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  
+  // Apply brand theme based on hostname
+  const brand = useBrandTheme();
 
   // Check if this is an OAuth callback
   const isOAuthCallback = window.location.pathname === '/oauth/callback';
