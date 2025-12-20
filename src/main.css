@@ -68,6 +68,13 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* AutoCertify green overrides when brand is active */
+:root[data-brand="autocertify.net"],
+:root[data-brand="www.autocertify.net"] {
+  --primary: #15803D;
+  --primary-foreground: #FFFFFF;
+}
+
 /*
   ---break---
 */
