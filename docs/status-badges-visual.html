@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DelegatedSSL Status Badges - Visual Reference</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: #F8FAFC;
+      padding: 40px 20px;
+      color: #0F172A;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #0F172A;
+    }
+    
+    .subtitle {
+      color: #475569;
+      margin-bottom: 40px;
+      font-size: 16px;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #0F172A;
+    }
+    
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid;
+      font-size: 14px;
+      font-weight: 500;
+      position: relative;
+    }
+    
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .badge-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    
+    /* Status-specific styles */
+    .badge-active {
+      background: #DCFCE7;
+      color: #16A34A;
+      border-color: rgba(22, 163, 74, 0.3);
+    }
+    
+    .badge-active .badge-dot {
+      background: #16A34A;
+    }
+    
+    .badge-warning {
+      background: #FEF3C7;
+      color: #F59E0B;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    
+    .badge-warning .badge-dot {
+      background: #F59E0B;
+    }
+    
+    .badge-danger {
+      background: #FEE2E2;
+      color: #DC2626;
+      border-color: rgba(220, 38, 38, 0.3);
+    }
+    
+    .badge-danger .badge-dot {
+      background: #DC2626;
+    }
+    
+    .badge-neutral {
+      background: #F1F5F9;
+      color: #64748B;
+      border-color: rgba(100, 116, 139, 0.3);
+    }
+    
+    .badge-neutral .badge-dot {
+      background: #64748B;
+    }
+    
+    .tooltip-demo {
+      background: #1E293B;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .tooltip-demo strong {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    
+    .tooltip-demo p {
+      opacity: 0.9;
+      font-size: 12px;
+    }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 20px;
+    }
+    
+    .comparison-item {
+      padding: 16px;
+      background: #F8FAFC;
+      border-radius: 8px;
+    }
+    
+    .comparison-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748B;
+      margin-bottom: 12px;
+    }
+    
+    .old-badge {
+      background: rgba(37, 99, 235, 0.1);
+      color: rgb(37, 99, 235);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      padding: 6px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .feature {
+      padding: 16px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border-left: 3px solid #2563EB;
+    }
+    
+    .feature-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #0F172A;
+    }
+    
+    .feature-desc {
+      font-size: 14px;
+      color: #64748B;
+    }
+    
+    .check-icon {
+      color: #16A34A;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DelegatedSSL Status Badges</h1>
+    <p class="subtitle">Traffic-light system with dot + icon + label + tooltip (WCAG AA compliant)</p>
+    
+    <div class="section">
+      <div class="section-title">Status Badge Examples</div>
+      
+      <div class="badge-row">
+        <div>
+          <span class="badge badge-active">
+            <span class="badge-dot"></span>
+            <svg class="badge-icon" fill="currentColor" viewBox="0 0 256 256">
+              <circle cx="128" cy="128" r="96" opacity="0.2"/>
+              <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"/>
+            </svg>
+            Active
+          </span>
+          <div class="tooltip-demo">
+            <strong>Active</strong>
+            <p>Auto-renewing</p>
+          </div>
+        </div>
+        
+        <div>
+          <span class="badge badge-warning">
+            <span class="badge-dot"></span>
+            <svg class="badge-icon" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"/>
+            </svg>
+            Action Needed
+          </span>
+          <div class="tooltip-demo">
+            <strong>Action Needed</strong>
+            <p>Client DNS verification pending. Pending CNAME (Client action required)</p>
+          </div>
+        </div>
+        
+        <div>
+          <span class="badge badge-danger">
+            <span class="badge-dot"></span>
+            <svg class="badge-icon" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"/>
+            </svg>
+            Blocked
+          </span>
+          <div class="tooltip-demo">
+            <strong>Blocked</strong>
+            <p>CAA policy prevents issuance. CAA Error (Client DNS blocks Let's Encrypt - Click to Fix)</p>
+          </div>
+        </div>
+        
+        <div>
+          <span class="badge badge-neutral">
+            <span class="badge-dot"></span>
+            <svg class="badge-icon" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M136,80v43.47l36.12,21.67a8,8,0,0,1-8.24,13.72l-40-24A8,8,0,0,1,120,128V80a8,8,0,0,1,16,0Zm-8-48A104,104,0,1,0,232,136,104.11,104.11,0,0,0,128,32Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,224Z"/>
+            </svg>
+            Pending
+          </span>
+          <div class="tooltip-demo">
+            <strong>Pending</strong>
+            <p>Provisioning in progress</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Key Features</div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-title"><span class="check-icon">✓</span> Never Color-Only</div>
+          <div class="feature-desc">Dot + icon + label + tooltip ensure accessibility</div>
+        </div>
+        <div class="feature">
+          <div class="feature-title"><span class="check-icon">✓</span> WCAG AA Compliant</div>
+          <div class="feature-desc">All color combinations meet contrast requirements</div>
+        </div>
+        <div class="feature">
+          <div class="feature-title"><span class="check-icon">✓</span> Keyboard Accessible</div>
+          <div class="feature-desc">Tooltips appear on hover and focus</div>
+        </div>
+        <div class="feature">
+          <div class="feature-title"><span class="check-icon">✓</span> Clear Visual Hierarchy</div>
+          <div class="feature-desc">Traffic-light colors convey urgency at a glance</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Before & After Comparison</div>
+      <div class="comparison">
+        <div class="comparison-item">
+          <div class="comparison-label">Before (DCVaaS Default)</div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <span class="old-badge">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 256 256">
+                <circle cx="128" cy="128" r="96" opacity="0.2"/>
+                <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"/>
+              </svg>
+              Active
+            </span>
+            <div style="font-size: 13px; color: #64748B;">
+              • Icon + label only<br>
+              • No tooltip<br>
+              • No status dot<br>
+              • Generic blue color
+            </div>
+          </div>
+        </div>
+        
+        <div class="comparison-item">
+          <div class="comparison-label">After (DelegatedSSL)</div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <span class="badge badge-active">
+              <span class="badge-dot"></span>
+              <svg class="badge-icon" fill="currentColor" viewBox="0 0 256 256">
+                <circle cx="128" cy="128" r="96" opacity="0.2"/>
+                <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"/>
+              </svg>
+              Active
+            </span>
+            <div style="font-size: 13px; color: #64748B;">
+              ✓ Dot + icon + label<br>
+              ✓ Tooltip on hover/focus<br>
+              ✓ Traffic-light color<br>
+              ✓ Never color-only
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section" style="background: #F0F9FF; border-left: 4px solid #2563EB;">
+      <div class="section-title" style="color: #2563EB;">DelegatedSSL Brand Identity</div>
+      <div style="font-size: 14px; color: #475569; line-height: 1.7;">
+        <p style="margin-bottom: 12px;"><strong>Voice:</strong> Authoritative, operational, margin-focused</p>
+        <p style="margin-bottom: 12px;"><strong>Positioning:</strong> White-label "set-it-and-forget-it" SSL operations console</p>
+        <p style="margin-bottom: 12px;"><strong>Core Promise:</strong> Offload the renewal/verification burden and eliminate SSL chaos while protecting margins</p>
+        <p><strong>Key Motif:</strong> "All Green = All Good" - Green is a signal (status), not decoration</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

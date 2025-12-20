@@ -1,0 +1,224 @@
+/* DelegatedSSL Brand Theme */
+:root[data-brand="delegatedssl.com"] {
+  /* Fonts */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans-alt: Manrope, Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Core neutrals */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F5F9;
+  --color-surface-3: #E8EEF6;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Text */
+  --color-text: #0F172A;
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748B;
+
+  /* Brand (Trust Blue) */
+  --color-primary-500: #2563EB;
+  --color-primary-600: #1D4ED8;
+  --color-primary-700: #1E40AF;
+  --color-primary-contrast: #FFFFFF;
+
+  /* Secondary / Accent (teal from bible; use sparingly so it never reads as "success") */
+  --color-accent-500: #14B8A6;
+  --color-accent-600: #0F766E;
+  --color-accent-700: #115E59;
+  --color-accent-contrast: #F0FDFA;
+
+  /* Status (traffic light) */
+  --color-success-600: #16A34A;
+  --color-warning-600: #F59E0B;
+  --color-danger-600: #DC2626;
+  --color-neutral-600: #64748B;
+  --color-success-bg: #DCFCE7;
+  --color-warning-bg: #FEF3C7;
+  --color-danger-bg: #FEE2E2;
+  --color-neutral-bg: #F1F5F9;
+
+  /* Focus / A11y */
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  --focus-ring-danger: 0 0 0 3px rgba(220, 38, 38, 0.25);
+
+  /* Shadows (dashboard stays flatter; marketing can use more depth) */
+  --shadow-xs: 0 1px 1px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.14);
+  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.18);
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Spacing (8pt system + a 4px micro-step) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Layout */
+  --container-max: 1200px;
+
+  /* Breakpoints */
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+
+  /* Component helpers */
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 44px;
+  --table-row-hover-bg: rgba(37, 99, 235, 0.04);
+  --table-row-selected-bg: rgba(37, 99, 235, 0.08);
+  --overlay: rgba(11, 18, 32, 0.55);
+
+  /* Aliases (compat with blueprint starter markup) */
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --border: var(--color-border);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --primary: var(--color-primary-500);
+  --primaryHover: var(--color-primary-600);
+  --success: var(--color-success-600);
+  --warn: var(--color-warning-600);
+  --danger: var(--color-danger-600);
+  --neutral: var(--color-neutral-600);
+  --radius: var(--radius-lg);
+
+  /* Override Shadcn/Radix theme variables for compatibility */
+  --background: 248 250 252; /* #F8FAFC */
+  --foreground: 15 23 42; /* #0F172A */
+  --card: 255 255 255; /* #FFFFFF */
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  --primary: 37 99 235; /* #2563EB */
+  --primary-foreground: 255 255 255;
+  --secondary: 241 245 249; /* #F1F5F9 */
+  --secondary-foreground: 15 23 42;
+  --muted: 241 245 249;
+  --muted-foreground: 71 85 105; /* #475569 */
+  --accent: 20 184 166; /* #14B8A6 */
+  --accent-foreground: 15 23 42;
+  --destructive: 220 38 38; /* #DC2626 */
+  --destructive-foreground: 255 255 255;
+  --border: 226 232 240; /* #E2E8F0 */
+  --input: 226 232 240;
+  --ring: 37 99 235;
+
+  /* Success color utilities */
+  --success: 22 163 74; /* #16A34A */
+  --success-foreground: 255 255 255;
+  
+  /* Warning color utilities */
+  --warning: 245 158 11; /* #F59E0B */
+  --warning-foreground: 15 23 42;
+
+  /* Neutral color utilities */
+  --neutral: 100 116 139; /* #64748B */
+}
+
+/* Dark mode for DelegatedSSL (if needed in future) */
+:root[data-brand="delegatedssl.com"].dark {
+  --color-bg: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-2: #334155;
+  --color-surface-3: #475569;
+  --color-border: #475569;
+  --color-border-strong: #64748B;
+  
+  --color-text: #F8FAFC;
+  --color-text-muted: #CBD5E1;
+  --color-text-subtle: #94A3B8;
+  
+  --background: 15 23 42;
+  --foreground: 248 250 252;
+  --card: 30 41 59;
+  --card-foreground: 248 250 252;
+}
+
+/* Additional utility classes for DelegatedSSL brand */
+:root[data-brand="delegatedssl.com"] {
+  /* Ensure body uses the correct font */
+  & body {
+    font-family: var(--font-sans);
+  }
+
+  /* Status badge color classes */
+  & .text-success {
+    color: var(--color-success-600);
+  }
+  
+  & .text-warning {
+    color: var(--color-warning-600);
+  }
+  
+  & .text-danger {
+    color: var(--color-danger-600);
+  }
+  
+  & .text-neutral {
+    color: var(--color-neutral-600);
+  }
+  
+  & .bg-success-bg {
+    background-color: var(--color-success-bg);
+  }
+  
+  & .bg-warning-bg {
+    background-color: var(--color-warning-bg);
+  }
+  
+  & .bg-danger-bg {
+    background-color: var(--color-danger-bg);
+  }
+  
+  & .bg-neutral-bg {
+    background-color: var(--color-neutral-bg);
+  }
+  
+  & .bg-success-600 {
+    background-color: var(--color-success-600);
+  }
+  
+  & .bg-warning-600 {
+    background-color: var(--color-warning-600);
+  }
+  
+  & .bg-danger-600 {
+    background-color: var(--color-danger-600);
+  }
+  
+  & .bg-neutral-600 {
+    background-color: var(--color-neutral-600);
+  }
+  
+  & .border-success {
+    border-color: var(--color-success-600);
+  }
+  
+  & .border-warning {
+    border-color: var(--color-warning-600);
+  }
+  
+  & .border-danger {
+    border-color: var(--color-danger-600);
+  }
+  
+  & .border-neutral {
+    border-color: var(--color-neutral-600);
+  }
+}
+
