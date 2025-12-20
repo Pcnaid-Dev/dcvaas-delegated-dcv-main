@@ -1,0 +1,235 @@
+/* AutoCertify Brand Theme */
+/* Applied when data-brand="autocertify.net" or "www.autocertify.net" */
+
+:root[data-brand="autocertify.net"],
+:root[data-brand="www.autocertify.net"] {
+  /* Brand Identity */
+  --brand-name: "AutoCertify";
+  --brand-tone: "calm-trust-urgent";
+
+  /* Typography */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Type Scale (marketing + app) */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px; /* app body default */
+  --text-xl: 20px; /* marketing body default */
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px; /* marketing H1 desktop */
+  --text-6xl: 56px; /* marketing H1 max */
+
+  /* Line Heights */
+  --line-xs: 16px;
+  --line-sm: 20px;
+  --line-md: 24px;
+  --line-lg: 28px;
+  --line-xl: 30px;
+  --line-2xl: 32px;
+  --line-3xl: 38px;
+  --line-4xl: 44px;
+  --line-5xl: 56px;
+  --line-6xl: 64px;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+
+  /* Colors - Primary Green */
+  --color-primary: #15803D;
+  --color-primary-hover: #166534;
+  --color-primary-active: #14532D;
+  --color-on-primary: #FFFFFF;
+
+  /* Colors - Secondary (Trust Blue) */
+  --color-secondary: #2563EB;
+  --color-secondary-hover: #1D4ED8;
+  --color-on-secondary: #FFFFFF;
+
+  /* Colors - Accent */
+  --color-accent: #22C55E; /* bright green accent */
+  --color-accent-strong: #15803D;
+
+  /* Backgrounds / Surfaces */
+  --color-bg: #FFFFFF;
+  --color-surface: #F0FDF4; /* light mint tint */
+  --color-surface-2: #FFFFFF; /* cards */
+  --color-surface-neutral: #F8FAFC; /* neutral when mint feels too themed */
+  --color-surface-hover: #ECFDF5; /* gentle mint hover */
+  --color-overlay: rgba(11, 18, 32, 0.55);
+
+  /* Text Colors */
+  --color-text: #0B1220;
+  --color-text-muted: #556274;
+  --color-text-subtle: #64748B;
+  --color-link: var(--color-primary);
+  --color-link-hover: var(--color-primary-hover);
+
+  /* Borders */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Status Colors */
+  --color-success: #15803D;
+  --color-success-solid: #166534;
+  --color-success-bg: #DCFCE7;
+  --color-warning: #F59E0B;
+  --color-warning-solid: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-danger: #EF4444;
+  --color-danger-solid: #DC2626;
+  --color-danger-bg: #FEE2E2;
+
+  /* Focus / Accessibility */
+  --focus-ring-color: rgba(21, 128, 61, 0.35);
+  --focus-ring: 0 0 0 4px var(--focus-ring-color);
+  --focus-outline: 2px solid rgba(21, 128, 61, 0.65);
+
+  /* Spacing Scale */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  /* Border Radii */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows (soft) */
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.06);
+  --shadow-md: 0 8px 24px rgba(2, 6, 23, 0.10);
+  --shadow-lg: 0 18px 48px rgba(2, 6, 23, 0.16);
+
+  /* Layout Sizes */
+  --container-max: 1160px;
+  --sidebar-w: 280px;
+  --topbar-h: 64px;
+
+  /* Control Sizes (44px minimum for accessibility) */
+  --control-h: 44px;
+  --control-h-sm: 36px;
+  --control-px: 14px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 240ms;
+
+  /* Icon Properties */
+  --icon-stroke: 2px;
+  --icon-corner: round;
+
+  /* Override Tailwind/Shadcn Variables for Green Primary */
+  --primary: #15803D;
+  --primary-foreground: #FFFFFF;
+  
+  /* Success should match primary for consistency */
+  --success: #15803D;
+  --success-foreground: #FFFFFF;
+}
+
+/* AutoCertify-specific component styles */
+[data-brand="autocertify.net"] .btn-primary,
+[data-brand="www.autocertify.net"] .btn-primary,
+[data-brand="autocertify.net"] button[class*="bg-primary"],
+[data-brand="www.autocertify.net"] button[class*="bg-primary"] {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+[data-brand="autocertify.net"] .btn-primary:hover,
+[data-brand="www.autocertify.net"] .btn-primary:hover,
+[data-brand="autocertify.net"] button[class*="bg-primary"]:hover,
+[data-brand="www.autocertify.net"] button[class*="bg-primary"]:hover {
+  background-color: var(--color-primary-hover);
+}
+
+[data-brand="autocertify.net"] .btn-primary:active,
+[data-brand="www.autocertify.net"] .btn-primary:active,
+[data-brand="autocertify.net"] button[class*="bg-primary"]:active,
+[data-brand="www.autocertify.net"] button[class*="bg-primary"]:active {
+  background-color: var(--color-primary-active);
+}
+
+/* Marketing Typography */
+[data-brand="autocertify.net"] .marketing-body,
+[data-brand="www.autocertify.net"] .marketing-body {
+  font-size: var(--text-xl);
+  line-height: var(--line-xl);
+}
+
+[data-brand="autocertify.net"] .marketing-h1,
+[data-brand="www.autocertify.net"] .marketing-h1 {
+  font-size: var(--text-5xl);
+  line-height: var(--line-5xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+@media (max-width: 768px) {
+  [data-brand="autocertify.net"] .marketing-h1,
+  [data-brand="www.autocertify.net"] .marketing-h1 {
+    font-size: 34px;
+    line-height: 40px;
+  }
+}
+
+/* Mint-tinted sections */
+[data-brand="autocertify.net"] .section-mint,
+[data-brand="www.autocertify.net"] .section-mint {
+  background-color: var(--color-surface);
+}
+
+/* Reassurance chips */
+[data-brand="autocertify.net"] .reassurance-chip,
+[data-brand="www.autocertify.net"] .reassurance-chip {
+  background-color: var(--color-success-bg);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Status badges for dashboard */
+[data-brand="autocertify.net"] .status-secure,
+[data-brand="www.autocertify.net"] .status-secure {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-solid);
+  border: 1px solid var(--color-success);
+}
+
+[data-brand="autocertify.net"] .status-pending,
+[data-brand="www.autocertify.net"] .status-pending {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-solid);
+  border: 1px solid var(--color-warning);
+}
+
+[data-brand="autocertify.net"] .status-error,
+[data-brand="www.autocertify.net"] .status-error {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-solid);
+  border: 1px solid var(--color-danger);
+}
