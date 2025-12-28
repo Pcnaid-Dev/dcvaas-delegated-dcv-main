@@ -18,6 +18,7 @@ import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { DNSRecordBuilderPage } from './pages/DNSRecordBuilderPage';
 
 // Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
@@ -67,6 +68,10 @@ function AppContent() {
     return <DocsPage onNavigate={setCurrentPage} />;
   }
 
+  if (!isAuthenticated && currentPage === 'dns-builder') {
+    return <DNSRecordBuilderPage onNavigate={setCurrentPage} />;
+  }
+
   if (!isAuthenticated) {
     return <LandingPage onNavigate={setCurrentPage} />;
   }
@@ -114,6 +119,8 @@ function AppContent() {
         return <PricingPage onNavigate={setCurrentPage} />;
       case 'docs':
         return <DocsPage onNavigate={setCurrentPage} />;
+      case 'dns-builder':
+        return <DNSRecordBuilderPage onNavigate={setCurrentPage} />;
       default:
         return (
           <OverviewPage
