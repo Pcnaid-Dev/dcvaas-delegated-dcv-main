@@ -8,6 +8,7 @@ import { OverviewPage } from './pages/OverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PricingPage } from './pages/PricingPage';
 import { DocsPage } from './pages/DocsPage';
+import { CSRDecoderPage } from './pages/CSRDecoderPage';
 import { DomainDetailPage } from './pages/DomainDetailPage';
 import { TeamPage } from './pages/TeamPage';
 import { BillingPage } from './pages/BillingPage';
@@ -67,6 +68,10 @@ function AppContent() {
     return <DocsPage onNavigate={setCurrentPage} />;
   }
 
+  if (!isAuthenticated && currentPage === 'csr-decoder') {
+    return <CSRDecoderPage onNavigate={setCurrentPage} />;
+  }
+
   if (!isAuthenticated) {
     return <LandingPage onNavigate={setCurrentPage} />;
   }
@@ -114,6 +119,8 @@ function AppContent() {
         return <PricingPage onNavigate={setCurrentPage} />;
       case 'docs':
         return <DocsPage onNavigate={setCurrentPage} />;
+      case 'csr-decoder':
+        return <CSRDecoderPage onNavigate={setCurrentPage} />;
       default:
         return (
           <OverviewPage
