@@ -1,0 +1,98 @@
+:root[data-brand="delegatedssl.com"] {
+  /* Fonts */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans-alt: Manrope, Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Added */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Core neutrals */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F5F9;
+  --color-surface-3: #E8EEF6; /* Added */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Text */
+  --color-text: #0F172A;
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748B;
+
+  /* Brand (Trust Blue) */
+  --color-primary-500: #2563EB;
+  --color-primary-600: #1D4ED8;
+  --color-primary-700: #1E40AF; /* Added */
+  --color-primary-contrast: #FFFFFF;
+
+  /* Secondary / Accent (teal from bible; use sparingly so it never reads as “success”) */
+  --color-accent-500: #14B8A6;
+  --color-accent-600: #0F766E; /* Added (accessible hover) */
+  --color-accent-700: #115E59; /* Added */
+  --color-accent-contrast: #062923; /* Added */
+
+  /* Status (traffic light) */
+  --color-success-600: #16A34A;
+  --color-warning-600: #F59E0B;
+  --color-danger-600: #DC2626;
+  --color-neutral-600: #64748B;
+  --color-success-bg: #DCFCE7;
+  --color-warning-bg: #FEF3C7;
+  --color-danger-bg: #FEE2E2;
+  --color-neutral-bg: #F1F5F9;
+
+  /* Focus / A11y */
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  --focus-ring-danger: 0 0 0 3px rgba(220, 38, 38, 0.25);
+
+  /* Shadows (dashboard stays flatter; marketing can use more depth) */
+  --shadow-xs: 0 1px 1px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.14);
+  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.18);
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Spacing (8pt system + a 4px micro-step) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px; /* Added */
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Layout */
+  --container-max: 1200px;
+
+  /* Breakpoints */
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+
+  /* Component helpers */
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 44px;
+  --table-row-hover-bg: rgba(37, 99, 235, 0.04);
+  --table-row-selected-bg: rgba(37, 99, 235, 0.08); /* Added */
+  --overlay: rgba(11, 18, 32, 0.55);
+
+  /* Aliases (compat with blueprint starter markup) */
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --border: var(--color-border);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --primary: var(--color-primary-500);
+  --primaryHover: var(--color-primary-600);
+  --success: var(--color-success-600);
+  --warn: var(--color-warning-600);
+  --danger: var(--color-danger-600);
+  --neutral: var(--color-neutral-600);
+  --radius: var(--radius-lg);
+}
