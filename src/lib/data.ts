@@ -424,39 +424,13 @@ export async function updateWebhook(id: string, updates: { url?: string; events?
 
 export async function deleteWebhook(id: string): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(id)}`, {
-
-// ===== WEBHOOKS =====
-
-import type { WebhookEndpoint } from '@/types';
-
-export async function getWebhooks(): Promise<WebhookEndpoint[]> {
-  const res = await api<{ webhooks: WebhookEndpoint[] }>('/api/webhooks');
-  return res.webhooks;
-}
-
-export async function createWebhook(url: string, secret: string, events: string[]): Promise<WebhookEndpoint> {
-  const res = await api<{ webhook: WebhookEndpoint }>('/api/webhooks', {
-    method: 'POST',
-    body: JSON.stringify({ url, secret, events }),
-  });
-  return res.webhook;
-}
-
-export async function deleteWebhook(webhookId: string): Promise<void> {
-  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
     method: 'DELETE',
   });
 }
 
 // ===== OAUTH CONNECTIONS (real API) =====
 
-export async function exchangeOAuthCode(provider: string, code: string, redirectUri: string): Promise<any> {
-  const res = await api('/api/oauth/exchange', {
-    method: 'POST',
-    body: JSON.stringify({ provider, code, redirectUri }),
-  });
-  return res;
-}
+
 
 export async function getOAuthConnections(): Promise<any[]> {
   try {
@@ -466,6 +440,8 @@ export async function getOAuthConnections(): Promise<any[]> {
     console.warn('getOAuthConnections failed', err);
     return [];
   }
+}
+
 export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
     method: 'PATCH',
@@ -511,4 +487,39 @@ export async function deleteOAuthConnection(provider: string): Promise<void> {
   await api(`/api/oauth/connections/${encodeURIComponent(provider)}`, {
     method: 'DELETE',
   });
+}
+
+// ===== HTTP-01 TESTER =====
+
+export interface RedirectStep {
+  url: string;
+  status: number;
+  headers: Record<string, string>;
+}
+
+export interface HTTP01TestResult {
+  success: boolean;
+  finalUrl: string;
+  finalStatus: number;
+  bodyPreview: string;
+  redirectChain: RedirectStep[];
+  flags: {
+    forcedHttps: boolean;
+    is403: boolean;
+    is404: boolean;
+    blockedPath: boolean;
+    wrongVhost: boolean;
+    hasCaching: boolean;
+    hasWafChallenge: boolean;
+  };
+  error?: string;
+  suggestions: string[];
+}
+
+export async function testHTTP01(domain: string, token: string = 'test'): Promise<HTTP01TestResult> {
+  const res = await api<{ result: HTTP01TestResult }>('/api/tools/http01-test', {
+    method: 'POST',
+    body: JSON.stringify({ domain, token }),
+  });
+  return res.result;
 }
