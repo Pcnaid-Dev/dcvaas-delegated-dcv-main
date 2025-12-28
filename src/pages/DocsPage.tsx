@@ -28,6 +28,12 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
                 Home
               </button>
               <button
+                onClick={() => onNavigate('cert-checker')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Cert Checker
+              </button>
+              <button
                 onClick={() => onNavigate('pricing')}
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >

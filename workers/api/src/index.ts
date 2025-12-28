@@ -39,6 +39,26 @@ export default {
         return response;
       }
 
+      // Certificate Chain Checker - public endpoint, no auth required
+      if (method === 'POST' && url.pathname === '/api/check-cert-chain') {
+        try {
+          const { parseDomainInput, checkCertChain } = await import('./lib/cert-checker');
+          const body = await req.json().catch(() => ({} as any));
+          const domainInput = String(body.domain ?? '').trim();
+          
+          if (!domainInput) {
+            return withCors(req, env, badRequest('domain is required'));
+          }
+          
+          const { hostname, port } = parseDomainInput(domainInput);
+          const result = await checkCertChain(hostname, port);
+          
+          return withCors(req, env, json({ result }));
+        } catch (error: any) {
+          return withCors(req, env, badRequest(error.message || 'Invalid request'));
+        }
+      }
+
 // 1. Ensure this auth check exists first
 const auth = await authenticate(req, env);
 if (!auth) return withCors(req, env, unauthorized());
