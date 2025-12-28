@@ -99,8 +99,6 @@ const AVAILABLE_EVENTS = [
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -116,7 +114,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { data: orgWebhooks = [] } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
-    enabled: !!currentOrg,
+    enabled: !!currentOrg && hasApiAccess,
     staleTime: 30000,
   });
 
@@ -137,26 +135,6 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.error(error.message || 'Failed to create webhook');
     },
   });
-  // Load webhooks from API on mount
-  useEffect(() => {
-    if (!hasApiAccess) return;
-    
-    const loadWebhooks = async () => {
-      try {
-        const data = await getWebhooks();
-        setWebhooks(data);
-      } catch (error) {
-        console.error('Failed to load webhooks:', error);
-        toast.error('Failed to load webhooks');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadWebhooks();
-  }, [hasApiAccess]);
-
-  const orgWebhooks = webhooks;
 
   const handleCreateWebhook = async () => {
     if (!currentOrg) return;
@@ -192,22 +170,26 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
     },
   });
 
+  // Mutation for toggling webhook enabled status
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) =>
+      updateWebhook(webhookId, { enabled }),
+    onSuccess: (_, { enabled }) => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+    },
+    onError: () => {
+      toast.error('Failed to update webhook');
+    },
+  });
+
   const handleDeleteWebhook = async () => {
     if (!deleteWebhookId) return;
     deleteWebhookMutation.mutate(deleteWebhookId);
   };
 
   const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
-    try {
-      await updateWebhook(webhookId, { enabled });
-      setWebhooks((current) =>
-        current.map((wh) => (wh.id === webhookId ? { ...wh, enabled } : wh))
-      );
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-    } catch (error) {
-      console.error('Failed to update webhook:', error);
-      toast.error('Failed to update webhook');
-    }
+    updateWebhookMutation.mutate({ webhookId, enabled });
   };
 
   const toggleEventSelection = (eventName: string) => {

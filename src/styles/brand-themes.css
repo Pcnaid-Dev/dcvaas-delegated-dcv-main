@@ -5,11 +5,4 @@
  * Themes are applied based on the data-brand attribute on :root element.
  */
 
-/* AutoCertify Theme */
-@import url('../../../autocertify/theme.tokens.css');
-
-/* DelegatedSSL Theme */
-@import url('../../../delegatedssl/theme.tokens.css');
-
-/* KeylessSSL Theme */
-@import url('../../../keylessssl/theme.tokens.css');
+/* Note: These imports MUST be in the main.css file BEFORE other @layer rules */

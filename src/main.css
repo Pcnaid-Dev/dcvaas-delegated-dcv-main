@@ -1,7 +1,11 @@
 @import 'tailwindcss';
 
+/* Brand Theme Tokens - MUST be imported before other styles */
+@import url('../../autocertify/theme.tokens.css');
+@import url('../../delegatedssl/theme.tokens.css');
+@import url('../../keylessssl/theme.tokens.css');
+
 @import './styles/theme.css';
-@import './styles/brand-themes.css';
 @import './index.css';
 @import "tw-animate-css";
 /*
