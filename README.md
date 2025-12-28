@@ -1,9 +1,26 @@
 ````markdown
-# DCVaaS – Delegated DCV-as-a-Service
+# DCVaaS – Multi-Brand SSL/TLS Certificate Automation Platform
 
 > **A SaaS control plane for automated SSL/TLS certificate issuance and renewal via Cloudflare for SaaS (Custom Hostnames)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## 🌐 Multi-Brand Architecture
+
+DCVaaS is implemented as a **multi-brand, multi-tenant platform** supporting three distinct brands on shared infrastructure:
+
+- **AutoCertify** (`autocertify.net`, `wizard.autocertify.net`) - SMB-focused SSL fix platform
+- **DelegatedSSL** (`delegatedssl.com`, `portal.delegatedssl.com`) - Agency/MSP certificate dashboard
+- **KeylessSSL** (`keylessssl.dev`, `app.keylessssl.dev`) - Developer ACME automation API
+
+Each brand has unique:
+- 🎨 **Visual theme** (CSS custom properties)
+- 📝 **Microcopy and messaging**
+- 🏗️ **Layout and information architecture**
+- 🔍 **SEO isolation** (separate robots.txt, sitemap.xml, canonical URLs)
+- 🚫 **noindex app subdomains** (app.*, wizard.*, portal.*)
+
+**For complete multi-brand implementation details, see [MULTI_BRAND_GUIDE.md](./MULTI_BRAND_GUIDE.md).**
 
 ## Overview
 
