@@ -1,0 +1,1474 @@
+schema_version: '1.0'
+generated_on: '2025-12-19'
+depends_on:
+- artifact: dcvaas_brand_overlay_config
+  version: '1.0'
+  files:
+  - dcvaas_brand_overlay_config.json
+  - dcvaas_brand_overlay_config.yaml
+purpose: Maps concrete UI/marketing/docs microcopy slots to canonical modules and
+  render policies so brand-specific LLMs fill copy without contradicting shared platform
+  facts.
+governance:
+  truth_layers:
+    SHARED: Canonical product facts. Copy may be rephrased only if strictness is guided;
+      must not contradict.
+    HYBRID: Canonical facts are shared, but framing/tone/order can vary per brand.
+    PER_BRAND: Brand wrapper content; may vary freely within brand voice.
+  strictness_levels:
+    locked: Must use the canonical template or step order; only brand tone polish
+      allowed where explicitly permitted.
+    guided: May rewrite for tone and clarity; must include required facts/tokens;
+      cannot introduce new claims.
+    free: Brand may write freely; must not contradict SHARED modules and invariants.
+  hard_invariants:
+  - Do not rename or alter the technical token `_acme-challenge`.
+  - Do not claim that OAuth DNS setup exists unless the `dns_oauth_setup` entitlement
+    is enabled and the provider is supported.
+  - Do not claim traffic proxying, CDN, or WAF features (platform is certificate/DCV
+    service, not a reverse proxy).
+  - Do not promise specific CA issuance times; use non-committal phrasing (e.g., 'typically
+    within minutes') only if supported elsewhere.
+variables:
+  dynamic_tokens:
+  - name: domain
+    example: example.com
+    description: Customer domain being onboarded.
+  - name: cname_host
+    example: _acme-challenge.example.com
+    description: CNAME host that the user must create for delegation.
+  - name: cname_target
+    example: acme.platform.tld
+    description: CNAME target value provided by the platform.
+  - name: brand_domain
+    example: keylessssl.dev
+    description: Current hostname/domain used to access the platform.
+  - name: plan_name
+    example: Startup
+    description: Displayed plan name (may be overridden per brand presentation layer).
+  reserved_terms:
+  - _acme-challenge
+  - CNAME
+  - TXT
+  - ACME
+  - DNS-01
+  - DCV
+render_modes:
+  canonical: Use the module's canonical facts; may paraphrase unless strictness=locked.
+  canonical_steps_locked: Use the module's workflow_steps exactly in order; may simplify
+    wording but must preserve 1–4 structure.
+  brand_angle: Select facts from the module but frame according to brand angle hints
+    and persona.
+  tooltip_brand_angle: Short, supportive microcopy; brand tone allowed; no new facts.
+  canonical_entitlements: Render pricing/feature gating from entitlements matrix;
+    brand may only change plan labels and taglines (if allowed).
+  microcopy_brand_angle: Very short UI microcopy; brand tone allowed; must not drift
+    into new claims.
+slots:
+- slot_id: marketing.home.hero.headline
+  surface: marketing
+  page: home
+  component: hero
+  content_kind: headline
+  binding:
+    module_id: problem_statement
+    render_mode: brand_angle
+    secondary_module_ids:
+    - solution_mechanism_delegated_dcv
+    - security_model
+    - differentiators
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Conveys automated SSL for custom domains
+  - Avoids contradicting delegated DCV mechanism
+  forbidden:
+  - proxy
+  - CDN
+  - WAF
+  - traffic routed through us
+  char_limit:
+    min: 20
+    max: 80
+  implementation_notes:
+  - Primary promise should map to delegated DCV + automation. Security angle is allowed
+    depending on brand priorities.
+  i18n_key: mkt.home.hero.headline
+- slot_id: marketing.home.hero.subhead
+  surface: marketing
+  page: home
+  component: hero
+  content_kind: subhead
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions one-time CNAME delegation (can be simplified but must be accurate)
+  - Zero-touch renewals thereafter
+  forbidden:
+  - store your DNS API key
+  - requires repeated TXT changes every renewal
+  char_limit:
+    min: 60
+    max: 180
+  implementation_notes:
+  - You may explain DNS-01/ACME briefly, but do not overwhelm non-technical brands.
+  i18n_key: mkt.home.hero.subhead
+  variables:
+  - brand_domain
+- slot_id: marketing.home.hero.bullets
+  surface: marketing
+  page: home
+  component: hero
+  content_kind: bullet_list
+  binding:
+    module_id: differentiators
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Include 2–3 bullets mapping to the 3 differentiators (security, platform-agnostic,
+    pro features)
+  char_limit:
+    min: 60
+    max: 240
+  i18n_key: mkt.home.hero.bullets
+- slot_id: marketing.home.hero.primary_cta.label
+  surface: marketing
+  page: home
+  component: hero
+  content_kind: cta_label
+  binding:
+    module_id: pricing_packaging
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Should point to signup/onboarding
+  char_limit:
+    min: 4
+    max: 24
+  i18n_key: mkt.home.hero.cta.primary
+- slot_id: marketing.home.hero.secondary_cta.label
+  surface: marketing
+  page: home
+  component: hero
+  content_kind: cta_label
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Should point to docs/how-it-works
+  char_limit:
+    min: 4
+    max: 24
+  i18n_key: mkt.home.hero.cta.secondary
+- slot_id: marketing.home.why_now.title
+  surface: marketing
+  page: home
+  component: why_now_section
+  content_kind: section_title
+  binding:
+    module_id: why_now_urgency
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: mkt.home.why_now.title
+- slot_id: marketing.home.why_now.body
+  surface: marketing
+  page: home
+  component: why_now_section
+  content_kind: paragraph
+  binding:
+    module_id: why_now_urgency
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions shorter certificate lifetimes (90-day; potential further reduction) without
+    asserting a specific future mandate date
+  char_limit:
+    min: 120
+    max: 420
+  i18n_key: mkt.home.why_now.body
+- slot_id: marketing.home.how_it_works.title
+  surface: marketing
+  page: home
+  component: how_it_works_summary
+  content_kind: section_title
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: mkt.home.how.title
+- slot_id: marketing.home.how_it_works.steps
+  surface: marketing
+  page: home
+  component: how_it_works_summary
+  content_kind: step_list
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical_steps_locked
+  strictness: locked
+  brand_override_allowed: false
+  classification: SHARED
+  required_includes:
+  - 4-step delegated DCV workflow
+  - Keeps _acme-challenge token intact
+  i18n_key: mkt.home.how.steps
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: marketing.home.security_snippet.title
+  surface: marketing
+  page: home
+  component: security_snippet
+  content_kind: section_title
+  binding:
+    module_id: security_model
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: mkt.home.security.title
+- slot_id: marketing.home.security_snippet.body
+  surface: marketing
+  page: home
+  component: security_snippet
+  content_kind: paragraph
+  binding:
+    module_id: security_model
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Explains reduced need for high-privilege DNS API keys (or reduced blast radius)
+  char_limit:
+    min: 120
+    max: 380
+  i18n_key: mkt.home.security.body
+- slot_id: marketing.home.differentiators.cards
+  surface: marketing
+  page: home
+  component: differentiators_cards
+  content_kind: card_set
+  binding:
+    module_id: differentiators
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - 3 cards mapping to security, platform-agnostic, pro/agency features
+  i18n_key: mkt.home.diffs.cards
+- slot_id: marketing.home.pricing_teaser.title
+  surface: marketing
+  page: home
+  component: pricing_teaser
+  content_kind: section_title
+  binding:
+    module_id: pricing_packaging
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: mkt.home.pricing.title
+- slot_id: marketing.home.pricing_teaser.body
+  surface: marketing
+  page: home
+  component: pricing_teaser
+  content_kind: paragraph
+  binding:
+    module_id: pricing_packaging
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions free tier and gradual upgrade ladder (no steep cliff)
+  char_limit:
+    min: 80
+    max: 240
+  i18n_key: mkt.home.pricing.body
+- slot_id: marketing.home.pricing_teaser.cta.label
+  surface: marketing
+  page: home
+  component: pricing_teaser
+  content_kind: cta_label
+  binding:
+    module_id: pricing_packaging
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 4
+    max: 24
+  i18n_key: mkt.home.pricing.cta
+- slot_id: marketing.pricing.header.title
+  surface: marketing
+  page: pricing
+  component: header
+  content_kind: headline
+  binding:
+    module_id: pricing_packaging
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Signals predictable pricing ladder
+  char_limit:
+    min: 10
+    max: 70
+  i18n_key: mkt.pricing.header.title
+- slot_id: marketing.pricing.header.subhead
+  surface: marketing
+  page: pricing
+  component: header
+  content_kind: subhead
+  binding:
+    module_id: pricing_packaging
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions wildcard included in all plans
+  char_limit:
+    min: 60
+    max: 200
+  i18n_key: mkt.pricing.header.subhead
+- slot_id: marketing.pricing.plan_cards.names
+  surface: marketing
+  page: pricing
+  component: plan_cards
+  content_kind: plan_names
+  binding:
+    module_id: pricing_packaging
+    render_mode: canonical_entitlements
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Uses plans_core default_name unless brand override exists
+  i18n_key: mkt.pricing.plans.names
+- slot_id: marketing.pricing.plan_cards.taglines
+  surface: marketing
+  page: pricing
+  component: plan_cards
+  content_kind: plan_taglines
+  binding:
+    module_id: pricing_packaging
+    render_mode: canonical_entitlements
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Each plan gets 1 short tagline; must not promise features not in entitlements
+  forbidden:
+  - enterprise-only wildcard
+  - unlimited domains
+  i18n_key: mkt.pricing.plans.taglines
+- slot_id: marketing.pricing.entitlements.table.caption
+  surface: marketing
+  page: pricing
+  component: entitlements_table
+  content_kind: caption
+  binding:
+    module_id: pricing_packaging
+    render_mode: canonical_entitlements
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Clarifies feature access is plan-dependent; wildcard always included
+  char_limit:
+    min: 30
+    max: 140
+  i18n_key: mkt.pricing.entitlements.caption
+- slot_id: marketing.pricing.faq.q_delegated_dcv
+  surface: marketing
+  page: pricing
+  component: faq
+  content_kind: faq_question
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 20
+    max: 120
+  i18n_key: mkt.pricing.faq.q1
+- slot_id: marketing.pricing.faq.a_delegated_dcv
+  surface: marketing
+  page: pricing
+  component: faq
+  content_kind: faq_answer
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Explains one-time CNAME delegation and automatic TXT responses
+  char_limit:
+    min: 80
+    max: 420
+  i18n_key: mkt.pricing.faq.a1
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: marketing.pricing.faq.q_security
+  surface: marketing
+  page: pricing
+  component: faq
+  content_kind: faq_question
+  binding:
+    module_id: security_model
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 20
+    max: 120
+  i18n_key: mkt.pricing.faq.q2
+- slot_id: marketing.pricing.faq.a_security
+  surface: marketing
+  page: pricing
+  component: faq
+  content_kind: faq_answer
+  binding:
+    module_id: security_model
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - No root DNS API key custody angle (blast radius reduction)
+  char_limit:
+    min: 80
+    max: 420
+  i18n_key: mkt.pricing.faq.a2
+- slot_id: marketing.how_it_works.header.title
+  surface: marketing
+  page: how_it_works
+  component: header
+  content_kind: headline
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 80
+  i18n_key: mkt.how.header.title
+- slot_id: marketing.how_it_works.header.intro
+  surface: marketing
+  page: how_it_works
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: problem_statement
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 120
+    max: 420
+  i18n_key: mkt.how.header.intro
+- slot_id: marketing.how_it_works.workflow_steps
+  surface: marketing
+  page: how_it_works
+  component: workflow
+  content_kind: step_list
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical_steps_locked
+  strictness: locked
+  brand_override_allowed: false
+  classification: SHARED
+  required_includes:
+  - 4-step delegated DCV workflow
+  i18n_key: mkt.how.steps
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: marketing.how_it_works.security_note
+  surface: marketing
+  page: how_it_works
+  component: workflow
+  content_kind: callout
+  binding:
+    module_id: security_model
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: mkt.how.security.callout
+- slot_id: marketing.security.header.title
+  surface: marketing
+  page: security
+  component: header
+  content_kind: headline
+  binding:
+    module_id: security_model
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 80
+  i18n_key: mkt.security.header.title
+- slot_id: marketing.security.header.summary
+  surface: marketing
+  page: security
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: security_model
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Explains delegation vs storing root DNS credentials
+  char_limit:
+    min: 120
+    max: 520
+  i18n_key: mkt.security.header.summary
+- slot_id: marketing.security.key_points
+  surface: marketing
+  page: security
+  component: key_points
+  content_kind: bullet_list
+  binding:
+    module_id: security_model
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - 2–5 bullets; include blast radius reduction concept
+  char_limit:
+    min: 80
+    max: 360
+  i18n_key: mkt.security.points
+- slot_id: marketing.alternatives.cloudflare.header.title
+  surface: marketing
+  page: alternatives_cloudflare
+  component: header
+  content_kind: headline
+  binding:
+    module_id: competitive_landscape
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  forbidden:
+  - defamation
+  - unverifiable claims
+  char_limit:
+    min: 10
+    max: 90
+  i18n_key: mkt.alt.cloudflare.title
+- slot_id: marketing.alternatives.cloudflare.summary
+  surface: marketing
+  page: alternatives_cloudflare
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: competitive_landscape
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions lock-in (proxy requirement) and/or overage unpredictability as cited
+  char_limit:
+    min: 120
+    max: 520
+  i18n_key: mkt.alt.cloudflare.summary
+- slot_id: marketing.alternatives.cloudflare.disclaimer
+  surface: marketing
+  page: alternatives_cloudflare
+  component: footer_note
+  content_kind: disclaimer
+  binding:
+    module_id: competitive_landscape
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - States comparisons are informational and may change; encourages verifying current
+    pricing/features
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: mkt.alt.disclaimer
+- slot_id: docs.how_it_works.title
+  surface: docs
+  page: how_it_works
+  component: header
+  content_kind: headline
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 80
+  i18n_key: docs.how.title
+- slot_id: docs.how_it_works.intro
+  surface: docs
+  page: how_it_works
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: problem_statement
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 120
+    max: 520
+  i18n_key: docs.how.intro
+- slot_id: docs.how_it_works.workflow_steps
+  surface: docs
+  page: how_it_works
+  component: workflow
+  content_kind: step_list
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical_steps_locked
+  strictness: locked
+  brand_override_allowed: false
+  classification: SHARED
+  i18n_key: docs.how.steps
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: docs.dns_setup.title
+  surface: docs
+  page: dns_setup_guide
+  component: header
+  content_kind: headline
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 90
+  i18n_key: docs.dns.title
+- slot_id: docs.dns_setup.manual_instructions
+  surface: docs
+  page: dns_setup_guide
+  component: manual_steps
+  content_kind: instruction_list
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Explains adding CNAME for _acme-challenge
+  - Uses variables for host/target
+  i18n_key: docs.dns.manual
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: docs.dns_setup.oauth_instructions
+  surface: docs
+  page: dns_setup_guide
+  component: oauth_steps
+  content_kind: instruction_list
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Only render if dns_oauth_setup enabled
+  - Do not list providers not supported
+  i18n_key: docs.dns.oauth
+- slot_id: docs.dns_setup.troubleshooting
+  surface: docs
+  page: dns_setup_guide
+  component: troubleshooting
+  content_kind: bullet_list
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Propagation delay note
+  - Common misconfigurations (wrong host, wrong target, proxied record)
+  forbidden:
+  - guaranteed within X minutes
+  i18n_key: docs.dns.troubleshoot
+- slot_id: docs.security_model.title
+  surface: docs
+  page: security_model
+  component: header
+  content_kind: headline
+  binding:
+    module_id: security_model
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 90
+  i18n_key: docs.security.title
+- slot_id: docs.security_model.summary
+  surface: docs
+  page: security_model
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: security_model
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 140
+    max: 700
+  i18n_key: docs.security.summary
+- slot_id: docs.security_model.threat_model_intro
+  surface: docs
+  page: threat_model
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: security_model
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Explains what delegation reduces vs what remains customer responsibility
+  i18n_key: docs.security.threatmodel.intro
+- slot_id: docs.architecture.title
+  surface: docs
+  page: architecture
+  component: header
+  content_kind: headline
+  binding:
+    module_id: technical_architecture
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 10
+    max: 90
+  i18n_key: docs.arch.title
+- slot_id: docs.architecture.summary
+  surface: docs
+  page: architecture
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: technical_architecture
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  char_limit:
+    min: 140
+    max: 700
+  i18n_key: docs.arch.summary
+- slot_id: docs.api.intro
+  surface: docs
+  page: api
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions REST API availability on paid tiers (per entitlements)
+  - Encourages sandbox for testing if applicable
+  i18n_key: docs.api.intro
+- slot_id: docs.webhooks.intro
+  surface: docs
+  page: webhooks
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions event types like domain.active/domain.error as examples
+  i18n_key: docs.webhooks.intro
+- slot_id: docs.audit_trail.intro
+  surface: docs
+  page: audit_trail
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions immutable audit trail concept
+  i18n_key: docs.audit.intro
+- slot_id: docs.sandbox.intro
+  surface: docs
+  page: sandbox
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions using sandbox to avoid CA rate limits during integration/testing
+  i18n_key: docs.sandbox.intro
+- slot_id: app.nav.domains.label
+  surface: app
+  page: app_shell
+  component: navigation
+  content_kind: nav_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain recognizable to users; avoid novelty labels
+  char_limit:
+    min: 3
+    max: 20
+  i18n_key: app_nav_domains_label
+- slot_id: app.nav.billing.label
+  surface: app
+  page: app_shell
+  component: navigation
+  content_kind: nav_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain recognizable to users; avoid novelty labels
+  char_limit:
+    min: 3
+    max: 20
+  i18n_key: app_nav_billing_label
+- slot_id: app.nav.settings.label
+  surface: app
+  page: app_shell
+  component: navigation
+  content_kind: nav_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain recognizable to users; avoid novelty labels
+  char_limit:
+    min: 3
+    max: 20
+  i18n_key: app_nav_settings_label
+- slot_id: app.nav.docs.label
+  surface: app
+  page: app_shell
+  component: navigation
+  content_kind: nav_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain recognizable to users; avoid novelty labels
+  char_limit:
+    min: 3
+    max: 20
+  i18n_key: app_nav_docs_label
+- slot_id: app.onboarding.add_domain.title
+  surface: app
+  page: onboarding_add_domain
+  component: header
+  content_kind: headline
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Signals adding a domain and setting up delegation
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: app.onboard.add.title
+- slot_id: app.onboarding.add_domain.intro
+  surface: app
+  page: onboarding_add_domain
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions one-time CNAME delegation for automatic renewals
+  char_limit:
+    min: 80
+    max: 260
+  i18n_key: app.onboard.add.intro
+- slot_id: app.onboarding.add_domain.step_domain_input.helper
+  surface: app
+  page: onboarding_add_domain
+  component: step_domain_input
+  content_kind: helper_text
+  binding:
+    module_id: problem_statement
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Mentions apex/base domain expectation (if required by UI) without making DNS promises
+  char_limit:
+    min: 20
+    max: 120
+  i18n_key: app.onboard.domain.helper
+- slot_id: app.onboarding.add_domain.step_dns_instructions.title
+  surface: app
+  page: onboarding_add_domain
+  component: step_dns_instructions
+  content_kind: section_title
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: app.onboard.dns.title
+- slot_id: app.onboarding.add_domain.step_dns_instructions.body
+  surface: app
+  page: onboarding_add_domain
+  component: step_dns_instructions
+  content_kind: instruction_block
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Show CNAME host and target variables
+  - Explain this is one-time delegation
+  i18n_key: app.onboard.dns.body
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: app.onboarding.add_domain.step_dns_instructions.security_tooltip
+  surface: app
+  page: onboarding_add_domain
+  component: step_dns_instructions
+  content_kind: tooltip
+  binding:
+    module_id: security_model
+    render_mode: tooltip_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Explains why CNAME delegation avoids sharing root DNS credentials (or reduces
+    blast radius)
+  char_limit:
+    min: 40
+    max: 160
+  i18n_key: app.onboard.dns.security.tooltip
+- slot_id: app.onboarding.add_domain.step_dns_instructions.oauth_cta_label
+  surface: app
+  page: onboarding_add_domain
+  component: dns_oauth_button
+  content_kind: cta_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Only render if dns_oauth_setup is enabled
+  char_limit:
+    min: 6
+    max: 24
+  i18n_key: app.onboard.dns.oauth.cta
+- slot_id: app.onboarding.add_domain.step_dns_instructions.manual_tab_label
+  surface: app
+  page: onboarding_add_domain
+  component: dns_tabs
+  content_kind: tab_label
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 4
+    max: 16
+  i18n_key: app.onboard.dns.tab.manual
+- slot_id: app.onboarding.add_domain.step_dns_instructions.oauth_tab_label
+  surface: app
+  page: onboarding_add_domain
+  component: dns_tabs
+  content_kind: tab_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Only render if dns_oauth_setup is enabled
+  char_limit:
+    min: 4
+    max: 16
+  i18n_key: app.onboard.dns.tab.oauth
+- slot_id: app.verification.title
+  surface: app
+  page: verification
+  component: header
+  content_kind: headline
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: app.verify.title
+- slot_id: app.verification.pending_message
+  surface: app
+  page: verification
+  component: status_panel
+  content_kind: status_message
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  required_includes:
+  - Mentions DNS propagation can take time
+  forbidden:
+  - guaranteed within X minutes
+  char_limit:
+    min: 30
+    max: 140
+  i18n_key: app.verify.pending
+- slot_id: app.verification.success_message
+  surface: app
+  page: verification
+  component: status_panel
+  content_kind: status_message
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Confirms delegation detected and renewals will be automatic
+  char_limit:
+    min: 30
+    max: 140
+  i18n_key: app.verify.success
+- slot_id: app.verification.error_message_generic
+  surface: app
+  page: verification
+  component: status_panel
+  content_kind: error_message
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - States CNAME delegation not found or incorrect
+  - Suggests checking host/target
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: app.verify.error
+  variables:
+  - cname_host
+  - cname_target
+- slot_id: app.verification.troubleshooting.title
+  surface: app
+  page: verification
+  component: troubleshooting
+  content_kind: section_title
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 10
+    max: 50
+  i18n_key: app.verify.troubleshoot.title
+- slot_id: app.verification.troubleshooting.items
+  surface: app
+  page: verification
+  component: troubleshooting
+  content_kind: bullet_list
+  binding:
+    module_id: platform_feature_set
+    render_mode: canonical
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Wrong host
+  - Wrong target
+  - Proxy/CDN flattening note if applicable
+  - Propagation delay
+  i18n_key: app.verify.troubleshoot.items
+- slot_id: app.dashboard.domains.header.title
+  surface: app
+  page: dashboard_domains
+  component: header
+  content_kind: headline
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 6
+    max: 40
+  i18n_key: app.domains.title
+- slot_id: app.dashboard.domains.header.microcopy
+  surface: app
+  page: dashboard_domains
+  component: header
+  content_kind: microcopy
+  binding:
+    module_id: why_now_urgency
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Subtle reminder that renewals are automated; avoid heavy marketing tone
+  char_limit:
+    min: 40
+    max: 140
+  i18n_key: app.domains.microcopy
+- slot_id: app.dashboard.domains.empty_state.title
+  surface: app
+  page: dashboard_domains
+  component: empty_state
+  content_kind: headline
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: app.domains.empty.title
+- slot_id: app.dashboard.domains.empty_state.body
+  surface: app
+  page: dashboard_domains
+  component: empty_state
+  content_kind: paragraph
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Mentions adding a domain and one-time CNAME delegation
+  char_limit:
+    min: 60
+    max: 200
+  i18n_key: app.domains.empty.body
+- slot_id: app.dashboard.domains.empty_state.cta.label
+  surface: app
+  page: dashboard_domains
+  component: empty_state
+  content_kind: cta_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 6
+    max: 24
+  i18n_key: app.domains.empty.cta
+- slot_id: app.domain_status.badge.active
+  surface: app
+  page: shared_components
+  component: status_badge
+  content_kind: badge_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain instantly understandable
+  char_limit:
+    min: 4
+    max: 16
+  i18n_key: app.status.active
+- slot_id: app.domain_status.badge.pending
+  surface: app
+  page: shared_components
+  component: status_badge
+  content_kind: badge_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain instantly understandable
+  char_limit:
+    min: 4
+    max: 16
+  i18n_key: app.status.pending
+- slot_id: app.domain_status.badge.error
+  surface: app
+  page: shared_components
+  component: status_badge
+  content_kind: badge_label
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Must remain instantly understandable
+  char_limit:
+    min: 4
+    max: 16
+  i18n_key: app.status.error
+- slot_id: app.domain_details.renewal_reassurance
+  surface: app
+  page: domain_details
+  component: info_panel
+  content_kind: callout
+  binding:
+    module_id: solution_mechanism_delegated_dcv
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - States renewals are automatic after delegation
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: app.domain.renewal.callout
+- slot_id: app.domain_details.security_note
+  surface: app
+  page: domain_details
+  component: info_panel
+  content_kind: callout
+  binding:
+    module_id: security_model
+    render_mode: tooltip_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Avoids encouraging storing DNS credentials
+  - Explains delegation model benefit
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: app.domain.security.callout
+- slot_id: app.billing.title
+  surface: app
+  page: billing
+  component: header
+  content_kind: headline
+  binding:
+    module_id: pricing_packaging
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  char_limit:
+    min: 10
+    max: 50
+  i18n_key: app.billing.title
+- slot_id: app.billing.subtitle
+  surface: app
+  page: billing
+  component: header
+  content_kind: subhead
+  binding:
+    module_id: pricing_packaging
+    render_mode: brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Emphasizes gradual upgrade ladder; no steep cliff
+  char_limit:
+    min: 60
+    max: 200
+  i18n_key: app.billing.subhead
+- slot_id: app.billing.upgrade_banner.title
+  surface: app
+  page: billing
+  component: upgrade_banner
+  content_kind: headline
+  binding:
+    module_id: pricing_packaging
+    render_mode: microcopy_brand_angle
+  strictness: free
+  brand_override_allowed: true
+  classification: PER_BRAND
+  char_limit:
+    min: 10
+    max: 60
+  i18n_key: app.billing.upgrade.title
+- slot_id: app.billing.upgrade_banner.body
+  surface: app
+  page: billing
+  component: upgrade_banner
+  content_kind: paragraph
+  binding:
+    module_id: pricing_packaging
+    render_mode: canonical_entitlements
+  strictness: guided
+  brand_override_allowed: true
+  classification: SHARED
+  required_includes:
+  - Mentions feature unlocks based on entitlements (API, teams, white-label) without
+    naming unsupported ones
+  char_limit:
+    min: 60
+    max: 220
+  i18n_key: app.billing.upgrade.body
+- slot_id: app.settings.team.rbac_explainer
+  surface: app
+  page: settings_team
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Explains team roles/permissions at a high level
+  char_limit:
+    min: 80
+    max: 260
+  i18n_key: app.settings.team.rbac
+- slot_id: app.white_label.explainer
+  surface: app
+  page: white_label
+  component: header
+  content_kind: paragraph
+  binding:
+    module_id: platform_feature_set
+    render_mode: microcopy_brand_angle
+  strictness: guided
+  brand_override_allowed: true
+  classification: HYBRID
+  required_includes:
+  - Explains branded control plane; avoid claiming end-user portal unless it exists
+  char_limit:
+    min: 80
+    max: 260
+  i18n_key: app.white_label.explainer
