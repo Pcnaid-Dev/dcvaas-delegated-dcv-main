@@ -29,6 +29,24 @@ export default {
         return withCors(req, env, json({ ok: true }));
       }
 
+      // Public redirect analyzer tool - no auth required
+      if (method === 'POST' && url.pathname === '/api/analyze-redirects') {
+        const { analyzeRedirectChain } = await import('./lib/redirect-analyzer');
+        const body = await req.json().catch(() => ({} as any));
+        const input = String(body.input ?? '').trim();
+        
+        if (!input) {
+          return withCors(req, env, badRequest('input (domain or URL) is required'));
+        }
+        
+        try {
+          const analysis = await analyzeRedirectChain(input);
+          return withCors(req, env, json({ analysis }));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message || 'Failed to analyze redirects'));
+        }
+      }
+
       if (!url.pathname.startsWith('/api/')) {
         return withCors(req, env, notFound());
       }

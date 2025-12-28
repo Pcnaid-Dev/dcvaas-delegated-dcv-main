@@ -124,6 +124,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               >
                 Docs
               </button>
+              <button
+                onClick={() => onNavigate('redirect-analyzer')}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Tools
+              </button>
               <Button onClick={() => onNavigate('dashboard')}>
                 Sign In
               </Button>
