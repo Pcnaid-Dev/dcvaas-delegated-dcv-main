@@ -1,0 +1,135 @@
+:root[data-brand="autocertify.net"] {
+  /* Brand */
+  --brand-name: "AutoCertify";
+  --brand-tone: "calm-trust-urgent";
+
+  /* Typography */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Type scale (merged: larger marketing sizes + usable app sizes) */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;   /* app body default */
+  --text-lg: 18px;   /* marketing body default (stress-friendly) */
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;  /* marketing H1 desktop */
+  --text-6xl: 56px;  /* marketing H1 max */
+
+  --line-xs: 16px;
+  --line-sm: 20px;
+  --line-md: 24px;
+  --line-lg: 28px;
+  --line-xl: 30px;
+  --line-2xl: 32px;
+  --line-3xl: 38px;
+  --line-4xl: 44px;
+  --line-5xl: 56px;
+  --line-6xl: 64px;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+
+  /* Colors (merged: Landing Page says primary green; keep blue as secondary/info) */
+  --color-primary: #15803D;        /* Secure Green (CTA, success) */
+  --color-primary-hover: #166534;  /* Deep Green */
+  --color-primary-active: #14532D; /* Deeper Green */
+  --color-on-primary: #FFFFFF;
+
+  --color-secondary: #2563EB;      /* optional trust/info blue */
+  --color-secondary-hover: #1D4ED8;
+  --color-on-secondary: #FFFFFF;
+
+  --color-accent: #22C55E;         /* bright green accent (icons, small highlights only) */
+  --color-accent-strong: #15803D;  /* reuse deep green */
+
+  /* Backgrounds / surfaces */
+  --color-bg: #FFFFFF;
+  --color-surface: #F0FDF4;        /* very light mint tint sections */
+  --color-surface-2: #FFFFFF;      /* cards */
+  --color-surface-neutral: #F8FAFC;/* neutral surface when mint feels “too themed” */
+  --color-surface-hover: #ECFDF5;  /* gentle mint hover */
+
+  --color-overlay: rgba(11, 18, 32, 0.55);
+
+  /* Text */
+  --color-text: #0B1220;
+  --color-text-muted: #556274;
+  --color-text-subtle: #64748B;
+
+  --color-link: var(--color-primary);
+  --color-link-hover: var(--color-primary-hover);
+
+  /* Borders */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Status */
+  --color-success: #15803D;
+  --color-success-solid: #166534;
+  --color-success-bg: #DCFCE7;
+
+  --color-warning: #F59E0B;
+  --color-warning-solid: #B45309;
+  --color-warning-bg: #FFFBEB;
+
+  --color-danger: #EF4444;         /* “Not Secure” / error (use sparingly) */
+  --color-danger-solid: #DC2626;
+  --color-danger-bg: #FEE2E2;
+
+  /* Focus / a11y */
+  --focus-ring-color: rgba(21, 128, 61, 0.35);
+  --focus-ring: 0 0 0 4px var(--focus-ring-color);
+  --focus-outline: 2px solid rgba(21, 128, 61, 0.65);
+
+  /* Spacing scale */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  /* Radii (merged: calmness asks 12–16px) */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows (soft) */
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.06);
+  --shadow-md: 0 8px 24px rgba(2, 6, 23, 0.10);
+  --shadow-lg: 0 18px 48px rgba(2, 6, 23, 0.16);
+
+  /* Layout sizes */
+  --container-max: 1160px;
+  --sidebar-w: 280px;
+  --topbar-h: 64px;
+
+  /* Controls (min 44px taps) */
+  --control-h: 44px;
+  --control-h-sm: 36px;
+  --control-px: 14px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 240ms;
+
+  /* Icon direction */
+  --icon-stroke: 2px;
+  --icon-corner: round;
+}
