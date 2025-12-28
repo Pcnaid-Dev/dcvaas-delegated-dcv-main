@@ -1,0 +1,79 @@
+{
+  "global": {
+    "user_agent": "PcnaidSEO/1.0 (+https://pcnaid.com)",
+    "timeout_seconds": 20,
+    "follow_redirects": true,
+    "require_https": true,
+    "enforce_non_www": true,
+    "require_self_canonical_on_marketing_pages": true,
+    "disallow_cross_domain_canonicals": true,
+    "fail_if_marketing_page_has_noindex": true,
+    "max_cross_brand_links_per_page": 1,
+    "sitemap_host_must_match": true
+  },
+  "brands": [
+    {
+      "name": "KeylessSSL",
+      "marketing_host": "keylessssl.dev",
+      "preferred_host": "keylessssl.dev",
+      "marketing_pages": [
+        "/",
+        "/pricing",
+        "/docs",
+        "/blog"
+      ],
+      "app_hosts": [
+        {
+          "host": "app.keylessssl.dev",
+          "test_paths": [
+            "/",
+            "/login"
+          ],
+          "require_noindex": true
+        }
+      ]
+    },
+    {
+      "name": "DelegatedSSL",
+      "marketing_host": "delegatedssl.com",
+      "preferred_host": "delegatedssl.com",
+      "marketing_pages": [
+        "/",
+        "/pricing",
+        "/docs",
+        "/blog"
+      ],
+      "app_hosts": [
+        {
+          "host": "portal.delegatedssl.com",
+          "test_paths": [
+            "/",
+            "/login"
+          ],
+          "require_noindex": true
+        }
+      ]
+    },
+    {
+      "name": "AutoCertify",
+      "marketing_host": "autocertify.net",
+      "preferred_host": "autocertify.net",
+      "marketing_pages": [
+        "/",
+        "/pricing",
+        "/guides",
+        "/blog"
+      ],
+      "app_hosts": [
+        {
+          "host": "wizard.autocertify.net",
+          "test_paths": [
+            "/",
+            "/login"
+          ],
+          "require_noindex": true
+        }
+      ]
+    }
+  ]
+}
