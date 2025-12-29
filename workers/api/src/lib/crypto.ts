@@ -39,6 +39,10 @@ export async function encryptSecret(plaintext: string, encryptionKey: string): P
   combined.set(new Uint8Array(ciphertext), iv.length);
 
   // Convert to base64 - use loop to avoid stack overflow on large payloads
+  return btoa(String.fromCharCode(...combined));
+}
+
+/**
  * Derives a CryptoKey from the encryption key string using PBKDF2
  */
 async function deriveKey(encryptionKey: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -123,6 +127,12 @@ export async function decryptSecret(ciphertext: string, encryptionKey: string): 
     { name: 'AES-GCM', iv },
     key,
     encryptedData
+  );
+
+  return new TextDecoder().decode(decrypted);
+}
+
+/**
  * Decrypts data using AES-GCM
  * Accepts base64-encoded string containing salt, iv, and ciphertext
  */

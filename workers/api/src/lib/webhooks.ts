@@ -171,6 +171,6 @@ export async function dispatchWebhook(
   payload: Record<string, any>
 ) {
   // Use shared webhook dispatch module
-  const { dispatchWebhook: sharedDispatch } = await import('../../shared/webhook-dispatch');
+  const { dispatchWebhook: sharedDispatch } = await import('../../../shared/webhook-dispatch');
   await sharedDispatch(env.DB, orgId, event, payload);
 }

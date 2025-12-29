@@ -6,7 +6,7 @@ import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
 import { listWebhooks, createWebhook, updateWebhook, deleteWebhook } from './lib/webhooks';
-import { exchangeOAuthCode, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
+import { createOAuthConnection, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
 import { getOrganization } from './lib/organizations';
 import { listJobs, getJob } from './lib/jobs';
 import { snakeToCamel } from './lib/utils';
@@ -38,6 +38,103 @@ export default {
       if (method === 'POST' && url.pathname === '/api/webhooks/stripe') {
         const response = await handleStripeWebhook(req, env);
         return response;
+      }
+
+      // Admin endpoints - require INTERNAL_ADMIN_TOKEN
+      if (url.pathname.startsWith('/api/admin/')) {
+        const adminToken = req.headers.get('X-Admin-Token');
+        if (!adminToken || !env.INTERNAL_ADMIN_TOKEN || adminToken !== env.INTERNAL_ADMIN_TOKEN) {
+          return withCors(req, env, new Response(
+            JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin token' }),
+            { status: 401, headers: { 'Content-Type': 'application/json' } }
+          ));
+        }
+
+        // POST /api/admin/demo/seed
+        if (method === 'POST' && url.pathname === '/api/admin/demo/seed') {
+          try {
+            const { generateId } = await import('./lib/crypto');
+            const now = new Date().toISOString();
+            
+            // Create demo org
+            const orgId = generateId();
+            await env.DB.prepare(
+              `INSERT INTO organizations (id, name, owner_id, subscription_tier, created_at)
+               VALUES (?, ?, ?, ?, ?)`
+            ).bind(orgId, 'Demo Organization', 'demo_owner', 'pro', now).run();
+
+            // Create demo domains
+            const domainNames = ['demo1.example.com', 'demo2.example.com', 'demo3.example.com'];
+            const domainIds = [];
+            for (const name of domainNames) {
+              const domainId = generateId();
+              domainIds.push(domainId);
+              await env.DB.prepare(
+                `INSERT INTO domains (id, org_id, domain_name, status, cname_target, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(domainId, orgId, name, 'active', env.SAAS_CNAME_TARGET, now, now).run();
+            }
+
+            // Create demo jobs
+            for (const domainId of domainIds) {
+              const jobId = generateId();
+              await env.DB.prepare(
+                `INSERT INTO jobs (id, type, domain_id, status, attempts, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(jobId, 'dns_check', domainId, 'completed', 1, now, now).run();
+            }
+
+            return withCors(req, env, json({
+              success: true,
+              message: 'Demo data seeded successfully',
+              orgId,
+              domains: domainIds.length,
+              jobs: domainIds.length
+            }));
+          } catch (err: any) {
+            console.error('Demo seed error:', err);
+            return withCors(req, env, json({ error: err.message }, 500));
+          }
+        }
+
+        // POST /api/admin/demo/reset
+        if (method === 'POST' && url.pathname === '/api/admin/demo/reset') {
+          try {
+            // Find demo org
+            const demoOrg = await env.DB.prepare(
+              `SELECT id FROM organizations WHERE name = 'Demo Organization'`
+            ).first<{ id: string }>();
+
+            if (demoOrg) {
+              // Delete jobs for demo domains
+              await env.DB.prepare(
+                `DELETE FROM jobs WHERE domain_id IN (
+                   SELECT id FROM domains WHERE org_id = ?
+                 )`
+              ).bind(demoOrg.id).run();
+
+              // Delete demo domains
+              await env.DB.prepare(
+                `DELETE FROM domains WHERE org_id = ?`
+              ).bind(demoOrg.id).run();
+
+              // Delete demo org
+              await env.DB.prepare(
+                `DELETE FROM organizations WHERE id = ?`
+              ).bind(demoOrg.id).run();
+            }
+
+            return withCors(req, env, json({
+              success: true,
+              message: 'Demo data reset successfully'
+            }));
+          } catch (err: any) {
+            console.error('Demo reset error:', err);
+            return withCors(req, env, json({ error: err.message }, 500));
+          }
+        }
+
+        return withCors(req, env, notFound());
       }
 
 // 1. Ensure this auth check exists first
@@ -452,7 +549,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         }
 
         try {
-          const result = await exchangeOAuthCode(env, auth.orgId, provider as any, code, redirectUri);
+          const result = await createOAuthConnection(env, auth.orgId, provider as any, code, redirectUri);
           return withCors(req, env, json(result, 201));
         } catch (err: any) {
           return withCors(req, env, badRequest(err.message));
