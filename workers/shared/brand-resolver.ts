@@ -78,7 +78,7 @@ export function resolveBrandFromHostname(hostname: string): BrandConfig | null {
 
   // Check if it matches marketing host
   for (const brand of BRAND_DEFINITIONS) {
-    if (normalized === brand.marketingHost || normalized === `www.${brand.marketingHost}`) {
+    if (normalized === brand.marketingHost) {
       return {
         brandId: brand.brandId,
         brandName: brand.brandName,
