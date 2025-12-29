@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle, CreditCard } from '@phosphor-icons/react';
 import { PLAN_LIMITS, getEffectiveMaxDomains } from '@/types';
 import { createStripeCheckoutSession } from '@/lib/data';
-import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
+import { STRIPE_PRICE_IDS, isStripeConfigured } from '@/lib/stripe-constants';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/common';
@@ -36,9 +36,16 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
   const effectiveLimit = getEffectiveMaxDomains(currentOrg, user?.email);
   const isUnlimited = effectiveLimit === Infinity;
   const usagePercentage = isUnlimited ? 0 : (domains.length / effectiveLimit) * 100;
-
+  const stripeConfigured = isStripeConfigured();
 
   const handleUpgrade = async (tier: 'pro' | 'agency') => {
+    if (!stripeConfigured) {
+      toast.error('Stripe not configured', {
+        description: 'Contact administrator to configure Stripe pricing.',
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const priceId = STRIPE_PRICE_IDS[tier];
@@ -151,14 +158,16 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
                   <Button 
                     variant="default" 
                     onClick={() => handleUpgrade('pro')}
-                    disabled={loading}
+                    disabled={loading || !stripeConfigured}
+                    title={!stripeConfigured ? 'Stripe not configured' : ''}
                   >
                     {loading ? 'Loading...' : 'Upgrade to Pro'}
                   </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => handleUpgrade('agency')}
-                    disabled={loading}
+                    disabled={loading || !stripeConfigured}
+                    title={!stripeConfigured ? 'Stripe not configured' : ''}
                   >
                     {loading ? 'Loading...' : 'Upgrade to Agency'}
                   </Button>
@@ -168,7 +177,8 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
                 <Button 
                   variant="default" 
                   onClick={() => handleUpgrade('agency')}
-                  disabled={loading}
+                  disabled={loading || !stripeConfigured}
+                  title={!stripeConfigured ? 'Stripe not configured' : ''}
                 >
                   {loading ? 'Loading...' : 'Upgrade to Agency'}
                 </Button>
