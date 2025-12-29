@@ -163,6 +163,24 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
   },
 };
 
+/**
+ * Get effective max domains for a user, considering platform owner status
+ */
+export function getEffectiveMaxDomains(
+  org: Organization | undefined,
+  userEmail: string | undefined
+): number {
+  // Platform owner has unlimited domains
+  const ownerEmail = import.meta.env.VITE_PLATFORM_OWNER_EMAIL;
+  if (ownerEmail && userEmail && userEmail.toLowerCase() === ownerEmail.toLowerCase()) {
+    return Infinity;
+  }
+  
+  // Normal users follow plan limits
+  if (!org) return PLAN_LIMITS.free.maxDomains;
+  return PLAN_LIMITS[org.subscriptionTier].maxDomains;
+}
+
 export type EnvironmentVariable = {
   key: string;
   isSet: boolean;

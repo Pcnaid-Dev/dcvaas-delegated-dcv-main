@@ -183,12 +183,12 @@ export function AdminPage({ onNavigate }: AdminPageProps) {
             Publishing Notes
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
-            When you publish this Spark, remember that all users share the same datastore.
+            When you publish this application, remember that all users share the same datastore.
             You can make it read-only for viewers to prevent modifications.
           </p>
           <div className="flex items-center gap-2">
             <Switch id="readonly" />
-            <Label htmlFor="readonly">Make this spark read-only</Label>
+            <Label htmlFor="readonly">Make this application read-only</Label>
           </div>
         </Card>
       </div>

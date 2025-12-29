@@ -93,6 +93,47 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         const body = await req.json().catch(() => ({} as any));
         const hostname = String(body.hostname ?? body.domainName ?? '').trim();
         if (!hostname) return withCors(req, env, badRequest('hostname/domainName is required'));
+        
+        // Check domain limit before creating (unless platform owner)
+        const platformOwnerEmail = env.PLATFORM_OWNER_EMAIL?.toLowerCase();
+        let isPlatformOwner = false;
+        
+        if (platformOwnerEmail) {
+          // Get org owner's email
+          const orgOwner = await env.DB.prepare(
+            `SELECT om.email 
+             FROM organizations o 
+             JOIN organization_members om ON om.user_id = o.owner_id AND om.org_id = o.id
+             WHERE o.id = ?`
+          ).bind(auth.orgId).first<{ email: string }>();
+          
+          isPlatformOwner = orgOwner?.email?.toLowerCase() === platformOwnerEmail;
+        }
+        
+        if (!isPlatformOwner) {
+          // Get org subscription tier and current domain count
+          const org = await env.DB.prepare(
+            'SELECT subscription_tier FROM organizations WHERE id = ?'
+          ).bind(auth.orgId).first<{ subscription_tier: string }>();
+          
+          const domainCount = await env.DB.prepare(
+            'SELECT COUNT(*) as count FROM domains WHERE org_id = ?'
+          ).bind(auth.orgId).first<{ count: number }>();
+          
+          const PLAN_LIMITS = {
+            free: 3,
+            pro: 15,
+            agency: 50,
+          };
+          
+          const tier = org?.subscription_tier || 'free';
+          const maxDomains = PLAN_LIMITS[tier as keyof typeof PLAN_LIMITS] || 3;
+          
+          if ((domainCount?.count || 0) >= maxDomains) {
+            return withCors(req, env, badRequest(`Domain limit reached. Your plan allows ${maxDomains} domains. Upgrade to add more.`));
+          }
+        }
+        
         const domain = await createDomain(env, auth.orgId, hostname);
         return withCors(req, env, json({ domain }, 201));
       }

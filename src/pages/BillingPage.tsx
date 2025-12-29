@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle, CreditCard } from '@phosphor-icons/react';
-import { PLAN_LIMITS } from '@/types';
+import { PLAN_LIMITS, getEffectiveMaxDomains } from '@/types';
 import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
@@ -21,7 +21,7 @@ type BillingPageProps = {
 const UPGRADE_WARNING_THRESHOLD = 80;
 
 export function BillingPage({ onNavigate }: BillingPageProps) {
-  const { currentOrg } = useAuth();
+  const { currentOrg, user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Fetch domains for usage stats
@@ -33,8 +33,9 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
 
   if (!currentOrg) return null;
 
-  const currentLimit = PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains;
-  const usagePercentage = currentLimit > 0 ? (domains.length / currentLimit) * 100 : 0;
+  const effectiveLimit = getEffectiveMaxDomains(currentOrg, user?.email);
+  const isUnlimited = effectiveLimit === Infinity;
+  const usagePercentage = isUnlimited ? 0 : (domains.length / effectiveLimit) * 100;
 
 
   const handleUpgrade = async (tier: 'pro' | 'agency') => {
@@ -99,13 +100,22 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">Domain Usage</span>
             <span className="text-sm text-muted-foreground">
-              {domains.length} / {currentLimit} domains
+              {domains.length} / {isUnlimited ? 'Unlimited' : effectiveLimit} domains
             </span>
           </div>
-          <Progress value={usagePercentage} className="h-2" />
-          {usagePercentage >= UPGRADE_WARNING_THRESHOLD && (
-            <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
-              You're approaching your domain limit. Consider upgrading your plan.
+          {!isUnlimited && (
+            <>
+              <Progress value={usagePercentage} className="h-2" />
+              {usagePercentage >= UPGRADE_WARNING_THRESHOLD && (
+                <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+                  You're approaching your domain limit. Consider upgrading your plan.
+                </p>
+              )}
+            </>
+          )}
+          {isUnlimited && (
+            <p className="text-sm text-green-600 dark:text-green-500 mt-2">
+              🎉 Platform owner account - unlimited domains
             </p>
           )}
         </div>
@@ -117,7 +127,7 @@ export function BillingPage({ onNavigate }: BillingPageProps) {
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle size={16} weight="fill" className="text-success" />
                   <span className="text-foreground">
-                    {PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains} domains
+                    {isUnlimited ? 'Unlimited' : PLAN_LIMITS[currentOrg.subscriptionTier].maxDomains} domains
                   </span>
                 </div>
                 {PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess && (
