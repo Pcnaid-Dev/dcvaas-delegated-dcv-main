@@ -10,79 +10,23 @@
  * - Canonical URL enforcement
  */
 
-// Import brand resolver (inline since we can't import TypeScript in .js)
-// We'll inline the necessary functions
-
-const BRAND_DEFINITIONS = [
-  {
-    brandId: 'autocertify.net',
-    brandName: 'AutoCertify',
-    marketingHost: 'autocertify.net',
-    appHost: 'wizard.autocertify.net',
-  },
-  {
-    brandId: 'delegatedssl.com',
-    brandName: 'DelegatedSSL',
-    marketingHost: 'delegatedssl.com',
-    appHost: 'portal.delegatedssl.com',
-  },
-  {
-    brandId: 'keylessssl.dev',
-    brandName: 'KeylessSSL',
-    marketingHost: 'keylessssl.dev',
-    appHost: 'app.keylessssl.dev',
-  },
-];
-
-function normalizeHostname(hostname) {
-  return hostname.replace(/^www\./, '').toLowerCase();
-}
-
-function resolveBrandFromHostname(hostname) {
-  const normalized = normalizeHostname(hostname);
-
-  // Check if it matches marketing host
-  for (const brand of BRAND_DEFINITIONS) {
-    if (normalized === brand.marketingHost || normalized === `www.${brand.marketingHost}`) {
-      return {
-        ...brand,
-        isMarketingHost: true,
-        isAppHost: false,
-        preferredHost: brand.marketingHost,
-      };
-    }
-  }
-
-  // Check if it matches app host
-  for (const brand of BRAND_DEFINITIONS) {
-    if (normalized === brand.appHost) {
-      return {
-        ...brand,
-        isMarketingHost: false,
-        isAppHost: true,
-        preferredHost: brand.marketingHost,
-      };
-    }
-  }
-
-  return null;
-}
+import { 
+  resolveBrandFromHostname, 
+  getRedirectTarget,
+  getCanonicalURL
+} from './shared/brand-resolver.js';
 
 function handleWwwRedirect(url) {
-  if (url.hostname.startsWith('www.')) {
-    const normalized = normalizeHostname(url.hostname);
-    for (const brand of BRAND_DEFINITIONS) {
-      if (normalized === brand.marketingHost) {
-        const redirectUrl = `${url.protocol}//${brand.marketingHost}${url.pathname}${url.search}`;
-        return new Response(null, {
-          status: 308,
-          headers: {
-            'Location': redirectUrl,
-            'Cache-Control': 'public, max-age=31536000',
-          },
-        });
-      }
-    }
+  const redirectTarget = getRedirectTarget(url.hostname);
+  if (redirectTarget) {
+    const redirectUrl = `${url.protocol}//${redirectTarget}${url.pathname}${url.search}`;
+    return new Response(null, {
+      status: 308,
+      headers: {
+        'Location': redirectUrl,
+        'Cache-Control': 'public, max-age=31536000',
+      },
+    });
   }
   return null;
 }
@@ -126,12 +70,24 @@ function generateSitemapXml(brand, protocol) {
     });
   }
 
-  const pages = [
-    { path: '/', priority: '1.0', changefreq: 'weekly' },
-    { path: '/pricing', priority: '0.9', changefreq: 'weekly' },
-    { path: '/docs', priority: '0.8', changefreq: 'weekly' },
-    { path: '/blog', priority: '0.7', changefreq: 'daily' },
-  ];
+  // Brand-specific pages per seo_safety_rules.json
+  let pages;
+  if (brand.brandId === 'autocertify.net') {
+    pages = [
+      { path: '/', priority: '1.0', changefreq: 'weekly' },
+      { path: '/pricing', priority: '0.9', changefreq: 'weekly' },
+      { path: '/guides', priority: '0.8', changefreq: 'weekly' },
+      { path: '/blog', priority: '0.7', changefreq: 'daily' },
+    ];
+  } else {
+    // KeylessSSL and DelegatedSSL use /docs
+    pages = [
+      { path: '/', priority: '1.0', changefreq: 'weekly' },
+      { path: '/pricing', priority: '0.9', changefreq: 'weekly' },
+      { path: '/docs', priority: '0.8', changefreq: 'weekly' },
+      { path: '/blog', priority: '0.7', changefreq: 'daily' },
+    ];
+  }
 
   const now = new Date().toISOString().split('T')[0];
 
@@ -151,6 +107,58 @@ ${pages.map(page => `  <url>
       'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
     },
+  });
+}
+
+/**
+ * Inject canonical and meta tags into HTML
+ */
+async function injectSEOTags(response, brand, url) {
+  const contentType = response.headers.get('content-type') || '';
+  
+  // Only process HTML responses
+  if (!contentType.includes('text/html')) {
+    return response;
+  }
+
+  // Read the HTML content
+  let html = await response.text();
+  
+  // Generate canonical URL
+  const canonicalUrl = getCanonicalURL(url.hostname, url.pathname);
+  
+  // Inject canonical tag if not already present
+  if (!html.includes('rel="canonical"')) {
+    html = html.replace(
+      '</head>',
+      `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
+    );
+  } else {
+    // Replace existing canonical with correct one
+    html = html.replace(
+      /<link[^>]+rel="canonical"[^>]*>/i,
+      `<link rel="canonical" href="${canonicalUrl}" />`
+    );
+  }
+  
+  // For app subdomains, inject noindex meta tag as backup
+  if (brand && brand.isAppHost) {
+    if (!html.includes('name="robots"')) {
+      html = html.replace(
+        '</head>',
+        `  <meta name="robots" content="noindex, nofollow" />\n</head>`
+      );
+    }
+  }
+  
+  // Create new response with modified HTML
+  const headers = new Headers(response.headers);
+  headers.set('Content-Length', new Blob([html]).size.toString());
+  
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
 }
 
@@ -186,6 +194,11 @@ export default {
     // serve index.html instead. This fixes "Page Not Found" on refresh.
     if (response.status === 404 && !url.pathname.startsWith('/assets/')) {
       response = await env.ASSETS.fetch(new URL("/index.html", request.url));
+    }
+
+    // Inject canonical and meta tags into HTML
+    if (brand) {
+      response = await injectSEOTags(response, brand, url);
     }
 
     // Add X-Robots-Tag header for app subdomains
