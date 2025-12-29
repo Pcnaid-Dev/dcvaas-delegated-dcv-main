@@ -1,0 +1,12 @@
+{
+  "dashboard_header": "Active Domains | Pending Verification | Rate Limit Status",
+  "add_domain.placeholder": "*.app.your-saas.com",
+  "add_domain.instruction": "Add this CNAME record to your DNS provider once. We will handle rotations forever.",
+  "api_token.notice": "Generate Scoped API Token. Warning: This token is shown only once. It is hashed using SHA-256 before storage.",
+  "status_active": "Auto-renewing. Next renewal scheduled. Last issuance logged.",
+  "status_pending": "Delegation not detected. Confirm _acme-challenge CNAME target.",
+  "status_error": "Validation failed. Open diagnostics for exact failure mode + trace.",
+  "toast_copied": "Copied.",
+  "toast_saved": "Saved.",
+  "toast_domain_queued": "Domain queued."
+}
