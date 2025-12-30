@@ -17,9 +17,9 @@ const DEFAULT_USER: User = {
 // Define default organization for fallback/mocking
 const DEFAULT_ORG: Organization = {
   id: 'org_1',
-  name: 'Pcnaid Default Org',
+  name: 'Pcnaid Default Org - Test',
   ownerId: 'user_1',
-  subscriptionTier: 'agency',
+  subscriptionTier: 'agency', // Upgrade from 'pro' to 'agency'
   createdAt: new Date().toISOString(),
 };
 
@@ -90,10 +90,6 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await res.json()) as T;
 }
 
-// ===== Very loose types =====
-
-
-
 // ===== LocalStorage keys =====
 
 const LOCAL_USER_KEY = 'dcvaas_user';
@@ -105,10 +101,6 @@ const LOCAL_AUDIT_KEY = 'dcvaas_audit_logs';
 
 // ===== USERS & ORGS (used by AppShell/AuthContext) =====
 
-/**
- * Helper function to fetch organization from API and cache in localStorage
- * Returns null if fetch fails
- */
 async function fetchOrganizationFromAPI(): Promise<Organization | null> {
   if (!API_TOKEN) return null;
   
@@ -116,7 +108,6 @@ async function fetchOrganizationFromAPI(): Promise<Organization | null> {
     const res = await api<{ organization: Organization }>('/api/organizations');
     const org = res.organization;
     
-    // Cache in localStorage
     localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(org));
     localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([org]));
     
@@ -127,7 +118,6 @@ async function fetchOrganizationFromAPI(): Promise<Organization | null> {
   }
 }
 
-// Always return a user object so code like user.name.substring() doesn't crash
 export async function getUser(): Promise<User> {
   if (!isBrowser()) return DEFAULT_USER;
 
@@ -139,11 +129,7 @@ export async function getUser(): Promise<User> {
 
   try {
     const parsed = JSON.parse(raw);
-    // Ensure critical fields exist
-    return {
-      ...DEFAULT_USER,
-      ...parsed,
-    };
+    return { ...DEFAULT_USER, ...parsed };
   } catch {
     localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(DEFAULT_USER));
     return DEFAULT_USER;
@@ -159,44 +145,34 @@ export async function setUser(user: User | null): Promise<void> {
   localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
 }
 
-// AppShell often takes the first org in this list -> always return at least [DEFAULT_ORG]
 export async function getUserOrganizations(): Promise<Organization[]> {
   if (!isBrowser()) return [DEFAULT_ORG];
 
-  // Try to fetch from API first
   const orgFromAPI = await fetchOrganizationFromAPI();
   if (orgFromAPI) return [orgFromAPI];
 
-  // Try explicit list first
   const rawList = localStorage.getItem(LOCAL_ORG_LIST_KEY);
   if (rawList) {
     try {
       const list = JSON.parse(rawList) as Organization[];
       if (Array.isArray(list) && list.length > 0) return list;
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
-  // Then single org
   const rawOrg = localStorage.getItem(LOCAL_ORG_KEY);
   if (rawOrg) {
     try {
       const org = JSON.parse(rawOrg) as Organization;
       return [org];
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
-  // Seed defaults
   localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(DEFAULT_ORG));
   localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([DEFAULT_ORG]));
   return [DEFAULT_ORG];
 }
 
 export async function getOrganization(): Promise<Organization> {
-  // Rely solely on getUserOrganizations() which already handles API fetch and fallback
   const orgs = await getUserOrganizations();
   return orgs[0] ?? DEFAULT_ORG;
 }
@@ -258,7 +234,6 @@ export async function createDomain(domainName: string): Promise<Domain> {
   return res.domain;
 }
 
-// Older pages may still call addDomain
 export const addDomain = createDomain;
 
 export async function verifyDomain(domainId: string): Promise<void> {
@@ -268,7 +243,6 @@ export async function verifyDomain(domainId: string): Promise<void> {
 }
 
 export async function syncDomain(domainId: string): Promise<Domain> {
-  // Use the sync endpoint we created in the API
   const res = await api<{ domain: Domain }>(`/api/domains/${encodeURIComponent(domainId)}/sync`, {
     method: 'POST',
   });
@@ -287,10 +261,7 @@ export async function getDomainsExpiringBefore(isoDate: string): Promise<Domain[
   });
 }
 
-// No-ops kept for compatibility with old Spark template
-export function setDomain(_domain: Domain): void {
-  // no-op
-}
+export function setDomain(_domain: Domain): void {}
 
 // ===== JOBS (real API) =====
 
@@ -314,9 +285,7 @@ export async function getJob(jobId: string): Promise<Job> {
   return res.job;
 }
 
-export function setJob(_job: Job): void {
-  // no-op
-}
+export function setJob(_job: Job): void {}
 
 // ===== API TOKENS (real API) =====
 
@@ -338,20 +307,13 @@ export async function createAPIToken(name: string, expiresAt?: string | null): P
   return res;
 }
 
-// Deprecated: Use createAPIToken instead
-export async function addAPIToken(token: APIToken): Promise<void> {
-  // This is a no-op for backward compatibility
-  // New code should use createAPIToken
-  console.warn('addAPIToken is deprecated, use createAPIToken instead');
-}
-
 export async function deleteAPIToken(id: string): Promise<void> {
   await api(`/api/tokens/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
 }
 
-// ===== AUDIT LOGS (local stub for now) =====
+// ===== AUDIT LOGS (local stub) =====
 
 export async function getOrgAuditLogs(): Promise<AuditLog[]> {
   if (!isBrowser()) return [];
@@ -411,6 +373,7 @@ export async function acceptOrgInvitation(orgId: string, userId: string, email: 
     body: JSON.stringify({ userId, email }),
   });
 }
+
 // ===== WEBHOOKS (real API) =====
 
 export async function getOrgWebhooks(): Promise<WebhookEndpoint[]> {
@@ -482,7 +445,7 @@ export async function exchangeOAuthCode(provider: string, code: string, redirect
 
 export async function listOAuthConnections(): Promise<OAuthConnection[]> {
   const res = await api<{ connections: OAuthConnection[] }>('/api/oauth/connections');
-  return res.connections;
+  return res?.connections ?? [];
 }
 
 export async function deleteOAuthConnection(provider: string): Promise<void> {
