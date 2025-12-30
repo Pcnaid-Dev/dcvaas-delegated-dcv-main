@@ -1,50 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AppShell } from '@/components/AppShell';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import type { WebhookEndpoint } from '@/types';
-import { PLAN_LIMITS } from '@/types';
+
+import { CopyButton } from '@/components/CopyButton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
-import { CopyButton } from '@/components/CopyButton';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  getOrgWebhooks, 
-  createWebhook, 
-  updateWebhook, 
-  deleteWebhook 
-} from '@/lib/data';
 
-type WebhooksPageProps = {
-  onNavigate: (page: string) => void;
-};
+import { useAuth } from '@/hooks/useAuth';
+import { createWebhook, deleteWebhook, getOrgWebhooks, updateWebhook } from '@/lib/data';
+import { PLAN_LIMITS } from '@/types';
 
 const AVAILABLE_EVENTS = [
   { name: 'domain.active', description: 'Certificate has been successfully issued and is active', category: 'Certificate Lifecycle' },
@@ -59,60 +36,70 @@ const AVAILABLE_EVENTS = [
   { name: 'job.dlq', description: 'Job has been moved to dead letter queue', category: 'Job Queue' },
 ];
 
-export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
+type NewWebhookState = {
+  url: string;
+  events: string[];
+};
+
+export function WebhooksPage({ onNavigate }: { onNavigate: (page: string) => void }) {
   const { currentOrg } = useAuth();
   const queryClient = useQueryClient();
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
-  const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
+  const [revealedSecrets, setRevealedSecrets] = useState<Record<string, boolean>>({});
+  const [newWebhook, setNewWebhook] = useState<NewWebhookState>({ url: '', events: [] });
   const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
-  const [newWebhook, setNewWebhook] = useState({ url: '', events: [] as string[] });
 
-  const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
+  const hasApiAccess = Boolean(currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess);
 
-  // Fetch webhooks with React Query
+  // Fetch webhooks with React Query (org-scoped cache key)
   const { data: orgWebhooks = [], isLoading } = useQuery({
-  const { data: orgWebhooksData = [] } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
-    queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
-    enabled: !!currentOrg && hasApiAccess,
-    staleTime: 30000,
+    queryFn: () => getOrgWebhooks(),
+    enabled: Boolean(currentOrg && hasApiAccess),
+    staleTime: 30_000,
   });
 
   const createWebhookMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentOrg) throw new Error('No organization');
-      return createWebhook(newWebhook.url, newWebhook.events);
-    },
+    mutationFn: (payload: { url: string; events: string[] }) => createWebhook(payload.url, payload.events),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
       setNewWebhookSecret(result.webhook.secret);
       setNewWebhook({ url: '', events: [] });
       setIsCreateOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
       toast.success('Webhook endpoint created');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to create webhook');
+      toast.error(error?.message || 'Failed to create webhook');
     },
   });
 
-  useEffect(() => {
-    if (!hasApiAccess) return;
-    const loadWebhooks = async () => {
-      try {
-        const data = await getOrgWebhooks();
-        setWebhooks(data);
-      } catch (error) {
-        console.error('Failed to load webhooks:', error);
-        toast.error('Failed to load webhooks');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadWebhooks();
-  }, [hasApiAccess]);
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (webhookId: string) => deleteWebhook(webhookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      setDeleteWebhookId(null);
+      toast.success('Webhook deleted');
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to delete webhook');
+    },
+  });
 
-  const handleCreateWebhook = async () => {
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) =>
+      updateWebhook(webhookId, { enabled }),
+    onSuccess: (_, { enabled }) => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
+      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to update webhook');
+    },
+  });
+
+  const handleCreateWebhook = () => {
     if (!currentOrg) return;
     if (!newWebhook.url.trim()) {
       toast.error('Please enter a webhook URL');
@@ -126,156 +113,312 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       toast.error('Please select at least one event');
       return;
     }
-    createWebhookMutation.mutate();
+
+    createWebhookMutation.mutate({ url: newWebhook.url.trim(), events: newWebhook.events });
   };
 
-  const deleteWebhookMutation = useMutation({
-    mutationFn: (webhookId: string) => deleteWebhook(webhookId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
-      setDeleteWebhookId(null);
-      toast.success('Webhook deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete webhook');
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete webhook');
-    }
-  });
-
-  const updateWebhookMutation = useMutation({
-    mutationFn: ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) =>
-      updateWebhook(webhookId, { enabled }),
-    onSuccess: (_, { enabled }) => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
-      toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
-    },
-    onError: () => {
-      toast.error('Failed to update webhook');
-    }
-  });
-
-  const handleDeleteWebhook = async () => {
+  const handleDeleteWebhook = () => {
     if (!deleteWebhookId) return;
     deleteWebhookMutation.mutate(deleteWebhookId);
   };
 
-  const handleToggleEnabled = async (webhookId: string, enabled: boolean) => {
+  const handleUpdateWebhook = (webhookId: string, enabled: boolean) => {
     updateWebhookMutation.mutate({ webhookId, enabled });
   };
 
-  const toggleEventSelection = (eventName: string) => {
-    setNewWebhook((prev) => ({
-      ...prev,
-      events: prev.events.includes(eventName) ? prev.events.filter((e) => e !== eventName) : [...prev.events, eventName],
-    }));
+  const handleRevealSecret = (webhookId: string, secret?: string) => {
+    if (!secret) {
+      toast.error('Secret not available. Secrets are only shown on creation.');
+      return;
+    }
+    setRevealedSecrets((prev) => ({ ...prev, [webhookId]: !prev[webhookId] }));
   };
-
-  const toggleSecretVisibility = (webhookId: string) => {
-    setRevealedSecrets((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(webhookId)) newSet.delete(webhookId);
-      else newSet.add(webhookId);
-      return newSet;
-    });
-  };
-
-  const groupedEvents = AVAILABLE_EVENTS.reduce((acc, event) => {
-    if (!acc[event.category]) acc[event.category] = [];
-    acc[event.category].push(event);
-    return acc;
-  }, {} as Record<string, typeof AVAILABLE_EVENTS>);
 
   if (!hasApiAccess) {
+    // If your product wants a loading state here, you can add it,
+    // but keeping behavior consistent with existing UI:
     return (
-      <AppShell onNavigate={onNavigate} currentPage="webhooks">
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Webhooks</h1>
-            <p className="text-muted-foreground mt-1">Configure webhook endpoints for domain event notifications</p>
-          </div>
-          <Card className="p-8">
-            <div className="text-center space-y-4">
-              <Bell size={32} className="text-muted-foreground mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Webhooks require Pro plan</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">Upgrade to receive notifications.</p>
-              <Button onClick={() => onNavigate('billing')}>Upgrade Plan</Button>
-            </div>
-          </Card>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Webhooks</h1>
+          <p className="text-muted-foreground mt-2">
+            Webhooks are available on Pro and Agency plans.
+          </p>
         </div>
-      </AppShell>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Upgrade Required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Upgrade your plan to enable webhook notifications and integrate with your systems.
+            </p>
+            <Button onClick={() => onNavigate('billing')}>View Plans</Button>
+          </CardContent>
+        </Card>
+
+        <Separator />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>What you get with Webhooks</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Event-driven notifications (domain lifecycle, DNS verification, job failures)</li>
+              <li>Secure webhook secrets for signature verification</li>
+              <li>Enable/disable endpoints anytime</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <AppShell onNavigate={onNavigate} currentPage="webhooks">
-      <div className="space-y-8">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Webhooks</h1>
-            <p className="text-muted-foreground mt-1">Configure webhook endpoints for domain event notifications</p>
-          </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild><Button><Plus size={20} className="mr-2" />Add Endpoint</Button></DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create Webhook Endpoint</DialogTitle>
-                <DialogDescription>Add a new webhook endpoint.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6 py-4">
-                <Label htmlFor="webhook-url">Endpoint URL</Label>
-                <Input id="webhook-url" type="url" value={newWebhook.url} onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })} />
-                <Separator />
-                <Label>Events to Subscribe</Label>
-                {Object.entries(groupedEvents).map(([category, events]) => (
-                  <div key={category} className="space-y-3">
-                    <h4 className="text-sm font-semibold">{category}</h4>
-                    {events.map((event) => (
-                      <div key={event.name} className="flex items-start gap-3">
-                        <Checkbox checked={newWebhook.events.includes(event.name)} onCheckedChange={() => toggleEventSelection(event.name)} />
-                        <Label className="text-sm font-mono">{event.name}</Label>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateWebhook}>Create Endpoint</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Webhooks</h1>
+          <p className="text-muted-foreground mt-2">
+            Receive real-time notifications when events occur in your DCVaaS account.
+          </p>
         </div>
 
-        {isLoading ? (
-          <p>Loading webhooks...</p>
-        ) : orgWebhooksData.length === 0 ? (
-          <Card className="p-12 text-center"><Button onClick={() => setIsCreateOpen(true)}>Add Endpoint</Button></Card>
-        ) : (
-          <div className="space-y-4">
-            {orgWebhooksData.map((webhook) => (
-              <Card key={webhook.id} className="p-6">
-                <div className="flex justify-between">
-                  <h3 className="font-semibold">{webhook.url}</h3>
-                  <div className="flex gap-2">
-                    <Switch checked={webhook.enabled} onCheckedChange={(enabled) => handleToggleEnabled(webhook.id, enabled)} />
-                    <Button variant="ghost" onClick={() => setDeleteWebhookId(webhook.id)}><Trash className="text-destructive" /></Button>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>Create Webhook</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Webhook Endpoint</DialogTitle>
+              <DialogDescription>
+                Configure a webhook URL to receive event notifications.
+              </DialogDescription>
+            </DialogHeader>
+
+            {newWebhookSecret && (
+              <Alert>
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-medium">Webhook Secret (copy now)</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs break-all bg-muted px-2 py-1 rounded">
+                        {newWebhookSecret}
+                      </code>
+                      <CopyButton value={newWebhookSecret} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      This secret is shown only once on creation.
+                    </p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="webhook-url">Webhook URL</Label>
+                <Input
+                  id="webhook-url"
+                  placeholder="https://example.com/webhooks/dcvaas"
+                  value={newWebhook.url}
+                  onChange={(e) => setNewWebhook((prev) => ({ ...prev, url: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label>Events</Label>
+                <div className="mt-2 space-y-3">
+                  {['Certificate Lifecycle', 'Domain Management', 'DNS Operations', 'Job Queue'].map((category) => (
+                    <div key={category} className="space-y-2">
+                      <h4 className="font-medium text-sm">{category}</h4>
+                      <div className="space-y-2 pl-4">
+                        {AVAILABLE_EVENTS.filter((event) => event.category === category).map((event) => (
+                          <div key={event.name} className="flex items-start space-x-2">
+                            <Checkbox
+                              id={event.name}
+                              checked={newWebhook.events.includes(event.name)}
+                              onCheckedChange={(checked) => {
+                                setNewWebhook((prev) => ({
+                                  ...prev,
+                                  events: checked
+                                    ? [...prev.events, event.name]
+                                    : prev.events.filter((e) => e !== event.name),
+                                }));
+                              }}
+                            />
+                            <div className="grid gap-1.5 leading-none">
+                              <label
+                                htmlFor={event.name}
+                                className="text-sm font-medium leading-none cursor-pointer"
+                              >
+                                {event.name}
+                              </label>
+                              <p className="text-xs text-muted-foreground">{event.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateWebhook}
+                  disabled={createWebhookMutation.isPending}
+                >
+                  {createWebhookMutation.isPending ? 'Creating...' : 'Create Webhook'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Webhook Endpoints</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-muted-foreground">Loading webhooks…</div>
+          ) : orgWebhooks.length === 0 ? (
+            <div className="text-muted-foreground">No webhook endpoints configured.</div>
+          ) : (
+            <div className="space-y-4">
+              {orgWebhooks.map((webhook: any) => (
+                <div key={webhook.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm font-mono">{webhook.url}</code>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            webhook.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {webhook.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {webhook.events?.length || 0} events subscribed
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUpdateWebhook(webhook.id, !webhook.enabled)}
+                        disabled={updateWebhookMutation.isPending}
+                      >
+                        {webhook.enabled ? 'Disable' : 'Enable'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteWebhookId(webhook.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+
+                  {webhook.secret && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRevealSecret(webhook.id, webhook.secret)}
+                      >
+                        {revealedSecrets[webhook.id] ? 'Hide Secret' : 'Reveal Secret'}
+                      </Button>
+
+                      {revealedSecrets[webhook.id] && (
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs break-all bg-muted px-2 py-1 rounded">
+                            {webhook.secret}
+                          </code>
+                          <CopyButton value={webhook.secret} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {deleteWebhookId === webhook.id && (
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <p className="text-sm text-muted-foreground flex-1">
+                        Are you sure you want to delete this webhook?
+                      </p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteWebhook}
+                        disabled={deleteWebhookMutation.isPending}
+                      >
+                        {deleteWebhookMutation.isPending ? 'Deleting...' : 'Confirm'}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setDeleteWebhookId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Subscribed Events</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {(webhook.events || []).map((eventName: string) => (
+                        <span key={eventName} className="text-xs bg-muted px-2 py-1 rounded">
+                          {eventName}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </Card>
-            ))}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Integration Guide</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Webhooks are delivered as HTTP POST requests with JSON payloads. Verify the webhook secret
+            to ensure requests are authentic.
+          </p>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Example Payload</h4>
+            <pre className="bg-muted p-4 rounded text-xs overflow-auto">
+{JSON.stringify(
+  {
+    event: 'domain.active',
+    timestamp: new Date().toISOString(),
+    data: {
+      domainId: 'domain_123',
+      domain: 'example.com',
+      status: 'active',
+    },
+  },
+  null,
+  2
+)}
+            </pre>
           </div>
-        )}
-      </div>
-      <AlertDialog open={!!deleteWebhookId} onOpenChange={() => setDeleteWebhookId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete webhook?</AlertDialogTitle></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteWebhook}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </AppShell>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
