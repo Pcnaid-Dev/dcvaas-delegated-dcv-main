@@ -4,33 +4,42 @@
   "hero_primary_cta": "Start Your Agency Trial",
   "hero_secondary_cta": "Schedule a Demo",
   "hero_trust_note": "No credit card. 10-minute setup. Cancel anytime.",
-
   "pricing_agency": "$79 / month — Up to 250 domains. Flat rate.",
   "pricing_enterprise": "$299 / month — 2000+ domains + SLA.",
-
   "value_stop_sprawl": "Stop Certificate Sprawl: You have clients on GoDaddy, Namecheap, and Cloudflare. We give you a single “Green Light” dashboard for all of them.",
   "value_protect_margins": "Protect Your Margins: Competitors charge per-domain overages that punish your growth. Our flat-rate Agency Plan lets you scale profitably.",
   "value_white_label": "100% White Label: Your clients see your brand on the validation instructions, not ours. Position SSL management as a premium service you provide.",
-
   "profit_center_headline": "Turn SSL from a Cost Center into a Profit Center.",
   "profit_center_body": "Most agencies absorb the cost of SSL management. With DelegatedSSL, you can bundle “Premium Security Monitoring” into your maintenance packages. Our flat rate costs you pennies per domain; you charge clients $10/mo for peace of mind.",
-
   "overview.empty": "No urgent issues. You’re green.",
   "overview.alert": "3 domains need client verification to go live.",
   "domains.search_placeholder": "Search domains, clients…",
   "domains.empty": "No domains yet. Import a list to get your first dashboard.",
   "domains.no_action_needed": "No action needed. Everything is green.",
-
   "status_active": "Auto-renewing",
   "status_action_needed": "Client DNS verification pending",
   "status_blocked": "CAA policy prevents issuance",
   "status_pending": "Provisioning in progress",
   "tooltip_action_needed": "Pending CNAME (Client action required)",
   "tooltip_blocked": "CAA Error (Client DNS blocks Let’s Encrypt - Click to Fix)",
-
   "portal_title": "Secure Domain Setup",
   "portal_step1": "Add this DNS record",
   "portal_step2": "Click Verify",
   "portal_confirmation": "You’re secured. No further action needed.",
-  "portal_helper": "If you don’t manage DNS, forward this page to whoever does. This takes 2 minutes."
+  "portal_helper": "If you don’t manage DNS, forward this page to whoever does. This takes 2 minutes.",
+  "howto_title": "Get Started in 3 Simple Steps",
+  "howto_step1": "1. Add Your Domains: Import your client list with one click",
+  "howto_step2": "2. Share DNS Instructions: Send branded CNAME setup guides to clients",
+  "howto_step3": "3. Monitor & Renew: Track status in real-time; we handle renewals automatically",
+  "howto_support_note": "Need help? Our team is available 24/7 via chat or email",
+  "faq_1_q": "How does flat-rate pricing work?",
+  "faq_1_a": "You pay one monthly fee regardless of how many domains you add (up to your plan limit). No per-domain charges or surprise bills.",
+  "faq_2_q": "Can we white-label this for clients?",
+  "faq_2_a": "Yes! Agency and Enterprise plans include full white-labeling. Your clients see your brand on setup instructions and status pages.",
+  "faq_3_q": "What if a client uses an unsupported DNS provider?",
+  "faq_3_a": "All DNS providers are supported. Clients just add a CNAME record—no API integration needed. Works with GoDaddy, Namecheap, Cloudflare, Route53, and hundreds more.",
+  "faq_4_q": "Do you offer SLA guarantees?",
+  "faq_4_a": "Yes. Enterprise plans include 99.9% uptime SLA with financial credits for downtime. Contact sales for details.",
+  "faq_5_q": "How quickly can certificates be issued?",
+  "faq_5_a": "Most certificates issue within 5-10 minutes after DNS verification. Renewals happen automatically 30 days before expiration."
 }

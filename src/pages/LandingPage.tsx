@@ -26,32 +26,7 @@ type LandingPageProps = {
   onNavigate: (page: string) => void;
 };
 
-const FAQ_ITEMS = [
-  {
-    question: 'What is delegated DNS-01 validation?',
-    answer: 'Delegated DNS-01 validation allows you to prove domain ownership by creating a single CNAME record that points to our service. We then handle all ACME challenges without requiring your root DNS API keys, significantly improving security.',
-  },
-  {
-    question: 'Do I need to provide DNS API credentials?',
-    answer: "No! That's the beauty of delegated validation. You only need to create a single CNAME record in your DNS. Our service handles all ACME challenges without accessing your DNS provider's API.",
-  },
-  {
-    question: 'How often are certificates renewed?',
-    answer: "Certificates are automatically renewed 30 days before expiration. With the upcoming shift to 47-day certificate lifetimes, our automated renewal system ensures you'll never have an expired certificate.",
-  },
-  {
-    question: 'What DNS providers are supported?',
-    answer: 'All DNS providers are supported! Since you only need to create a CNAME record, DCVaaS works with any DNS provider including Cloudflare, Route 53, Google Cloud DNS, and traditional registrar DNS services.',
-  },
-  {
-    question: 'Is there a free tier?',
-    answer: 'Yes! Our free tier includes 3 domains with automated certificate issuance and renewal. Perfect for personal projects or trying out the service before upgrading to Pro or Agency plans.',
-  },
-  {
-    question: 'Can I use this for wildcard certificates?',
-    answer: "Yes! DCVaaS supports both single-domain and wildcard certificates. Wildcard certificates require DNS-01 validation, which is exactly what our delegated validation system is designed for.",
-  },
-];
+// FAQ_ITEMS removed - now loaded from brand microcopy dynamically
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
   const { loginWithRedirect, isAuthenticated } = useAuth0();
@@ -66,6 +41,32 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
   // Get brand-specific link text for docs/guides
   const docsLinkText = brand.brandId === 'autocertify.net' ? 'Guides' : 'Docs';
   const docsRoute = brand.brandId === 'autocertify.net' ? 'guides' : 'docs';
+
+  // Build FAQ items from brand microcopy
+  const faqItems = [];
+  for (let i = 1; i <= 5; i++) {
+    const questionKey = `faq_${i}_q` as keyof typeof microcopy;
+    const answerKey = `faq_${i}_a` as keyof typeof microcopy;
+    if (microcopy[questionKey] && microcopy[answerKey]) {
+      faqItems.push({
+        question: microcopy[questionKey] as string,
+        answer: microcopy[answerKey] as string,
+      });
+    }
+  }
+
+  // Build How It Works steps from brand microcopy
+  const howToSteps = [];
+  for (let i = 1; i <= 3; i++) {
+    const stepKey = `howto_step${i}` as keyof typeof microcopy;
+    if (microcopy[stepKey]) {
+      howToSteps.push({
+        label: `Step ${i}`,
+        description: microcopy[stepKey] as string,
+        status: 'complete' as const,
+      });
+    }
+  }
 
 
     return (
@@ -216,40 +217,51 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              How It Works
+              {microcopy.howto_title || 'How It Works'}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Four simple steps to automated SSL/TLS certificates
+              {brand.brandId === 'autocertify.net' 
+                ? 'Get secure in minutes with our simple setup'
+                : brand.brandId === 'delegatedssl.com'
+                ? 'Streamlined workflow for agency teams'
+                : 'API-first SSL automation'}
             </p>
           </div>
 
           <Card className="p-8">
-            <Stepper
-              steps={[
-                {
-                  label: 'Add Your Domain',
-                  description: 'Enter your domain in the DCVaaS dashboard',
-                  status: 'complete',
-                },
-                {
-                  label: 'Create CNAME Record',
-                  description: 'Add the CNAME record to your DNS provider',
-                  status: 'complete',
-                },
-                {
-                  label: 'Verify & Issue',
-                  description: 'We verify and issue your certificate',
-                  status: 'complete',
-                },
-                {
-                  label: 'Auto-Renewal',
-                  description: 'Certificates renew automatically',
-                  status: 'complete',
-                },
-              ]}
-              orientation="vertical"
-            />
+            {howToSteps.length > 0 ? (
+              <Stepper
+                steps={howToSteps}
+                orientation="vertical"
+              />
+            ) : (
+              <Stepper
+                steps={[
+                  {
+                    label: 'Add Your Domain',
+                    description: 'Enter your domain in the dashboard',
+                    status: 'complete',
+                  },
+                  {
+                    label: 'Create CNAME Record',
+                    description: 'Add the CNAME record to your DNS provider',
+                    status: 'complete',
+                  },
+                  {
+                    label: 'Auto-Renewal',
+                    description: 'Certificates renew automatically',
+                    status: 'complete',
+                  },
+                ]}
+                orientation="vertical"
+              />
+            )}
           </Card>
+          {microcopy.howto_support_note && (
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              {microcopy.howto_support_note}
+            </p>
+          )}
         </section>
 
         {/* FAQ Section */}
@@ -259,12 +271,16 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about DCVaaS
+              {brand.brandId === 'autocertify.net' 
+                ? 'Quick answers to common questions'
+                : brand.brandId === 'delegatedssl.com'
+                ? 'Everything agencies need to know'
+                : 'Developer FAQ'}
             </p>
           </div>
 
           <Accordion type="single" collapsible className="space-y-4">
-            {FAQ_ITEMS.map((item, index) => (
+            {faqItems.map((item, index) => (
               <AccordionItem
                 key={`item-${index + 1}`}
                 value={`item-${index + 1}`}

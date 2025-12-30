@@ -5,17 +5,19 @@ import { createStripeCheckoutSession } from '@/lib/data';
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useBrand } from '@/contexts/BrandContext';
 
 type PricingPageProps = {
   onNavigate: (page: string) => void;
 };
 
 export function PricingPage({ onNavigate }: PricingPageProps) {
+  const { brand, microcopy } = useBrand();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (planName: string, priceId: string) => {
     if (planName === 'Free') {
-      onNavigate('dashboard');
+      window.location.href = `https://${brand.appHost}`;
       return;
     }
 
@@ -38,60 +40,106 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
     }
   };
 
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      period: 'forever',
-      description: 'Perfect for developers and small projects',
-      features: [
-        'Up to 3 domains',
-        'Automatic renewals',
-        'DNS-01 validation',
-        'Community support',
-        'Basic audit logs',
-      ],
-      cta: 'Get Started',
-      highlighted: false,
-      priceId: '',
-    },
-    {
-      name: 'Pro',
-      price: '$29',
-      period: 'per month',
-      description: 'For growing businesses and teams',
-      features: [
-        'Up to 15 domains',
-        'All Free features',
-        'API access',
-        'Email support',
-        'Priority renewals',
-        'Custom CA support',
-      ],
-      cta: 'Start Trial',
-      highlighted: true,
-      priceId: STRIPE_PRICE_IDS.pro,
-    },
-    {
-      name: 'Agency',
-      price: '$99',
-      period: 'per month',
-      description: 'For agencies and enterprises',
-      features: [
-        'Up to 50 domains',
-        'All Pro features',
-        'Team management & RBAC',
-        'Single-click CNAME setup (OAuth)',
-        'White-label branding',
-        'Full audit logs',
-        'Priority support',
-        'Custom domain',
-      ],
-      cta: 'Contact Sales',
-      highlighted: false,
-      priceId: STRIPE_PRICE_IDS.agency,
-    },
-  ];
+  // Brand-specific pricing plans
+  const getPlansForBrand = () => {
+    if (brand.brandId === 'autocertify.net') {
+      return [
+        {
+          name: 'Business Pro',
+          price: '$15',
+          period: 'per month',
+          description: microcopy.plan_name || 'Secure up to 50 custom domains',
+          features: (microcopy.plan_includes as string || '')
+            .split('·')
+            .map(f => f.trim())
+            .filter(f => f),
+          cta: microcopy.pricing_cta || 'Secure My Site Now',
+          highlighted: true,
+          priceId: STRIPE_PRICE_IDS.pro,
+        },
+      ];
+    } else if (brand.brandId === 'delegatedssl.com') {
+      return [
+        {
+          name: 'Agency',
+          price: '$79',
+          period: 'per month',
+          description: 'Up to 250 client domains with flat-rate pricing',
+          features: [
+            'Up to 250 domains',
+            'White-label branding',
+            'Client management dashboard',
+            'Automated renewals',
+            'Email support',
+            'Bulk import',
+          ],
+          cta: 'Start Agency Trial',
+          highlighted: true,
+          priceId: STRIPE_PRICE_IDS.agency,
+        },
+        {
+          name: 'Enterprise',
+          price: '$299',
+          period: 'per month',
+          description: '2000+ domains with SLA guarantees',
+          features: [
+            'Unlimited domains',
+            'All Agency features',
+            '99.9% uptime SLA',
+            'Priority support',
+            'Custom integrations',
+            'Dedicated account manager',
+          ],
+          cta: 'Contact Sales',
+          highlighted: false,
+          priceId: '',
+        },
+      ];
+    } else {
+      // KeylessSSL
+      return [
+        {
+          name: 'Free',
+          price: '$0',
+          period: 'forever',
+          description: 'For developers and small projects',
+          features: [
+            'Up to 3 domains',
+            'API access',
+            'Basic rate limits',
+            'Community support',
+            'Webhook notifications',
+          ],
+          cta: 'Get Started',
+          highlighted: false,
+          priceId: '',
+        },
+        {
+          name: 'Pro',
+          price: '$29',
+          period: 'per month',
+          description: 'For production applications',
+          features: [
+            'Up to 50 domains',
+            'All Free features',
+            'Higher rate limits',
+            'Priority API access',
+            'Email support',
+            'Advanced webhooks',
+          ],
+          cta: 'Start Trial',
+          highlighted: true,
+          priceId: STRIPE_PRICE_IDS.pro,
+        },
+      ];
+    }
+  };
+
+  const plans = getPlansForBrand();
+
+  // Get brand-specific link text for docs/guides
+  const docsLinkText = brand.brandId === 'autocertify.net' ? 'Guides' : 'Docs';
+  const docsRoute = brand.brandId === 'autocertify.net' ? 'guides' : 'docs';
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,7 +151,7 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
               className="flex items-center gap-2"
             >
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.brandName}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
@@ -119,12 +167,12 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
                 Pricing
               </button>
               <button
-                onClick={() => onNavigate('docs')}
+                onClick={() => onNavigate(docsRoute)}
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
-                Docs
+                {docsLinkText}
               </button>
-              <Button onClick={() => onNavigate('dashboard')}>
+              <Button onClick={() => window.location.href = `https://${brand.appHost}`}>
                 Sign In
               </Button>
             </nav>
@@ -135,14 +183,18 @@ export function PricingPage({ onNavigate }: PricingPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+            {brand.brandId === 'autocertify.net' 
+              ? 'Simple, Affordable SSL Protection'
+              : brand.brandId === 'delegatedssl.com'
+              ? 'Flat-Rate Pricing for Agencies'
+              : 'Developer-Friendly Pricing'}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start free and scale as you grow. No hidden fees, cancel anytime.
+            {microcopy.pricing_line || 'Start free and scale as you grow. No hidden fees, cancel anytime.'}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className={`grid ${plans.length === 1 ? 'max-w-lg mx-auto' : plans.length === 2 ? 'md:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-3'} gap-8 mb-16`}>
           {plans.map((plan) => (
             <Card
               key={plan.name}

@@ -2,12 +2,28 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Certificate } from '@phosphor-icons/react';
+import { useBrand } from '@/contexts/BrandContext';
 
 type DocsPageProps = {
   onNavigate: (page: string) => void;
 };
 
 export function DocsPage({ onNavigate }: DocsPageProps) {
+  const { brand } = useBrand();
+
+  // Brand-specific page title
+  const pageTitle = brand.brandId === 'autocertify.net' 
+    ? 'Setup Guides' 
+    : brand.brandId === 'delegatedssl.com'
+    ? 'Agency Documentation'
+    : 'Developer Documentation';
+
+  const pageDescription = brand.brandId === 'autocertify.net'
+    ? 'Step-by-step guides to secure your website'
+    : brand.brandId === 'delegatedssl.com'
+    ? 'Complete guides for managing client SSL certificates'
+    : 'API reference and integration guides';
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -18,7 +34,7 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
               className="flex items-center gap-2"
             >
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.brandName}</span>
             </button>
             <nav className="flex items-center gap-6">
               <button
@@ -34,12 +50,12 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
                 Pricing
               </button>
               <button
-                onClick={() => onNavigate('docs')}
+                onClick={() => onNavigate(brand.brandId === 'autocertify.net' ? 'guides' : 'docs')}
                 className="text-sm font-medium text-primary"
               >
-                Docs
+                {brand.brandId === 'autocertify.net' ? 'Guides' : 'Docs'}
               </button>
-              <Button onClick={() => onNavigate('dashboard')}>
+              <Button onClick={() => window.location.href = `https://${brand.appHost}`}>
                 Sign In
               </Button>
             </nav>
@@ -50,71 +66,93 @@ export function DocsPage({ onNavigate }: DocsPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Documentation
+            {pageTitle}
           </h1>
           <p className="text-xl text-muted-foreground">
-            Learn how to automate SSL/TLS certificates with delegated DCV
+            {pageDescription}
           </p>
         </div>
 
         <Tabs defaultValue="quickstart" className="space-y-8">
           <TabsList>
-            <TabsTrigger value="quickstart">Quickstart</TabsTrigger>
-            <TabsTrigger value="concepts">Concepts</TabsTrigger>
-            <TabsTrigger value="api">API Reference</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-            <TabsTrigger value="architecture">Architecture</TabsTrigger>
+            <TabsTrigger value="quickstart">
+              {brand.brandId === 'autocertify.net' ? 'Getting Started' : 'Quickstart'}
+            </TabsTrigger>
+            <TabsTrigger value="concepts">
+              {brand.brandId === 'autocertify.net' ? 'How It Works' : 'Concepts'}
+            </TabsTrigger>
+            <TabsTrigger value="api">
+              {brand.brandId === 'keylessssl.dev' ? 'API Reference' : 'Integration'}
+            </TabsTrigger>
+            <TabsTrigger value="webhooks">
+              {brand.brandId === 'delegatedssl.com' ? 'Client Management' : 'Webhooks'}
+            </TabsTrigger>
+            {brand.brandId === 'keylessssl.dev' && (
+              <TabsTrigger value="architecture">Architecture</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="quickstart" className="space-y-6">
             <Card className="p-6">
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                Quickstart Guide
+                {brand.brandId === 'autocertify.net' 
+                  ? 'Secure Your Website in 3 Steps'
+                  : brand.brandId === 'delegatedssl.com'
+                  ? 'Agency Quickstart Guide'
+                  : 'API Integration Guide'}
               </h2>
               <div className="space-y-4 text-foreground">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
-                    1. Sign In and Create Organization
+                    1. {brand.brandId === 'autocertify.net' 
+                      ? 'Sign Up and Add Your Domain'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Create Your Agency Account'
+                      : 'Generate API Token'}
                   </h3>
                   <p className="text-muted-foreground">
-                    Sign in with your GitHub account and create a new
-                    organization to manage your certificates.
+                    {brand.brandId === 'autocertify.net'
+                      ? 'Create your account and enter your website domain. We\'ll show you exactly what DNS record to add.'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Sign up and import your client domain list. Bulk import supported via CSV.'
+                      : 'Create an API token in your dashboard with the appropriate scopes for your use case.'}
                   </p>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
-                    2. Add Your First Domain
+                    2. {brand.brandId === 'autocertify.net' 
+                      ? 'Add DNS Record'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Share Setup Instructions'
+                      : 'Configure CNAME Delegation'}
                   </h3>
                   <p className="text-muted-foreground mb-2">
-                    In the dashboard, click "Add Domain" and enter your domain
-                    name (e.g., example.com).
+                    {brand.brandId === 'autocertify.net'
+                      ? 'We\'ll show you exactly what CNAME record to add. Copy and paste it into your DNS provider.'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Send white-labeled setup instructions to your clients. They add a single CNAME record.'
+                      : 'Point _acme-challenge subdomain to our validation endpoint with a CNAME record.'}
                   </p>
-                  <pre className="bg-muted p-4 rounded font-mono text-sm overflow-x-auto">
-                    Domain: example.com
-                  </pre>
+                  {brand.brandId === 'keylessssl.dev' && (
+                    <pre className="bg-muted p-4 rounded font-mono text-sm overflow-x-auto">
+                      _acme-challenge.example.com CNAME abc123.acme.dcvaas-verify.com
+                    </pre>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
-                    3. Create CNAME Record
-                  </h3>
-                  <p className="text-muted-foreground mb-2">
-                    Add the generated CNAME record to your DNS:
-                  </p>
-                  <pre className="bg-muted p-4 rounded font-mono text-sm overflow-x-auto">
-                    _acme-challenge.example.com CNAME abc123.acme.dcvaas-verify.com
-                  </pre>
-                  <p className="text-muted-foreground mt-2">
-                    DNS propagation typically takes 5-15 minutes.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    4. Verify and Issue
+                    3. {brand.brandId === 'autocertify.net' 
+                      ? 'You\'re Secure!'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Monitor Status Dashboard'
+                      : 'Automate via API'}
                   </h3>
                   <p className="text-muted-foreground">
-                    Click "Check DNS" to verify the CNAME, then "Start
-                    Issuance" to obtain your certificate. Renewals happen
-                    automatically 30 days before expiration.
+                    {brand.brandId === 'autocertify.net'
+                      ? 'Once DNS propagates (usually 5-10 minutes), your certificate is issued automatically. Renewals happen before expiration.'
+                      : brand.brandId === 'delegatedssl.com'
+                      ? 'Track all client domains in real-time. Get alerts for pending verifications or expiring certificates.'
+                      : 'Use our REST API to add domains, trigger issuance, and monitor certificate lifecycle programmatically.'}
                   </p>
                 </div>
               </div>

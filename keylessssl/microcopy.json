@@ -8,5 +8,20 @@
   "status_error": "Validation failed. Open diagnostics for exact failure mode + trace.",
   "toast_copied": "Copied.",
   "toast_saved": "Saved.",
-  "toast_domain_queued": "Domain queued."
+  "toast_domain_queued": "Domain queued.",
+  "howto_title": "Integrate SSL Automation in Minutes",
+  "howto_step1": "1. Generate API Token: Create a scoped token in your dashboard",
+  "howto_step2": "2. Add CNAME Delegation: Point _acme-challenge to our validation endpoint",
+  "howto_step3": "3. Automate via API: Use our REST API or SDKs for cert lifecycle management",
+  "howto_support_note": "Check our API docs for code examples in Python, Node.js, Go, and Ruby",
+  "faq_1_q": "How does API-based cert management work?",
+  "faq_1_a": "Use our REST API to add domains, trigger issuance, and monitor status programmatically. Perfect for CI/CD pipelines and infrastructure-as-code.",
+  "faq_2_q": "What authentication methods do you support?",
+  "faq_2_a": "API tokens (scoped, revocable) and OAuth2. All tokens are hashed with SHA-256 before storage.",
+  "faq_3_q": "Can I use this in Kubernetes or Docker?",
+  "faq_3_a": "Yes! Deploy our cert-manager integration or use the API directly from your orchestration layer. Examples available in our GitHub repo.",
+  "faq_4_q": "What rate limits apply?",
+  "faq_4_a": "Free tier: 10 requests/minute. Pro: 100/minute. Enterprise: custom limits. Rate limit headers included in all responses.",
+  "faq_5_q": "Is there a webhook system for cert lifecycle events?",
+  "faq_5_a": "Yes. Configure webhooks to receive real-time notifications for issuance, renewal, and error events. Supports HMAC signature verification."
 }
