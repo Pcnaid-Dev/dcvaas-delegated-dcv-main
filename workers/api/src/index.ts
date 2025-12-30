@@ -464,6 +464,16 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             .bind(jobId, type, domainId, now, now)
             .run();
 
+          // Enqueue the job to the consumer for processing
+          if (env.QUEUE) {
+            await env.QUEUE.send({
+              jobId,
+              orgId: auth.orgId,
+              domainId,
+              type
+            });
+          }
+
           const job = await getJob(env, auth.orgId, jobId);
           return withCors(req, env, json({ job }, 201));
         } catch (err: any) {

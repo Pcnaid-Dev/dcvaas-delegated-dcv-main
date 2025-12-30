@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllDomains, getDomainsExpiringBefore, setJob, addAuditLog } from '@/lib/data';
+import { getAllDomains, getDomainsExpiringBefore, setJob, addAuditLog, isPlatformOwner as isOwnerEmail } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { toast } from 'sonner';
 import type { Job } from '@/types';
@@ -22,10 +22,10 @@ export function AdminPage({ onNavigate }: AdminPageProps) {
   const [isSeeding, setIsSeeding] = useState(false);
   
   // Check if user is platform owner
-  const isPlatformOwner = user?.email?.toLowerCase() === import.meta.env.VITE_PLATFORM_OWNER_EMAIL?.toLowerCase();
+  const isOwner = isOwnerEmail(user?.email);
   
   // Only show admin page to platform owner
-  if (!isPlatformOwner) {
+  if (!isOwner) {
     return (
       <AppShell onNavigate={onNavigate} currentPage="admin">
         <div className="text-center py-16">

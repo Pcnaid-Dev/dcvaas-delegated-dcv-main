@@ -1,11 +1,11 @@
-import { D1Database, Queue } from "@cloudflare/workers-types";
+import { D1Database, Queue, KVNamespace } from "@cloudflare/workers-types";
 
 export type Env = {
   // Bindings
   DB: D1Database;
   QUEUE: Queue;
   DLQ?: Queue;
-  CERTIFICATES?: any;  // KV namespace if used
+  CERTIFICATES?: KVNamespace;  // KV namespace if used
 
   // Secrets (set via wrangler secret put)
   CLOUDFLARE_API_TOKEN: string;
