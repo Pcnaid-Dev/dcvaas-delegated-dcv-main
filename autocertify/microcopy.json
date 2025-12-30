@@ -5,50 +5,42 @@
   "hero_primary_cta": "Secure My Site Now",
   "hero_secondary_cta": "Check my site first",
   "hero_cta_note": "No credit card surprises. Cancel anytime. You’ll see progress immediately.",
-
   "reassurance_chips": [
     "✅ Zero Downtime",
     "✅ Works with Everything",
     "✅ Set up in under 5 minutes",
     "✅ 24/7 monitoring"
   ],
-
   "benefit_instant": "Instant Security Fix — Turn the warning off fast—without digging into settings.",
   "benefit_downtime": "Zero Downtime — We verify everything before you switch, so your site stays live.",
   "benefit_compatibility": "Works with Everything — WordPress, Shopify, Wix, ClickFunnels, custom sites—if it’s a website, we can secure it.",
   "benefit_monitoring": "24/7 Automatic Protection — We keep watch so you don’t have to think about it again.",
-
   "howto_title": "Secure your site in 3 simple steps",
   "howto_step1": "Sign up: Enter your domain and email.",
   "howto_step2": "Add one record (we guide you): We show you exactly what to paste, with a “Copy” button.",
   "howto_step3": "You’re secure: Big green check — Your site is safe now.",
   "howto_support_note": "Stuck? We’ll walk you through it in chat—24/7.",
-
   "pricing_line": "Just $15/month for peace of mind — secure up to 50 sites.",
   "plan_name": "Business Pro ($15/mo) — Secure up to 50 custom domains. Instant setup. 24/7 Monitoring.",
   "plan_includes": "✅ Instant setup · ✅ Automatic renewals · ✅ 24/7 monitoring · ✅ Guided setup (chat support)",
   "pricing_cta": "Secure My Site Now",
-
-  "faq_legit_q": "Q: Is this legit?",
-  "faq_legit_a": "A: Yes. We use industry-standard SSL and best practices to secure your connection. You get the same “secure” experience visitors expect.",
-  "faq_steps_q": "Q: What do I need to do?",
-  "faq_steps_a": "A: Usually just add one record (we show you exactly what to paste). No coding.",
-  "faq_downtime_q": "Q: Will my site go down?",
-  "faq_downtime_a": "A: No — Zero Downtime. We verify the setup before switching.",
-  "faq_builder_q": "Q: Will it work with my website builder / host?",
-  "faq_builder_a": "A: Works with Everything. WordPress, Shopify, Wix, ClickFunnels, and custom sites.",
-  "faq_howknow_q": "Q: How will I know it’s fixed?",
-  "faq_howknow_a": "A: We show a live status, and you’ll see the green padlock once it’s active.",
-
   "portal_secure": "Your Site is Secure.",
   "portal_action_needed": "Action Needed: Please login to your domain registrar (like GoDaddy) and add this one record.",
   "portal_check_button": "Check Connection",
   "portal_help_widget": "AI Support: I see you use GoDaddy. Click here for a step-by-step guide on adding your CNAME record.",
-
   "portal_banner_action": "🟡 Action needed: one quick step",
   "portal_banner_reassurance": "Add the record below. It’s safe and reversible.",
   "portal_dns_timing": "Changes can take a few minutes to show up. That’s normal.",
-
   "error_not_found": "Hmm—can’t find that domain. Try without https://",
-  "error_dns_delay": "No worries—DNS can take a few minutes. Try again."
+  "error_dns_delay": "No worries—DNS can take a few minutes. Try again.",
+  "faq_1_q": "Q: Is this legit?",
+  "faq_1_a": "A: Yes. We use industry-standard SSL and best practices to secure your connection. You get the same “secure” experience visitors expect.",
+  "faq_2_q": "Q: What do I need to do?",
+  "faq_2_a": "A: Usually just add one record (we show you exactly what to paste). No coding.",
+  "faq_3_q": "Q: Will my site go down?",
+  "faq_3_a": "A: No — Zero Downtime. We verify the setup before switching.",
+  "faq_4_q": "Q: Will it work with my website builder / host?",
+  "faq_4_a": "A: Works with Everything. WordPress, Shopify, Wix, ClickFunnels, and custom sites.",
+  "faq_5_q": "Q: How will I know it’s fixed?",
+  "faq_5_a": "A: We show a live status, and you’ll see the green padlock once it’s active."
 }

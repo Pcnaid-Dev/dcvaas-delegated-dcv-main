@@ -10,7 +10,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stepper } from '@/components/common';
 import { TerminalWindow } from '@/components/TerminalWindow';
-// import { useAuth } from '@/contexts/AuthContext'; // <--- You can likely remove this
+import { useBrand } from '@/contexts/BrandContext';
 import {
   Certificate,
   Shield,
@@ -26,40 +26,46 @@ type LandingPageProps = {
   onNavigate: (page: string) => void;
 };
 
-const FAQ_ITEMS = [
-  {
-    question: 'What is delegated DNS-01 validation?',
-    answer: 'Delegated DNS-01 validation allows you to prove domain ownership by creating a single CNAME record that points to our service. We then handle all ACME challenges without requiring your root DNS API keys, significantly improving security.',
-  },
-  {
-    question: 'Do I need to provide DNS API credentials?',
-    answer: "No! That's the beauty of delegated validation. You only need to create a single CNAME record in your DNS. Our service handles all ACME challenges without accessing your DNS provider's API.",
-  },
-  {
-    question: 'How often are certificates renewed?',
-    answer: "Certificates are automatically renewed 30 days before expiration. With the upcoming shift to 47-day certificate lifetimes, our automated renewal system ensures you'll never have an expired certificate.",
-  },
-  {
-    question: 'What DNS providers are supported?',
-    answer: 'All DNS providers are supported! Since you only need to create a CNAME record, DCVaaS works with any DNS provider including Cloudflare, Route 53, Google Cloud DNS, and traditional registrar DNS services.',
-  },
-  {
-    question: 'Is there a free tier?',
-    answer: 'Yes! Our free tier includes 3 domains with automated certificate issuance and renewal. Perfect for personal projects or trying out the service before upgrading to Pro or Agency plans.',
-  },
-  {
-    question: 'Can I use this for wildcard certificates?',
-    answer: "Yes! DCVaaS supports both single-domain and wildcard certificates. Wildcard certificates require DNS-01 validation, which is exactly what our delegated validation system is designed for.",
-  },
-];
+// FAQ_ITEMS removed - now loaded from brand microcopy dynamically
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
-  const { loginWithRedirect, isAuthenticated } = useAuth0(); // <--- USE THE HOOK
+  const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const { brand, microcopy } = useBrand();
 
   // If already logged in, go to dashboard
   if (isAuthenticated) {
      onNavigate('dashboard');
      return null;
+  }
+
+  // Get brand-specific link text for docs/guides
+  const docsLinkText = brand.brandId === 'autocertify.net' ? 'Guides' : 'Docs';
+  const docsRoute = brand.brandId === 'autocertify.net' ? 'guides' : 'docs';
+
+  // Build FAQ items from brand microcopy
+  const faqItems = [];
+  for (let i = 1; i <= 5; i++) {
+    const questionKey = `faq_${i}_q` as keyof typeof microcopy;
+    const answerKey = `faq_${i}_a` as keyof typeof microcopy;
+    if (microcopy[questionKey] && microcopy[answerKey]) {
+      faqItems.push({
+        question: microcopy[questionKey] as string,
+        answer: microcopy[answerKey] as string,
+      });
+    }
+  }
+
+  // Build How It Works steps from brand microcopy
+  const howToSteps = [];
+  for (let i = 1; i <= 3; i++) {
+    const stepKey = `howto_step${i}` as keyof typeof microcopy;
+    if (microcopy[stepKey]) {
+      howToSteps.push({
+        label: `Step ${i}`,
+        description: microcopy[stepKey] as string,
+        status: 'complete' as const,
+      });
+    }
   }
 
 
@@ -70,12 +76,12 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">DCVaaS</span>
+              <span className="text-xl font-bold text-foreground">{brand.brandName}</span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
               <button onClick={() => onNavigate('home')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</button>
               <button onClick={() => onNavigate('pricing')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Pricing</button>
-              <button onClick={() => onNavigate('docs')} className="text-sm font-medium text-foreground hover:text-primary transition-colors">Docs</button>
+              <button onClick={() => onNavigate(docsRoute)} className="text-sm font-medium text-foreground hover:text-primary transition-colors">{docsLinkText}</button>
             </nav>
             {/* Login Button */}
             <Button onClick={() => loginWithRedirect()}>
@@ -96,22 +102,35 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </span>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-foreground tracking-tight mb-6">
-              Secure SSL/TLS Automation via{' '}
-              <span className="text-primary">Delegated DCV</span>
+              {microcopy.hero_headline || 'Secure SSL/TLS Automation via Delegated DCV'}
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto mb-10">
-              Delegate once with CNAME. We'll handle every ACME DNS-01 challenge
-              securely—no root DNS API keys on your servers. Zero-touch renewals
-              for the era of 47-day certificates.
+              {microcopy.hero_subhead_line1 || 'Delegate once with CNAME. We\'ll handle every ACME DNS-01 challenge securely—no root DNS API keys on your servers.'}
+              {microcopy.hero_subhead_line2 && <><br />{microcopy.hero_subhead_line2}</>}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                Get Started Free
+                {microcopy.hero_primary_cta || 'Get Started Free'}
               </Button>
-              <Button size="lg" variant="outline" onClick={() => onNavigate('docs')}>
-                Read Documentation
+              <Button size="lg" variant="outline" onClick={() => onNavigate(docsRoute)}>
+                {microcopy.hero_secondary_cta || 'Read Documentation'}
               </Button>
             </div>
+
+            {/* Reassurance chips - brand-specific */}
+            {microcopy.reassurance_chips && microcopy.reassurance_chips.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+                {microcopy.reassurance_chips.map((chip, idx) => (
+                  <span key={idx} className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            {microcopy.hero_cta_note && (
+              <p className="text-sm text-muted-foreground">{microcopy.hero_cta_note}</p>
+            )}
 
 {/* Terminal Window Animation */}
             <div className="mt-16 relative">
@@ -157,12 +176,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <Shield size={24} weight="fill" className="text-primary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Enhanced Security
+                {brand.brandId === 'autocertify.net' ? 'Instant Security Fix' : 'Enhanced Security'}
               </h3>
               <p className="text-muted-foreground">
-                No root DNS API keys on your servers. CNAME delegation isolates
-                ACME challenges to a controlled subdomain, minimizing attack
-                surface.
+                {microcopy.benefit_instant || 'No root DNS API keys on your servers. CNAME delegation isolates ACME challenges to a controlled subdomain, minimizing attack surface.'}
               </p>
             </Card>
 
@@ -175,12 +192,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Zero-Touch Renewals
+                {brand.brandId === 'autocertify.net' ? 'Zero Downtime' : 'Zero-Touch Renewals'}
               </h3>
               <p className="text-muted-foreground">
-                Set it and forget it. Our orchestrator monitors expiration and
-                triggers renewals automatically, with retry logic and dead-letter
-                queue for reliability.
+                {microcopy.benefit_downtime || 'Set it and forget it. Our orchestrator monitors expiration and triggers renewals automatically, with retry logic and dead-letter queue for reliability.'}
               </p>
             </Card>
 
@@ -189,12 +204,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <Globe size={24} weight="fill" className="text-success" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Works with Any DNS Provider
+                {brand.brandId === 'autocertify.net' ? 'Works with Everything' : 'Works with Any DNS Provider'}
               </h3>
               <p className="text-muted-foreground">
-                Simply create a CNAME record in your existing DNS setup. No
-                migrations, no nameserver changes. Premium tier offers single-click
-                setup via OAuth.
+                {microcopy.benefit_compatibility || 'Simply create a CNAME record in your existing DNS setup. No migrations, no nameserver changes. Premium tier offers single-click setup via OAuth.'}
               </p>
             </Card>
           </div>
@@ -204,40 +217,51 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              How It Works
+              {microcopy.howto_title || 'How It Works'}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Four simple steps to automated SSL/TLS certificates
+              {brand.brandId === 'autocertify.net' 
+                ? 'Get secure in minutes with our simple setup'
+                : brand.brandId === 'delegatedssl.com'
+                ? 'Streamlined workflow for agency teams'
+                : 'API-first SSL automation'}
             </p>
           </div>
 
           <Card className="p-8">
-            <Stepper
-              steps={[
-                {
-                  label: 'Add Your Domain',
-                  description: 'Enter your domain in the DCVaaS dashboard',
-                  status: 'complete',
-                },
-                {
-                  label: 'Create CNAME Record',
-                  description: 'Add the CNAME record to your DNS provider',
-                  status: 'complete',
-                },
-                {
-                  label: 'Verify & Issue',
-                  description: 'We verify and issue your certificate',
-                  status: 'complete',
-                },
-                {
-                  label: 'Auto-Renewal',
-                  description: 'Certificates renew automatically',
-                  status: 'complete',
-                },
-              ]}
-              orientation="vertical"
-            />
+            {howToSteps.length > 0 ? (
+              <Stepper
+                steps={howToSteps}
+                orientation="vertical"
+              />
+            ) : (
+              <Stepper
+                steps={[
+                  {
+                    label: 'Add Your Domain',
+                    description: 'Enter your domain in the dashboard',
+                    status: 'complete',
+                  },
+                  {
+                    label: 'Create CNAME Record',
+                    description: 'Add the CNAME record to your DNS provider',
+                    status: 'complete',
+                  },
+                  {
+                    label: 'Auto-Renewal',
+                    description: 'Certificates renew automatically',
+                    status: 'complete',
+                  },
+                ]}
+                orientation="vertical"
+              />
+            )}
           </Card>
+          {microcopy.howto_support_note && (
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              {microcopy.howto_support_note}
+            </p>
+          )}
         </section>
 
         {/* FAQ Section */}
@@ -247,12 +271,16 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about DCVaaS
+              {brand.brandId === 'autocertify.net' 
+                ? 'Quick answers to common questions'
+                : brand.brandId === 'delegatedssl.com'
+                ? 'Everything agencies need to know'
+                : 'Developer FAQ'}
             </p>
           </div>
 
           <Accordion type="single" collapsible className="space-y-4">
-            {FAQ_ITEMS.map((item, index) => (
+            {faqItems.map((item, index) => (
               <AccordionItem
                 key={`item-${index + 1}`}
                 value={`item-${index + 1}`}
@@ -310,10 +338,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Certificate size={24} weight="bold" className="text-primary" />
-              <span className="font-semibold text-foreground">DCVaaS</span>
+              <span className="font-semibold text-foreground">{brand.brandName}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 DCVaaS. Secure certificate automation.
+              © 2024 {brand.brandName}. Secure certificate automation.
             </p>
           </div>
         </div>

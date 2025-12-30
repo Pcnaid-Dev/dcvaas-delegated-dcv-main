@@ -1,5 +1,5 @@
 name = "dcvaas-ui"
-main = "workers/spa.js"
+main = "workers/spa.ts"
 compatibility_date = "2024-09-23"
 
 # This uploads your "dist" folder (the React build) to Cloudflare

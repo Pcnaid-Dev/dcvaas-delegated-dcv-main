@@ -75,7 +75,7 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { data: orgWebhooksData = [] } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
-    enabled: !!currentOrg,
+    enabled: !!currentOrg && hasApiAccess,
     staleTime: 30000,
   });
 
