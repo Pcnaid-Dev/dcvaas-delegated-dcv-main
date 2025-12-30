@@ -39,7 +39,7 @@ export async function encryptSecret(plaintext: string, encryptionKey: string): P
   combined.set(new Uint8Array(ciphertext), iv.length);
 
   // Convert to base64 - use loop to avoid stack overflow on large payloads
-  return btoa(String.fromCharCode(...combined));
+  return btoa(Array.from(combined, (byte) => String.fromCharCode(byte)).join(''));
 }
 
 /**
