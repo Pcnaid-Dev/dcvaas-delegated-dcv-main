@@ -33,10 +33,14 @@ import {
 import { Plus, Trash, Copy, Eye, EyeSlash, Bell } from '@phosphor-icons/react';
 import { CopyButton } from '@/components/CopyButton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getOrgWebhooks, createWebhook, updateWebhook, deleteWebhook } from '@/lib/data';
-import { generateWebhookSecret } from '@/lib/crypto';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  getOrgWebhooks, 
+  createWebhook, 
+  updateWebhook, 
+  deleteWebhook 
+} from '@/lib/data';
 
 type WebhooksPageProps = {
   onNavigate: (page: string) => void;
@@ -58,8 +62,6 @@ const AVAILABLE_EVENTS = [
 export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
   const { currentOrg } = useAuth();
   const queryClient = useQueryClient();
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
   const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
@@ -68,6 +70,8 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
 
   const hasApiAccess = currentOrg && PLAN_LIMITS[currentOrg.subscriptionTier].apiAccess;
 
+  // Fetch webhooks with React Query
+  const { data: orgWebhooks = [], isLoading } = useQuery({
   const { data: orgWebhooksData = [] } = useQuery({
     queryKey: ['webhooks', currentOrg?.id],
     queryFn: () => currentOrg ? getOrgWebhooks() : Promise.resolve([]),
@@ -132,6 +136,8 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       setDeleteWebhookId(null);
       toast.success('Webhook deleted');
     },
+    onError: () => {
+      toast.error('Failed to delete webhook');
     onError: (error: any) => {
       toast.error(error.message || 'Failed to delete webhook');
     }
@@ -144,6 +150,9 @@ export function WebhooksPage({ onNavigate }: WebhooksPageProps) {
       queryClient.invalidateQueries({ queryKey: ['webhooks', currentOrg?.id] });
       toast.success(enabled ? 'Webhook enabled' : 'Webhook disabled');
     },
+    onError: () => {
+      toast.error('Failed to update webhook');
+    }
   });
 
   const handleDeleteWebhook = async () => {

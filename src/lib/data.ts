@@ -25,8 +25,24 @@ const DEFAULT_ORG: Organization = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://dcv.pcnaid.com').replace(/\/+$/, '');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
+const PLATFORM_OWNER_EMAIL = import.meta.env.VITE_PLATFORM_OWNER_EMAIL;
 
 // ===== Helpers =====
+
+/**
+ * Check if we're in token auth mode (single org mode)
+ */
+export function isTokenMode(): boolean {
+  return !!API_TOKEN;
+}
+
+/**
+ * Check if current user is the platform owner
+ */
+export function isPlatformOwner(userEmail: string | undefined): boolean {
+  if (!userEmail || !PLATFORM_OWNER_EMAIL) return false;
+  return userEmail.toLowerCase() === PLATFORM_OWNER_EMAIL.toLowerCase();
+}
 
 function isBrowser() {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
@@ -388,6 +404,13 @@ export async function updateWebhook(id: string, updates: { url?: string; events?
 export async function deleteWebhook(id: string): Promise<void> {
   await api(`/api/webhooks/${encodeURIComponent(id)}`, {
     method: 'DELETE',
+  });
+}
+
+export async function updateWebhookEnabled(webhookId: string, enabled: boolean): Promise<void> {
+  await api(`/api/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
   });
 }
 

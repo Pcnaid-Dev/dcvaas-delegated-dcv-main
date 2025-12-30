@@ -18,6 +18,17 @@ export async function createCheckoutSession(
   auth: AuthInfo
 ): Promise<Response> {
   try {
+    // Check if Stripe is configured
+    if (!env.STRIPE_SECRET_KEY) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Stripe not configured',
+          message: 'Payment processing is not available. Contact administrator.' 
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { priceId } = body;
 

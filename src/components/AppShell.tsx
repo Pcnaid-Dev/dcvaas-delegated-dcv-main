@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ import {
   Bell,
   SignOut,
 } from '@phosphor-icons/react';
+import { isTokenMode } from '@/lib/data';
 
 type AppShellProps = {
   children: ReactNode;
@@ -70,28 +72,47 @@ const { user, currentOrg, organizations, setCurrentOrg, userRole, logout } = use
             </button>
 
             {currentOrg && (
-              <div className="text-sm">
+              <div className="text-sm flex items-center gap-1">
                 <span className="text-muted-foreground">Org:</span>{' '}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="font-semibold">
-                      {currentOrg.name}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuLabel>Switch Organization</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {organizations.map((org) => (
-                      <DropdownMenuItem
-                        key={org.id}
-                        onClick={() => setCurrentOrg(org)}
-                      >
-                        {org.name}
-                        {org.id === currentOrg.id && ' ✓'}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {isTokenMode() || organizations.length <= 1 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-semibold px-2 py-1">
+                          {currentOrg.name}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {isTokenMode() 
+                            ? 'Org switching requires user-auth mode or separate tokens'
+                            : 'No other organizations available'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="font-semibold">
+                        {currentOrg.name}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuLabel>Switch Organization</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {organizations.map((org) => (
+                        <DropdownMenuItem
+                          key={org.id}
+                          onClick={() => setCurrentOrg(org)}
+                        >
+                          {org.name}
+                          {org.id === currentOrg.id && ' ✓'}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             )}
           </div>
