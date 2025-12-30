@@ -212,7 +212,7 @@ export function addBrandMetaTags(html: string, request: Request): string {
  * Comprehensive SEO safety middleware
  * Applies all SEO safety measures to responses
  */
-export function applySeoSafety(request: Request, response: Response): Response {
+export async function applySeoSafety(request: Request, response: Response): Promise<Response> {
   const brand = resolveBrandFromRequest(request);
   
   if (!brand) {
@@ -230,9 +230,16 @@ export function applySeoSafety(request: Request, response: Response): Response {
   // For HTML responses, process content
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('text/html')) {
-    // Note: In a real implementation, you'd want to stream process the HTML
-    // For now, we just set the header and return
-    return new Response(response.body, {
+    // Read the response body
+    const html = await response.text();
+    
+    // Apply HTML transformations
+    let modifiedHtml = html;
+    modifiedHtml = addCanonicalLink(modifiedHtml, request);
+    modifiedHtml = addBrandMetaTags(modifiedHtml, request);
+    
+    // Return new response with modified HTML and headers
+    return new Response(modifiedHtml, {
       status: response.status,
       statusText: response.statusText,
       headers,

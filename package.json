@@ -9,7 +9,8 @@
         "build": "tsc -b --noCheck && vite build",
         "lint": "eslint .",
         "optimize": "vite optimize",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "audit:cross-brand": "node scripts/audit-cross-brand-links.cjs"
     },
     "dependencies": {
         "@auth0/auth0-react": "^2.10.0",

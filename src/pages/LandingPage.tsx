@@ -338,10 +338,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Certificate size={24} weight="bold" className="text-primary" />
-              <span className="font-semibold text-foreground">DCVaaS</span>
+              <span className="font-semibold text-foreground">{brand.brandName}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 DCVaaS. Secure certificate automation.
+              © 2024 {brand.brandName}. Secure certificate automation.
             </p>
           </div>
         </div>
