@@ -75,7 +75,7 @@ Manual renewals become impossible at scale. DCVaaS provides:
 
 ### Running Locally
 
-This is a Spark application—simply open in your browser:
+This is a React application—simply open in your browser:
 
 ```bash
 npm install
@@ -134,7 +134,7 @@ MIT License - see [LICENSE](https://www.google.com/search?q=LICENSE) file
 
 -----
 
-**Built with ❤️ using GitHub Spark**
+**Built with ❤️ for automated SSL/TLS management**
 
 ```
 ```

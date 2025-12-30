@@ -11,9 +11,11 @@ import { ArrowLeft, ArrowsClockwise, CheckCircle, Clock, Warning } from '@phosph
 import { getDomain, getJobs, setJob, addAuditLog, syncDomain } from '@/lib/data';
 import { checkCNAME } from '@/lib/dns';
 import { generateId } from '@/lib/crypto';
+import { PageHeader, Callout, Stepper, DataTable, type Column } from '@/components/common';
 import type { Domain, Job, DomainStatus } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
+import { PageHeader, Callout, Stepper, DataTable, type Column } from '@/components/common';
 
 type DomainDetailPageProps = {
   domainId: string | null;
@@ -57,6 +59,46 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     enabled: !!domainId,
     staleTime: 5000,
   });
+
+  // Calculate stepper state (MOVED BEFORE CONDITIONAL RETURNS TO FIX HOOK ORDER)
+  const stepperSteps = useMemo(() => {
+    if (!domain) return [];
+    
+    const steps = [
+      {
+        label: 'Domain Added',
+        description: 'Initial setup',
+        status: 'complete' as const,
+      },
+      {
+        label: 'DNS Configured',
+        description: 'CNAME record verified',
+        status: 
+          domain.status === 'pending_cname'
+            ? 'current' as const
+            : domain.status === 'error'
+            ? 'current' as const  // Error state halts at DNS step
+            : 'complete' as const,
+      },
+      {
+        label: 'Validation',
+        description: 'Certificate issuance',
+        status:
+          domain.status === 'active'
+            ? 'complete' as const
+            : domain.status === 'issuing' || domain.status === 'pending_validation'
+            ? 'current' as const
+            : 'upcoming' as const,
+      },
+      {
+        label: 'Active',
+        description: 'Certificate issued',
+        status: domain.status === 'active' ? 'complete' as const : 'upcoming' as const,
+      },
+    ];
+
+    return steps;
+  }, [domain?.status]);
 
   // Show toast notification when status changes
   React.useEffect(() => {
@@ -131,45 +173,7 @@ export function DomainDetailPage({ domainId, onNavigate }: DomainDetailPageProps
     );
   }
 
-  // Calculate stepper state
-  const stepperSteps = useMemo(() => {
-    const steps = [
-      {
-        label: 'Domain Added',
-        description: 'Initial setup',
-        status: 'complete' as const,
-      },
-      {
-        label: 'DNS Configured',
-        description: 'CNAME record verified',
-        status: 
-          domain.status === 'pending_cname'
-            ? 'current' as const
-            : domain.status === 'error'
-            ? 'current' as const  // Error state halts at DNS step
-            : 'complete' as const,
-      },
-      {
-        label: 'Validation',
-        description: 'Certificate issuance',
-        status:
-          domain.status === 'active'
-            ? 'complete' as const
-            : domain.status === 'issuing' || domain.status === 'pending_validation'
-            ? 'current' as const
-            : 'upcoming' as const,
-      },
-      {
-        label: 'Active',
-        description: 'Certificate issued',
-        status: domain.status === 'active' ? 'complete' as const : 'upcoming' as const,
-      },
-    ];
-
-    return steps;
-  }, [domain.status]);
-
-  // Jobs table columns
+  // Jobs table columns (moved after conditional returns since it uses domain data)
   const jobColumns: Column<Job>[] = [
     {
       key: 'type',

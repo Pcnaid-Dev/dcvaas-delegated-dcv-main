@@ -6,9 +6,11 @@ import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
 import { listWebhooks, createWebhook, updateWebhook, deleteWebhook } from './lib/webhooks';
-import { exchangeOAuthCode, listOAuthConnections } from './lib/oauth';
+import { createOAuthConnection, listOAuthConnections, deleteOAuthConnection } from './lib/oauth';
 import { getOrganization } from './lib/organizations';
+import { listJobs, getJob } from './lib/jobs';
 import { snakeToCamel } from './lib/utils';
+import { PLAN_LIMITS, VALID_JOB_TYPES, type JobType } from '../../../shared/constants';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -37,6 +39,103 @@ export default {
       if (method === 'POST' && url.pathname === '/api/webhooks/stripe') {
         const response = await handleStripeWebhook(req, env);
         return response;
+      }
+
+      // Admin endpoints - require INTERNAL_ADMIN_TOKEN
+      if (url.pathname.startsWith('/api/admin/')) {
+        const adminToken = req.headers.get('X-Admin-Token');
+        if (!adminToken || !env.INTERNAL_ADMIN_TOKEN || adminToken !== env.INTERNAL_ADMIN_TOKEN) {
+          return withCors(req, env, new Response(
+            JSON.stringify({ error: 'Unauthorized', message: 'Invalid admin token' }),
+            { status: 401, headers: { 'Content-Type': 'application/json' } }
+          ));
+        }
+
+        // POST /api/admin/demo/seed
+        if (method === 'POST' && url.pathname === '/api/admin/demo/seed') {
+          try {
+            const { generateId } = await import('./lib/crypto');
+            const now = new Date().toISOString();
+            
+            // Create demo org
+            const orgId = generateId();
+            await env.DB.prepare(
+              `INSERT INTO organizations (id, name, owner_id, subscription_tier, created_at)
+               VALUES (?, ?, ?, ?, ?)`
+            ).bind(orgId, 'Demo Organization', 'demo_owner', 'pro', now).run();
+
+            // Create demo domains
+            const domainNames = ['demo1.example.com', 'demo2.example.com', 'demo3.example.com'];
+            const domainIds = [];
+            for (const name of domainNames) {
+              const domainId = generateId();
+              domainIds.push(domainId);
+              await env.DB.prepare(
+                `INSERT INTO domains (id, org_id, domain_name, status, cname_target, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(domainId, orgId, name, 'active', env.SAAS_CNAME_TARGET, now, now).run();
+            }
+
+            // Create demo jobs
+            for (const domainId of domainIds) {
+              const jobId = generateId();
+              await env.DB.prepare(
+                `INSERT INTO jobs (id, type, domain_id, status, attempts, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(jobId, 'dns_check', domainId, 'completed', 1, now, now).run();
+            }
+
+            return withCors(req, env, json({
+              success: true,
+              message: 'Demo data seeded successfully',
+              orgId,
+              domains: domainIds.length,
+              jobs: domainIds.length
+            }));
+          } catch (err: any) {
+            console.error('Demo seed error:', err);
+            return withCors(req, env, json({ error: err.message }, 500));
+          }
+        }
+
+        // POST /api/admin/demo/reset
+        if (method === 'POST' && url.pathname === '/api/admin/demo/reset') {
+          try {
+            // Find demo org
+            const demoOrg = await env.DB.prepare(
+              `SELECT id FROM organizations WHERE name = 'Demo Organization'`
+            ).first<{ id: string }>();
+
+            if (demoOrg) {
+              // Delete jobs for demo domains
+              await env.DB.prepare(
+                `DELETE FROM jobs WHERE domain_id IN (
+                   SELECT id FROM domains WHERE org_id = ?
+                 )`
+              ).bind(demoOrg.id).run();
+
+              // Delete demo domains
+              await env.DB.prepare(
+                `DELETE FROM domains WHERE org_id = ?`
+              ).bind(demoOrg.id).run();
+
+              // Delete demo org
+              await env.DB.prepare(
+                `DELETE FROM organizations WHERE id = ?`
+              ).bind(demoOrg.id).run();
+            }
+
+            return withCors(req, env, json({
+              success: true,
+              message: 'Demo data reset successfully'
+            }));
+          } catch (err: any) {
+            console.error('Demo reset error:', err);
+            return withCors(req, env, json({ error: err.message }, 500));
+          }
+        }
+
+        return withCors(req, env, notFound());
       }
 
 // 1. Ensure this auth check exists first
@@ -92,6 +191,41 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         const body = await req.json().catch(() => ({} as any));
         const hostname = String(body.hostname ?? body.domainName ?? '').trim();
         if (!hostname) return withCors(req, env, badRequest('hostname/domainName is required'));
+        
+        // Check domain limit before creating (unless platform owner)
+        const platformOwnerEmail = env.PLATFORM_OWNER_EMAIL?.toLowerCase();
+        let isPlatformOwner = false;
+        
+        if (platformOwnerEmail) {
+          // Get org owner's email
+          const orgOwner = await env.DB.prepare(
+            `SELECT om.email 
+             FROM organizations o 
+             JOIN organization_members om ON om.user_id = o.owner_id AND om.org_id = o.id
+             WHERE o.id = ?`
+          ).bind(auth.orgId).first<{ email: string }>();
+          
+          isPlatformOwner = orgOwner?.email?.toLowerCase() === platformOwnerEmail;
+        }
+        
+        if (!isPlatformOwner) {
+          // Get org subscription tier and current domain count
+          const org = await env.DB.prepare(
+            'SELECT subscription_tier FROM organizations WHERE id = ?'
+          ).bind(auth.orgId).first<{ subscription_tier: string }>();
+          
+          const domainCount = await env.DB.prepare(
+            'SELECT COUNT(*) as count FROM domains WHERE org_id = ?'
+          ).bind(auth.orgId).first<{ count: number }>();
+          
+          const tier = org?.subscription_tier || 'free';
+          const maxDomains = PLAN_LIMITS[tier as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.free;
+          
+          if ((domainCount?.count || 0) >= maxDomains) {
+            return withCors(req, env, badRequest(`Domain limit reached. Your plan allows ${maxDomains} domains. Upgrade to add more.`));
+          }
+        }
+        
         const domain = await createDomain(env, auth.orgId, hostname);
         return withCors(req, env, json({ domain }, 201));
       }
@@ -286,8 +420,72 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         }
       }
 
-      // GET /api/webhooks - List webhooks
-copilot/add-webhook-system-migration
+      // GET /api/jobs - List jobs (with optional domainId filter)
+      if (method === 'GET' && url.pathname === '/api/jobs') {
+        const domainId = url.searchParams.get('domainId') || undefined;
+        const type = url.searchParams.get('type') || undefined;
+        const status = url.searchParams.get('status') || undefined;
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
+        const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+
+        const jobs = await listJobs(env, auth.orgId, { domainId, type, status }, limit, offset);
+        return withCors(req, env, json({ jobs }));
+      }
+
+      // POST /api/jobs - Create a job
+      if (method === 'POST' && url.pathname === '/api/jobs') {
+        const body = await req.json().catch(() => ({} as any));
+        const domainId = String(body.domainId ?? '').trim();
+        const type = String(body.type ?? '').trim();
+
+        if (!domainId || !type) {
+          return withCors(req, env, badRequest('domainId and type are required'));
+        }
+
+        if (!VALID_JOB_TYPES.includes(type as JobType)) {
+          return withCors(req, env, badRequest('Invalid job type'));
+        }
+
+        try {
+          const { generateId } = await import('./lib/crypto');
+          const jobId = generateId();
+          const now = new Date().toISOString();
+
+          await env.DB.prepare(
+            `INSERT INTO jobs (id, type, domain_id, status, attempts, created_at, updated_at)
+             VALUES (?, ?, ?, 'queued', 0, ?, ?)`
+          )
+            .bind(jobId, type, domainId, now, now)
+            .run();
+
+          // Enqueue the job to the consumer for processing
+          if (env.QUEUE) {
+            await env.QUEUE.send({
+              jobId,
+              orgId: auth.orgId,
+              domainId,
+              type
+            });
+          }
+
+          const job = await getJob(env, auth.orgId, jobId);
+          return withCors(req, env, json({ job }, 201));
+        } catch (err: any) {
+          return withCors(req, env, badRequest(err.message));
+        }
+      }
+
+      // GET /api/jobs/:id - Get job by ID
+      {
+        const m = url.pathname.match(/^\/api\/jobs\/([^/]+)$/);
+        if (m && method === 'GET') {
+          const jobId = decodeURIComponent(m[1]);
+          const job = await getJob(env, auth.orgId, jobId);
+          if (!job) return withCors(req, env, notFound());
+          return withCors(req, env, json({ job }));
+        }
+      }
+
       // GET /api/webhooks - List webhooks for the authenticated org
       if (method === 'GET' && url.pathname === '/api/webhooks') {
         const webhooks = await listWebhooks(env, auth.orgId);
@@ -338,58 +536,6 @@ copilot/add-webhook-system-migration
         }
       }
 
-      // POST /api/oauth/exchange - Exchange OAuth code
-      if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
-        const body = await req.json().catch(() => ({} as any));
-        const provider = String(body.provider ?? '').trim();
-      // POST /api/webhooks - Create a new webhook endpoint
-      if (method === 'POST' && url.pathname === '/api/webhooks') {
-        const body = await req.json().catch(() => ({} as any));
-        const url_param = String(body.url ?? '').trim();
-        const secret = String(body.secret ?? '').trim();
-        const events = body.events as string[];
-
-        if (!url_param) {
-          return withCors(req, env, badRequest('url is required'));
-        }
-
-        if (!url_param.startsWith('https://')) {
-          return withCors(req, env, badRequest('url must start with https://'));
-        }
-
-        if (!secret) {
-          return withCors(req, env, badRequest('secret is required'));
-        }
-
-        if (!events || !Array.isArray(events) || events.length === 0) {
-          return withCors(req, env, badRequest('events array is required and must not be empty'));
-        }
-
-        const webhook = await createWebhook(env, auth.orgId, url_param, secret, events);
-        return withCors(req, env, json({ webhook }, 201));
-      }
-
-      // DELETE /api/webhooks/:id - Delete a webhook endpoint
-      // PATCH /api/webhooks/:id - Update webhook enabled status
-      {
-        const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
-        if (m) {
-          const webhookId = decodeURIComponent(m[1]);
-          
-          if (method === 'DELETE') {
-            await deleteWebhook(env, auth.orgId, webhookId);
-            return withCors(req, env, json({ success: true }));
-          }
-          
-          if (method === 'PATCH') {
-            const body = await req.json().catch(() => ({} as any));
-            
-            if (typeof body.enabled !== 'boolean') {
-              return withCors(req, env, badRequest('enabled field is required and must be a boolean'));
-            }
-
-            await updateWebhookEnabled(env, auth.orgId, webhookId, body.enabled);
-            return withCors(req, env, json({ success: true }));
       // POST /api/oauth/exchange - Exchange OAuth code for tokens
       if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
         const body = await req.json().catch(() => ({} as any));
@@ -407,36 +553,18 @@ copilot/add-webhook-system-migration
         }
 
         try {
-          const result = await exchangeOAuthCode(env, auth.orgId, provider as any, code, redirectUri);
+          const result = await createOAuthConnection(env, auth.orgId, provider as any, code, redirectUri);
           return withCors(req, env, json(result, 201));
         } catch (err: any) {
           return withCors(req, env, badRequest(err.message));
-        // Validate provider
-        const validProviders = ['cloudflare', 'godaddy'];
-        if (!validProviders.includes(provider)) {
-          return withCors(req, env, badRequest(`Invalid provider. Must be one of: ${validProviders.join(', ')}`));
-        }
-
-        try {
-          const connection = await createOAuthConnection(env, auth.orgId, provider, code, redirectUri);
-          // Return connection without encrypted tokens
-          const { encrypted_access_token, encrypted_refresh_token, ...safeConnection } = connection;
-          return withCors(req, env, json({ connection: safeConnection }, 201));
-        } catch (err: any) {
-          console.error('OAuth exchange error:', err);
-          return withCors(req, env, badRequest(err.message || 'Failed to exchange OAuth code'));
         }
       }
 
       // GET /api/oauth/connections - List OAuth connections
       if (method === 'GET' && url.pathname === '/api/oauth/connections') {
-        const connections = await listOAuthConnections(env, auth.orgId);
-        return withCors(req, env, json({ connections }));
         try {
           const connections = await listOAuthConnections(env, auth.orgId);
-          // Return connections without encrypted tokens
-          const safeConnections = connections.map(({ encrypted_access_token, encrypted_refresh_token, ...conn }) => conn);
-          return withCors(req, env, json({ connections: safeConnections }));
+          return withCors(req, env, json({ connections }));
         } catch (err: any) {
           console.error('List OAuth connections error:', err);
           return withCors(req, env, badRequest(err.message || 'Failed to list OAuth connections'));
@@ -455,7 +583,6 @@ copilot/add-webhook-system-migration
           } catch (err: any) {
             console.error('Delete OAuth connection error:', err);
             return withCors(req, env, badRequest(err.message || 'Failed to delete OAuth connection'));
-main
           }
         }
       }

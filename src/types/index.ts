@@ -77,7 +77,7 @@ export type OAuthConnection = {
   updatedAt: string;
 };
 
-export type JobType = 'dns_check' | 'start_issuance' | 'renewal';
+export type JobType = SharedJobType;
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
 export type Job = {
@@ -133,9 +133,12 @@ export type PlanLimits = {
   support: 'community' | 'email' | 'priority';
 };
 
+// Import plan limits from shared module for single source of truth
+import { PLAN_LIMITS as SHARED_PLAN_LIMITS, type JobType as SharedJobType } from '../../shared/constants';
+
 export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
   free: {
-    maxDomains: 3,
+    maxDomains: SHARED_PLAN_LIMITS.free,
     apiAccess: false,
     teamAccess: false,
     auditLogs: false,
@@ -144,7 +147,7 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
     support: 'community',
   },
   pro: {
-    maxDomains: 15,
+    maxDomains: SHARED_PLAN_LIMITS.pro,
     apiAccess: true,
     teamAccess: false,
     auditLogs: false,
@@ -153,7 +156,7 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
     support: 'email',
   },
   agency: {
-    maxDomains: 50,
+    maxDomains: SHARED_PLAN_LIMITS.agency,
     apiAccess: true,
     teamAccess: true,
     auditLogs: true,
@@ -162,6 +165,24 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
     support: 'priority',
   },
 };
+
+/**
+ * Get effective max domains for a user, considering platform owner status
+ */
+export function getEffectiveMaxDomains(
+  org: Organization | undefined,
+  userEmail: string | undefined
+): number {
+  // Platform owner has unlimited domains
+  const ownerEmail = import.meta.env.VITE_PLATFORM_OWNER_EMAIL;
+  if (ownerEmail && userEmail && userEmail.toLowerCase() === ownerEmail.toLowerCase()) {
+    return Infinity;
+  }
+  
+  // Normal users follow plan limits
+  if (!org) return PLAN_LIMITS.free.maxDomains;
+  return PLAN_LIMITS[org.subscriptionTier].maxDomains;
+}
 
 export type EnvironmentVariable = {
   key: string;

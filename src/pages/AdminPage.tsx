@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllDomains, getDomainsExpiringBefore, setJob, addAuditLog } from '@/lib/data';
+import { getAllDomains, getDomainsExpiringBefore, setJob, addAuditLog, isPlatformOwner as isOwnerEmail } from '@/lib/data';
 import { generateId } from '@/lib/crypto';
 import { toast } from 'sonner';
 import type { Job } from '@/types';
@@ -19,6 +19,24 @@ type AdminPageProps = {
 export function AdminPage({ onNavigate }: AdminPageProps) {
   const { user, currentOrg } = useAuth();
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  
+  // Check if user is platform owner
+  const isOwner = isOwnerEmail(user?.email);
+  
+  // Only show admin page to platform owner
+  if (!isOwner) {
+    return (
+      <AppShell onNavigate={onNavigate} currentPage="admin">
+        <div className="text-center py-16">
+          <p className="text-muted-foreground">Access denied. Admin page is only available to platform owners.</p>
+          <Button onClick={() => onNavigate('dashboard')} className="mt-4">
+            Back to Dashboard
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
 
   const handleSimulateCron = async () => {
     if (!user || !currentOrg) return;
@@ -57,6 +75,40 @@ export function AdminPage({ onNavigate }: AdminPageProps) {
       toast.success(`Queued ${expiringDomains.length} renewal jobs`);
     } catch (error) {
       toast.error('Failed to simulate cron');
+    }
+  };
+
+  const handleToggleDemoMode = async (enabled: boolean) => {
+    const adminToken = import.meta.env.VITE_INTERNAL_ADMIN_TOKEN;
+    if (!adminToken) {
+      toast.error('Admin token not configured');
+      return;
+    }
+
+    setIsSeeding(true);
+    try {
+      const endpoint = enabled ? '/api/admin/demo/seed' : '/api/admin/demo/reset';
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://dcv.pcnaid.com'}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Token': adminToken,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to toggle demo mode');
+      }
+
+      const result = await response.json();
+      setIsDemoMode(enabled);
+      toast.success(result.message || (enabled ? 'Demo data seeded' : 'Demo data reset'));
+    } catch (error: any) {
+      console.error('Demo mode error:', error);
+      toast.error(error.message || 'Failed to toggle demo mode');
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -117,9 +169,15 @@ export function AdminPage({ onNavigate }: AdminPageProps) {
             <Switch
               id="demo-mode"
               checked={isDemoMode}
-              onCheckedChange={setIsDemoMode}
+              onCheckedChange={handleToggleDemoMode}
+              disabled={isSeeding}
             />
           </div>
+          {isSeeding && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {isDemoMode ? 'Resetting demo data...' : 'Seeding demo data...'}
+            </p>
+          )}
         </Card>
 
         <Card className="p-6">
@@ -183,12 +241,12 @@ export function AdminPage({ onNavigate }: AdminPageProps) {
             Publishing Notes
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
-            When you publish this Spark, remember that all users share the same datastore.
+            When you publish this application, remember that all users share the same datastore.
             You can make it read-only for viewers to prevent modifications.
           </p>
           <div className="flex items-center gap-2">
             <Switch id="readonly" />
-            <Label htmlFor="readonly">Make this spark read-only</Label>
+            <Label htmlFor="readonly">Make this application read-only</Label>
           </div>
         </Card>
       </div>
