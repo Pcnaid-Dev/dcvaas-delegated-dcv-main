@@ -10,6 +10,7 @@ import { createOAuthConnection, listOAuthConnections, deleteOAuthConnection } fr
 import { getOrganization } from './lib/organizations';
 import { listJobs, getJob } from './lib/jobs';
 import { snakeToCamel } from './lib/utils';
+import { PLAN_LIMITS, VALID_JOB_TYPES, type JobType } from '../../../shared/constants';
 
 // Helper function to normalize ETags for comparison
 // Removes W/ prefix (weak ETag indicator) and quotes
@@ -217,14 +218,8 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             'SELECT COUNT(*) as count FROM domains WHERE org_id = ?'
           ).bind(auth.orgId).first<{ count: number }>();
           
-          const PLAN_LIMITS = {
-            free: 3,
-            pro: 15,
-            agency: 50,
-          };
-          
           const tier = org?.subscription_tier || 'free';
-          const maxDomains = PLAN_LIMITS[tier as keyof typeof PLAN_LIMITS] || 3;
+          const maxDomains = PLAN_LIMITS[tier as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.free;
           
           if ((domainCount?.count || 0) >= maxDomains) {
             return withCors(req, env, badRequest(`Domain limit reached. Your plan allows ${maxDomains} domains. Upgrade to add more.`));
@@ -447,8 +442,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           return withCors(req, env, badRequest('domainId and type are required'));
         }
 
-        const validTypes = ['dns_check', 'start_issuance', 'renewal', 'sync_status'];
-        if (!validTypes.includes(type)) {
+        if (!VALID_JOB_TYPES.includes(type as JobType)) {
           return withCors(req, env, badRequest('Invalid job type'));
         }
 
