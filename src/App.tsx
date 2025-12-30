@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrandProvider } from './contexts/BrandContext';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -130,17 +131,19 @@ function AppContent() {
 
 function App() {
   return (
-  <QueryClientProvider client={queryClient}>
-    <BrandProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <AppContent />
-          <Toaster />
-        </ThemeProvider>
-      </AuthProvider>
-    </BrandProvider>
-  </QueryClientProvider>
-);
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrandProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <AppContent />
+              <Toaster />
+            </ThemeProvider>
+          </AuthProvider>
+        </BrandProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
 }
 
 export default App;

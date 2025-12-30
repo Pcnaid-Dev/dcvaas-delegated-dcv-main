@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { resolveBrand, type BrandConfig } from '@/lib/brand-resolver';
 import { loadMicrocopy, type Microcopy } from '@/lib/microcopy';
 
@@ -40,16 +41,13 @@ export function BrandProvider({ children }: BrandProviderProps) {
 
     // Set data-brand attribute on HTML element for CSS theming
     document.documentElement.setAttribute('data-brand', brand.brandId);
-
-    // Update page title with brand name
-    const baseTitle = document.title;
-    if (!baseTitle.includes(brand.brandName)) {
-      document.title = `${brand.brandName} - SSL/TLS Certificate Automation`;
-    }
   }, [brand]);
 
   return (
     <BrandContext.Provider value={{ brand, microcopy, isLoading }}>
+      <Helmet>
+        <title>{brand.brandName} - SSL/TLS Certificate Automation</title>
+      </Helmet>
       {children}
     </BrandContext.Provider>
   );
