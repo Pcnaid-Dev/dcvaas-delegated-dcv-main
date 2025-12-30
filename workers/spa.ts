@@ -13,10 +13,11 @@
 import { 
   resolveBrandFromHostname, 
   getRedirectTarget,
-  getCanonicalURL
-} from './shared/brand-resolver.js';
+  getCanonicalURL,
+  type BrandConfig
+} from './shared/brand-resolver';
 
-function handleWwwRedirect(url) {
+function handleWwwRedirect(url: URL): Response | null {
   const redirectTarget = getRedirectTarget(url.hostname);
   if (redirectTarget) {
     const redirectUrl = `${url.protocol}//${redirectTarget}${url.pathname}${url.search}`;
@@ -31,7 +32,7 @@ function handleWwwRedirect(url) {
   return null;
 }
 
-function generateRobotsTxt(brand, protocol, hostname) {
+function generateRobotsTxt(brand: BrandConfig, protocol: string, hostname: string): Response {
   const robotsTxt = brand.isAppHost
     ? `# Robots.txt for ${brand.brandName} App (${brand.appHost})
 # This is the application subdomain - not for public indexing
@@ -60,7 +61,7 @@ Sitemap: ${protocol}//${hostname}/sitemap.xml
   });
 }
 
-function generateSitemapXml(brand, protocol) {
+function generateSitemapXml(brand: BrandConfig, protocol: string): Response {
   if (brand.isAppHost) {
     return new Response('Not Found - App subdomain has no sitemap', {
       status: 404,
@@ -113,7 +114,7 @@ ${pages.map(page => `  <url>
 /**
  * Inject canonical and meta tags into HTML
  */
-async function injectSEOTags(response, brand, url) {
+async function injectSEOTags(response: Response, brand: BrandConfig, url: URL): Promise<Response> {
   const contentType = response.headers.get('content-type') || '';
   
   // Only process HTML responses
@@ -162,8 +163,12 @@ async function injectSEOTags(response, brand, url) {
   });
 }
 
+interface Env {
+  ASSETS: Fetcher;
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const brand = resolveBrandFromHostname(url.hostname);
 
