@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash, Eye, EyeSlash } from '@phosphor-icons/react';
-import { getOrgAPITokens, addAPIToken, deleteAPIToken } from '@/lib/data';
+import { getOrgAPITokens, deleteAPIToken } from '@/lib/data';
 import { generateId, hashToken, generateToken } from '@/lib/crypto';
 import { toast } from 'sonner';
 import type { APIToken } from '@/types';

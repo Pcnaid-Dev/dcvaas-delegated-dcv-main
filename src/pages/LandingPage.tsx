@@ -43,7 +43,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
   const docsRoute = brand.brandId === 'autocertify.net' ? 'guides' : 'docs';
 
   // Build FAQ items from brand microcopy
-  const faqItems = [];
+  const faqItems: Array<{ question: string; answer: string }> = [];
   for (let i = 1; i <= 5; i++) {
     const questionKey = `faq_${i}_q` as keyof typeof microcopy;
     const answerKey = `faq_${i}_a` as keyof typeof microcopy;
@@ -56,7 +56,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
   }
 
   // Build How It Works steps from brand microcopy
-  const howToSteps = [];
+  const howToSteps: { label: string; description: string; status: "complete" | "current" | "upcoming" }[] = [];
   for (let i = 1; i <= 3; i++) {
     const stepKey = `howto_step${i}` as keyof typeof microcopy;
     if (microcopy[stepKey]) {

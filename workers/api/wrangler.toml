@@ -16,7 +16,7 @@ SAAS_CNAME_TARGET = "dcv.pcnaid.com"
 CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
 
 # Comma-separated list for CORS
-CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com,https://cert.pcnaid.com"
+CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"
 
 [[d1_databases]]
 binding = "DB"

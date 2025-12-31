@@ -2,18 +2,15 @@ import type { Env } from '../env';
 import type { SyncStatusJob } from '../lib/types';
 import { getCustomHostname } from '../lib/cloudflare';
 import { buildCertificateIssuedEmail } from '../lib/email-templates';
-import { dispatchWebhook } from '../../../api/src/lib/webhooks';
+// We are using the webhooks library from the API worker directly
+import { dispatchWebhook as dispatchWebhookShared } from '../../../api/src/lib/webhooks';
 
 export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
-  const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first<any>();
+  const domain = await env.DB.prepare('SELECT * FROM domains WHERE id = ?').bind(job.domain_id).first();
   if (!domain || !domain.cf_custom_hostname_id) return;
 
   const previousStatus = domain.status;
   const cfData = await getCustomHostname(env, domain.cf_custom_hostname_id);
-  const previousStatus = domain.status;
-
-  // Store the old status before updating
-  const oldStatus = domain.status;
 
   let internalStatus = 'pending_cname';
   if (cfData.status === 'active' && cfData.ssl.status === 'active') {
@@ -21,12 +18,12 @@ export async function handleSyncStatus(job: SyncStatusJob, env: Env) {
   } else if (cfData.ssl.status === 'validation_failed') {
     internalStatus = 'error';
   } else if (cfData.status === 'pending_validation') {
-    internalStatus = 'issuing'; // Or 'pending_validation'
+    internalStatus = 'issuing';
   }
 
   // Extract certificate expiry and issued dates
   const expiresAt = cfData.ssl.expires_on || null;
-  const lastIssuedAt = cfData.ssl.issued_on || null;
+  const lastIssuedAt = (cfData.ssl as any).issued_on || null;
   
   // Extract error message from validation errors
   const errorMessage = cfData.ssl.validation_errors && cfData.ssl.validation_errors.length > 0
@@ -69,7 +66,6 @@ async function dispatchStatusTransitionWebhooks(
   newStatus: string,
   cfData: any
 ) {
-  // Detect status transitions
   const transitions: { event: string; payload: any }[] = [];
 
   // domain.active event
@@ -84,7 +80,6 @@ async function dispatchStatusTransitionWebhooks(
         cfStatus: cfData.status,
         cfSslStatus: cfData.ssl.status,
         expiresAt: cfData.ssl.expires_on,
-        issuedAt: cfData.ssl.issued_on,
         timestamp: new Date().toISOString(),
       },
     });
@@ -110,27 +105,28 @@ async function dispatchStatusTransitionWebhooks(
   // Dispatch all transitions
   for (const { event, payload } of transitions) {
     try {
-      await dispatchWebhook(env, domain.org_id, event, payload);
+      await dispatchWebhookLocal(env, domain.org_id, event, payload, domain, previousStatus, newStatus);
     } catch (err) {
       console.error(`Failed to dispatch webhook for ${event}:`, err);
-      // Don't fail the sync if webhook dispatch fails
     }
   }
 }
 
 /**
  * Dispatch a webhook event to all subscribed endpoints
- * Uses shared dispatch logic with database-level event filtering
  */
-async function dispatchWebhook(
+async function dispatchWebhookLocal(
   env: Env,
   orgId: string,
   event: string,
-  payload: Record<string, any>
+  payload: Record<string, any>,
+  domain: any,
+  previousStatus: string,
+  internalStatus: string
 ) {
   // Use shared webhook dispatch module
-  const { dispatchWebhook: sharedDispatch } = await import('../../shared/webhook-dispatch');
-  await sharedDispatch(env.DB, orgId, event as any, payload);
+  await dispatchWebhookShared(env.DB, orgId, event as any, payload);
+  
   // Send email notification when certificate becomes active
   if (previousStatus !== 'active' && internalStatus === 'active') {
     await sendCertificateIssuedNotification(env, domain);
@@ -139,27 +135,24 @@ async function dispatchWebhook(
 
 async function sendCertificateIssuedNotification(env: Env, domain: any): Promise<void> {
   try {
-    // Get organization details
     const org = await env.DB.prepare('SELECT * FROM organizations WHERE id = ?')
       .bind(domain.org_id)
-      .first<any>();
+      .first();
     
     if (!org) return;
 
-    // Get all active members of the organization
     const members = await env.DB.prepare(
       `SELECT email FROM organization_members 
        WHERE org_id = ? AND status = 'active'`
-    ).bind(domain.org_id).all<{ email: string }>();
+    ).bind(domain.org_id).all();
 
-    const emails = members.results?.map(m => m.email).filter(Boolean) || [];
+    // Fix implicit any on map parameter
+    const emails = members.results?.map((m: any) => m.email).filter(Boolean) || [];
     
     if (emails.length === 0) return;
 
-    // Build email HTML
     const html = buildCertificateIssuedEmail(domain.domain_name, org.name);
 
-    // Queue email notification
     await env.QUEUE.send({
       id: crypto.randomUUID(),
       type: 'send_email',
@@ -171,9 +164,8 @@ async function sendCertificateIssuedNotification(env: Env, domain: any): Promise
       attempts: 0,
     });
 
-    console.log(`Queued certificate issued notification for domain ${domain.domain_name} to ${emails.length} recipients`);
+    console.log(`Queued certificate issued notification for domain ${domain.domain_name}`);
   } catch (error) {
     console.error('Failed to queue certificate issued notification:', error);
-    // Don't throw - we don't want to fail the job if email queueing fails
   }
 }

@@ -9,7 +9,8 @@
  * - WWW to non-WWW redirects
  */
 
-import { resolveBrandFromRequest, getCanonicalURL, getRedirectTarget, type BrandConfig } from '../../shared/brand-resolver';
+import { resolveBrandFromRequest, getCanonicalURL, getRedirectTarget, type BrandConfig } from '../../../shared/brand-resolver';
+
 
 /**
  * Check if request is for app subdomain and add noindex header

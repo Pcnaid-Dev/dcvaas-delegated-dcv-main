@@ -1,6 +1,4 @@
 -- Organizations
--- Note: This schema is designed for Cloudflare D1 (SQLite)
--- For SQL Server compatibility, replace IF NOT EXISTS checks with conditional logic
 CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -24,55 +22,41 @@ CREATE TABLE IF NOT EXISTS organization_members (
   UNIQUE(org_id, email)
 );
 
--- Modify existing domains table or create migration
-ALTER TABLE domains ADD COLUMN cf_custom_hostname_id TEXT;
-ALTER TABLE domains ADD COLUMN cf_status TEXT; -- e.g., 'pending', 'active'
-ALTER TABLE domains ADD COLUMN cf_ssl_status TEXT; -- e.g., 'initializing', 'pending_validation', 'active'
-ALTER TABLE domains ADD COLUMN cf_verification_errors TEXT; -- Store JSON array of errors
-
-CREATE INDEX IF NOT EXISTS idx_domains_org ON domains(org_id);
-CREATE INDEX IF NOT EXISTS idx_domains_expires
-  ON domains(expires_at) WHERE status = 'active';
-
-CREATE INDEX IF NOT EXISTS idx_jobs_domain ON jobs(domain_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, created_at);
-
--- Audit Logs
-CREATE TABLE IF NOT EXISTS audit_logs (
+-- Domains
+CREATE TABLE IF NOT EXISTS domains (
   id TEXT PRIMARY KEY,
   org_id TEXT NOT NULL,
-  user_id TEXT,
-  action TEXT NOT NULL,
-  entity_type TEXT,
-  entity_id TEXT,
-  details TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_logs(org_id, created_at);
-
--- API Tokens
-CREATE TABLE IF NOT EXISTS api_tokens (
-  id TEXT PRIMARY KEY,
-  org_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  token_hash TEXT NOT NULL UNIQUE,
-  last_used_at TEXT,
-  expires_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
-);
-
--- OAuth Connections
-CREATE TABLE IF NOT EXISTS oauth_connections (
-  id TEXT PRIMARY KEY,
-  org_id TEXT NOT NULL,
-  provider TEXT NOT NULL CHECK(provider IN ('cloudflare', 'godaddy', 'route53', 'other')),
-  encrypted_access_token TEXT NOT NULL,
-  encrypted_refresh_token TEXT,
+  domain_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending_cname', -- pending_cname, issuing, active, error
+  cf_custom_hostname_id TEXT,
+  cf_status TEXT,
+  cf_ssl_status TEXT,
+  cf_verification_errors TEXT, -- JSON array
   expires_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_domains_org ON domains(org_id);
+CREATE INDEX IF NOT EXISTS idx_domains_expires ON domains(expires_at) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_domains_status ON domains(status);
+CREATE INDEX IF NOT EXISTS idx_domains_org_status ON domains(org_id, status);
+CREATE INDEX IF NOT EXISTS idx_domains_cf_hostname ON domains(cf_custom_hostname_id);
+CREATE INDEX IF NOT EXISTS idx_domains_updated ON domains(updated_at);
+
+-- Jobs
+CREATE TABLE IF NOT EXISTS jobs (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  payload TEXT NOT NULL, -- JSON
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  processed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON jobs(status, created_at);
+-- Bad index removed from here

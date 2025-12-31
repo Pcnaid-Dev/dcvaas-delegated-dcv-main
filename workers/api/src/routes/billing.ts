@@ -29,8 +29,8 @@ export async function createCheckoutSession(
       );
     }
 
-    const body = await req.json().catch(() => ({}));
-    const { priceId } = body;
+    const body = (await req.json().catch(() => ({}))) as any;
+    const { priceId } = body as { priceId?: string };
 
     if (!priceId || typeof priceId !== 'string') {
       return new Response(
@@ -40,7 +40,7 @@ export async function createCheckoutSession(
     }
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: STRIPE_API_VERSION,
+      apiVersion: STRIPE_API_VERSION as any, // Cast to any to fix version mismatch
     });
 
     // Determine tier from price ID for metadata
@@ -96,13 +96,16 @@ export async function handleStripeWebhook(
       );
     }
 
+    if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
+         return new Response("Stripe configuration missing", { status: 500 });
+    }
+
     const body = await req.text();
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: STRIPE_API_VERSION,
+      apiVersion: STRIPE_API_VERSION as any,
     });
 
     // You must verify the webhook signature to ensure the request is from Stripe.
-    // The webhook secret must be set as an environment variable.
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(
@@ -135,9 +138,6 @@ export async function handleStripeWebhook(
       if (session.metadata?.tier && ['free', 'pro', 'agency'].includes(session.metadata.tier)) {
         tier = session.metadata.tier as 'free' | 'pro' | 'agency';
       } else {
-        // Fallback for older sessions without tier metadata
-        // Note: line_items may not be expanded in webhook events by default
-        // If tier is missing from metadata, we log a warning and use the default
         console.warn(
           `Missing tier in session metadata for orgId: ${orgId}. ` +
           `Defaulting to 'pro'. Session ID: ${session.id}`

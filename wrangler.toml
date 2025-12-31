@@ -1,4 +1,4 @@
-name = "dcvaas-ui"
+name = "dcvaas-frontend"
 main = "workers/spa.ts"
 compatibility_date = "2024-09-23"
 
@@ -8,5 +8,5 @@ directory = "./dist"
 binding = "ASSETS"
 
 [[routes]]
-pattern = "cert.pcnaid.com"
+pattern = "cert.pcnaid.com/*"
 zone_name = "pcnaid.com"

@@ -10,7 +10,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@cloudflare/workers-types": "^4.20251217.0",
-    "resend": "^6.6.0"
+    "react-helmet-async": "^2.0.5",
+    "resend": "^6.6.0",
+    "stripe": "^20.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251231.0"
   }
 }

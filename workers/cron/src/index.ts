@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import { ScheduledEvent, ExecutionContext, Queue, D1Database } from '@cloudflare/workers-types';
 import { buildCertificateExpiringEmail } from './lib/email-templates';
 

@@ -1,3 +1,8 @@
+/// <reference types="@cloudflare/workers-types" />
+type D1Database = any;
+type Queue<T = unknown> = { send: (msg: T) => Promise<void> };
+type Fetcher = { fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response> };
+
 /**
  * SPA Worker with Multi-Brand SEO Safety
  * 
@@ -163,9 +168,14 @@ async function injectSEOTags(response: Response, brand: BrandConfig, url: URL): 
   });
 }
 
+type AssetFetcher = {
+  fetch: (request: Request | string, init?: RequestInit) => Promise<Response>;
+};
+
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS: AssetFetcher;
 }
+
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -198,7 +208,10 @@ export default {
     // If the asset is not found (404), and it's not a file in /assets/,
     // serve index.html instead. This fixes "Page Not Found" on refresh.
     if (response.status === 404 && !url.pathname.startsWith('/assets/')) {
-      response = await env.ASSETS.fetch(new URL("/index.html", request.url));
+      response = await env.ASSETS.fetch(
+  new Request(new URL("/index.html", request.url).toString(), request)
+);
+
     }
 
     // Inject canonical and meta tags into HTML

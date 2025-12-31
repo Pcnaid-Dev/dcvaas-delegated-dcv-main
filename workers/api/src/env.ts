@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import { D1Database, Queue, KVNamespace } from "@cloudflare/workers-types";
 
 export type Env = {
@@ -17,6 +18,8 @@ export type Env = {
   STRIPE_SECRET_KEY?: string;      // Stripe payments
   STRIPE_WEBHOOK_SECRET?: string;  // Stripe webhook verification
   PLATFORM_OWNER_EMAIL?: string;   // Platform owner for unlimited domains
+  APP_BASE_URL?: string; // Add this line
+  EMAIL_FROM: string;
 
   // Variables (set via wrangler.toml)
   SAAS_CNAME_TARGET: string;       // dcv.pcnaid.com

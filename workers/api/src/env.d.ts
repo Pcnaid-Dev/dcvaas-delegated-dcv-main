@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // workers/api/src/env.d.ts
 
 // This file is *types only*. It tells TypeScript what bindings

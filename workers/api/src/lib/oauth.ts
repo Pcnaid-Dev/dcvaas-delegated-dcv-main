@@ -110,7 +110,7 @@ export async function createOAuthConnection(
       'SELECT * FROM oauth_connections WHERE id = ?'
     ).bind(existing.id).first();
 
-    return updated as OAuthConnection;
+    return updated as unknown as OAuthConnection; // Added 'unknown' cast
   } else {
     // Create new connection
     await env.DB.prepare(`
@@ -131,7 +131,7 @@ export async function createOAuthConnection(
       'SELECT * FROM oauth_connections WHERE id = ?'
     ).bind(id).first();
 
-    return created as OAuthConnection;
+    return created as unknown as OAuthConnection; // Added 'unknown' cast
   }
 }
 
@@ -184,7 +184,7 @@ export async function listOAuthConnections(
     'SELECT * FROM oauth_connections WHERE org_id = ? ORDER BY created_at DESC'
   ).bind(orgId).all();
 
-  return (result.results || []) as OAuthConnection[];
+  return (result.results || []) as unknown as OAuthConnection[]; // Added 'unknown' cast
 }
 
 /**

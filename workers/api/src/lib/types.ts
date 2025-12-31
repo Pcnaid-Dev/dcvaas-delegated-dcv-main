@@ -1,5 +1,5 @@
 export type DomainStatus = 'pending_cname' | 'issuing' | 'active' | 'error';
-export type JobType = 'dns_check' | 'start_issuance' | 'renewal';
+export type JobType = 'dns_check' | 'start_issuance' | 'renewal' | 'sync_status' | 'send_email';
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
 export interface DomainRow {

@@ -6,7 +6,6 @@
  */
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { resolveBrand, type BrandConfig } from '@/lib/brand-resolver';
 import { loadMicrocopy, type Microcopy } from '@/lib/microcopy';
 
@@ -43,11 +42,12 @@ export function BrandProvider({ children }: BrandProviderProps) {
     document.documentElement.setAttribute('data-brand', brand.brandId);
   }, [brand]);
 
+  useEffect(() => {
+  document.title = brand.brandName;
+}, [brand.brandName]);
+
   return (
     <BrandContext.Provider value={{ brand, microcopy, isLoading }}>
-      <Helmet>
-        <title>{brand.brandName} - SSL/TLS Certificate Automation</title>
-      </Helmet>
       {children}
     </BrandContext.Provider>
   );

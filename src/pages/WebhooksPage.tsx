@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { createWebhook, deleteWebhook, getOrgWebhooks, updateWebhook } from '@/lib/data';
 import { PLAN_LIMITS } from '@/types';
 
@@ -207,7 +207,7 @@ export function WebhooksPage({ onNavigate }: { onNavigate: (page: string) => voi
                       <code className="text-xs break-all bg-muted px-2 py-1 rounded">
                         {newWebhookSecret}
                       </code>
-                      <CopyButton value={newWebhookSecret} />
+                      <CopyButton text={newWebhookSecret} />
                     </div>
                     <p className="text-xs text-muted-foreground">
                       This secret is shown only once on creation.
@@ -346,7 +346,7 @@ export function WebhooksPage({ onNavigate }: { onNavigate: (page: string) => voi
                           <code className="text-xs break-all bg-muted px-2 py-1 rounded">
                             {webhook.secret}
                           </code>
-                          <CopyButton value={webhook.secret} />
+                          <CopyButton text={webhook.secret} />
                         </div>
                       )}
                     </div>

@@ -74,7 +74,7 @@ export async function listJobs(
   binds.push(limit, offset);
 
 const res = await env.DB.prepare(sql).bind(...binds).all();
-const rows = (res.results ?? []) as JobRow[];
+const rows = (res.results ?? []) as unknown as JobRow[]; // Added 'unknown' cast
 return rows.map(mapJobRow);
 
 }

@@ -15,7 +15,6 @@ import { PageHeader, Callout, Stepper, DataTable, type Column } from '@/componen
 import type { Domain, Job, DomainStatus } from '@/types';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
-import { PageHeader, Callout, Stepper, DataTable, type Column } from '@/components/common';
 
 type DomainDetailPageProps = {
   domainId: string | null;

@@ -1,157 +1,186 @@
+// workers/api/src/lib/crypto.ts
+//
+// Works in Cloudflare Workers + modern browsers.
+//
+// Provides:
+//  - generateId()
+//  - generateToken()
+//  - hashToken() / sha256Hex()
+//  - encryptAES() / decryptAES() using PBKDF2 + AES-GCM
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+// PBKDF2 + AES-GCM params
+const PBKDF2_ITERATIONS = 100_000;
+const PBKDF2_HASH: AlgorithmIdentifier = "SHA-256";
+const SALT_LEN = 16; // bytes
+const IV_LEN = 12; // bytes (AES-GCM standard)
+
+/**
+ * Create a random ID.
+ * Example: generateId("tok") => "tok_2f6c9c0a6f0e4d0ea6e7c0d0c8b7a1d3"
+ */
+export function generateId(prefix = "id"): string {
+  const uuid = crypto.randomUUID().replace(/-/g, "");
+  return `${prefix}_${uuid}`;
+}
+
+/**
+ * Generate a random API token (base64url, no padding).
+ */
+export function generateToken(bytes = 32): string {
+  const buf = new Uint8Array(bytes);
+  crypto.getRandomValues(buf);
+  return toBase64Url(buf);
+}
+
+/**
+ * Hash a token with SHA-256 and return hex.
+ * (Useful to store in DB instead of the raw token.)
+ */
+export async function hashToken(token: string): Promise<string> {
+  return sha256Hex(token);
+}
+
+/**
+ * SHA-256 hex helper.
+ */
 export async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const data = encoder.encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return bytesToHex(new Uint8Array(digest));
 }
 
 /**
- * Encrypt plaintext using AES-GCM with a provided encryption key
- * Returns base64-encoded ciphertext with IV prepended
- * Format: base64(iv + encrypted_data)
+ * Encrypt plaintext using AES-GCM.
+ *
+ * Output format (base64):
+ *   [salt (16 bytes)] [iv (12 bytes)] [ciphertext (... bytes)]
+ *
+ * encryptionKey is a passphrase/secret (ENV.ENCRYPTION_KEY).
  */
-export async function encryptSecret(plaintext: string, encryptionKey: string): Promise<string> {
-  // Derive a proper AES key from the encryption key string
-  const keyMaterial = new TextEncoder().encode(encryptionKey);
-  const keyHash = await crypto.subtle.digest('SHA-256', keyMaterial);
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyHash,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt']
-  );
+export async function encryptAES(
+  plaintext: string,
+  encryptionKey: string
+): Promise<string> {
+  const salt = new Uint8Array(SALT_LEN);
+  crypto.getRandomValues(salt);
 
-  // Generate a random 12-byte IV (recommended for AES-GCM)
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  
-  // Encrypt the plaintext
-  const encodedPlaintext = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+  const iv = new Uint8Array(IV_LEN);
+  crypto.getRandomValues(iv);
+
+  const key = await deriveAesKey(encryptionKey, salt);
+  const ptBytes = encoder.encode(plaintext);
+
+  const ctBuffer = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: asArrayBuffer(iv) },
     key,
-    encodedPlaintext
+    ptBytes
   );
 
-  // Combine IV + ciphertext and encode as base64
-  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(ciphertext), iv.length);
+  const ctBytes = new Uint8Array(ctBuffer);
 
-  // Convert to base64 - use loop to avoid stack overflow on large payloads
-  return btoa(Array.from(combined, (byte) => String.fromCharCode(byte)).join(''));
+  // Combine salt + iv + ciphertext
+  const combined = new Uint8Array(SALT_LEN + IV_LEN + ctBytes.length);
+  combined.set(salt, 0);
+  combined.set(iv, SALT_LEN);
+  combined.set(ctBytes, SALT_LEN + IV_LEN);
+
+  return bytesToBase64(combined);
 }
 
 /**
- * Derives a CryptoKey from the encryption key string using PBKDF2
+ * Decrypt ciphertext produced by encryptAES().
  */
-async function deriveKey(encryptionKey: string, salt: Uint8Array): Promise<CryptoKey> {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(encryptionKey),
-    'PBKDF2',
+export async function decryptAES(
+  encryptedData: string,
+  encryptionKey: string
+): Promise<string> {
+  const combined = base64ToBytes(encryptedData);
+
+  if (combined.length < SALT_LEN + IV_LEN + 1) {
+    throw new Error("Invalid encrypted payload (too short).");
+  }
+
+  const salt = combined.subarray(0, SALT_LEN);
+  const iv = combined.subarray(SALT_LEN, SALT_LEN + IV_LEN);
+  const ciphertext = combined.subarray(SALT_LEN + IV_LEN);
+
+  const key = await deriveAesKey(encryptionKey, salt);
+
+  const ptBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: asArrayBuffer(iv) },
+    key,
+    asArrayBuffer(ciphertext)
+  );
+
+  return decoder.decode(ptBuffer);
+}
+
+/* ------------------------- internal helpers ------------------------- */
+
+async function deriveAesKey(
+  passphrase: string,
+  salt: Uint8Array
+): Promise<CryptoKey> {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    { name: "PBKDF2" },
     false,
-    ['deriveKey']
+    ["deriveKey"]
   );
 
   return crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
-      salt,
-      iterations: 100000,
-      hash: 'SHA-256',
+      name: "PBKDF2",
+      salt: asArrayBuffer(salt),
+      iterations: PBKDF2_ITERATIONS,
+      hash: PBKDF2_HASH,
     },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
     false,
-    ['encrypt', 'decrypt']
+    ["encrypt", "decrypt"]
   );
 }
 
-/**
- * Encrypts data using AES-GCM
- * Returns base64-encoded string containing salt, iv, and ciphertext
- */
-export async function encryptAES(plaintext: string, encryptionKey: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(encryptionKey, salt);
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
-  const encodedText = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encodedText
-  );
-
-  // Combine salt (16 bytes) + iv (12 bytes) + ciphertext
-  const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
-  combined.set(salt, 0);
-  combined.set(iv, salt.length);
-  combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
-
-  // Convert to base64 using chunked approach to avoid stack overflow
-  let binary = '';
-  for (let i = 0; i < combined.length; i++) {
-    binary += String.fromCharCode(combined[i]);
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000; // 32KB
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
   }
   return btoa(binary);
 }
 
-/**
- * Decrypt ciphertext using AES-GCM with a provided encryption key
- * Expects base64-encoded ciphertext with IV prepended (format from encryptSecret)
- */
-export async function decryptSecret(ciphertext: string, encryptionKey: string): Promise<string> {
-  // Derive the same AES key from the encryption key string
-  const keyMaterial = new TextEncoder().encode(encryptionKey);
-  const keyHash = await crypto.subtle.digest('SHA-256', keyMaterial);
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyHash,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt']
-  );
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    out[i] = binary.charCodeAt(i);
+  }
+  return out;
+}
 
-  // Decode from base64
-  const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
-  
-  // Extract IV (first 12 bytes) and encrypted data
-  const iv = combined.slice(0, 12);
-  const encryptedData = combined.slice(12);
-
-  // Decrypt
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encryptedData
-  );
-
-  return new TextDecoder().decode(decrypted);
+function toBase64Url(bytes: Uint8Array): string {
+  return bytesToBase64(bytes)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 /**
- * Decrypts data using AES-GCM
- * Accepts base64-encoded string containing salt, iv, and ciphertext
+ * Fixes TS BufferSource typing issues by forcing ArrayBuffer.
  */
-export async function decryptAES(encryptedData: string, encryptionKey: string): Promise<string> {
-  // Decode from base64
-  const combined = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
-
-  // Extract salt (16 bytes), iv (12 bytes), and ciphertext
-  const salt = combined.slice(0, 16);
-  const iv = combined.slice(16, 28);
-  const ciphertext = combined.slice(28);
-
-  const key = await deriveKey(encryptionKey, salt);
-
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    ciphertext
-  );
-
-  return new TextDecoder().decode(decrypted);
+function asArrayBuffer(u8: Uint8Array): ArrayBuffer {
+  const buf = u8.buffer as ArrayBuffer;
+  return buf.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
 }

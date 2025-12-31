@@ -1,7 +1,7 @@
 import type { Env } from './env';
 import { authenticate, isOwnerOrAdmin, hasRole } from './middleware/auth';
 import { json, withCors, preflight, notFound, unauthorized, badRequest, forbidden } from './lib/http';
-import { listDomains, getDomain, createDomain, syncDomain, forceRecheck } from './lib/domains';
+import { listDomains, getDomain, createDomain, syncDomain } from './lib/domains';
 import { listMembers, inviteMember, removeMember, updateMemberRole } from './lib/members';
 import { createCheckoutSession, handleStripeWebhook } from './routes/billing';
 import { listAPITokens, createAPIToken, deleteAPIToken } from './lib/tokens';
@@ -13,7 +13,6 @@ import { snakeToCamel } from './lib/utils';
 import { PLAN_LIMITS, VALID_JOB_TYPES, type JobType } from '../../../shared/constants';
 
 // Helper function to normalize ETags for comparison
-// Removes W/ prefix (weak ETag indicator) and quotes
 function normalizeETag(etag: string): string {
   return etag.replace(/^W\//, '').replace(/"/g, '');
 }
@@ -138,15 +137,15 @@ export default {
         return withCors(req, env, notFound());
       }
 
-// 1. Ensure this auth check exists first
-const auth = await authenticate(req, env);
-if (!auth) return withCors(req, env, unauthorized());
+      // 1. Ensure this auth check exists first
+      const auth = await authenticate(req, env);
+      if (!auth) return withCors(req, env, unauthorized());
 
-// 2. Add the Stripe route block here
-if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
-  const response = await createCheckoutSession(req, env, auth as any);
-  return withCors(req, env, response);
-}
+      // 2. Add the Stripe route block here
+      if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
+        const response = await createCheckoutSession(req, env, auth as any);
+        return withCors(req, env, response);
+      }
 
       // GET /api/organizations - Get current organization
       if (method === 'GET' && url.pathname === '/api/organizations') {
@@ -188,7 +187,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/domains
       if (method === 'POST' && url.pathname === '/api/domains') {
-        const body = await req.json().catch(() => ({} as any));
+        const body = await req.json().catch(() => ({})) as any;
         const hostname = String(body.hostname ?? body.domainName ?? '').trim();
         if (!hostname) return withCors(req, env, badRequest('hostname/domainName is required'));
         
@@ -241,7 +240,6 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         }
       }
 
-
       // POST /api/domains/:id/sync (no recheck, just refresh)
       {
         const m = url.pathname.match(/^\/api\/domains\/([^/]+)\/sync$/);
@@ -277,7 +275,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             return withCors(req, env, forbidden('Only owners and admins can invite members'));
           }
 
-          const body = await req.json().catch(() => ({} as any));
+          const body = await req.json().catch(() => ({})) as any;
           const email = String(body.email ?? '').trim();
           const role = (body.role ?? 'member') as 'owner' | 'admin' | 'member';
           
@@ -344,7 +342,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
             return withCors(req, env, forbidden('Only owners can change member roles'));
           }
 
-          const body = await req.json().catch(() => ({} as any));
+          const body = await req.json().catch(() => ({})) as any;
           const role = body.role as 'owner' | 'admin' | 'member';
           
           if (!role || !['owner', 'admin', 'member'].includes(role)) {
@@ -368,7 +366,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
           
           if (orgId !== auth.orgId) return withCors(req, env, forbidden());
 
-          const body = await req.json().catch(() => ({} as any));
+          const body = await req.json().catch(() => ({})) as any;
           const userId = String(body.userId ?? '').trim();
           const email = String(body.email ?? '').trim();
           
@@ -394,7 +392,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/tokens - Create API token
       if (method === 'POST' && url.pathname === '/api/tokens') {
-        const body = await req.json().catch(() => ({} as any));
+        const body = await req.json().catch(() => ({})) as any;
         const name = String(body.name ?? '').trim();
         const expiresAt = body.expiresAt ? String(body.expiresAt) : null;
 
@@ -434,7 +432,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/jobs - Create a job
       if (method === 'POST' && url.pathname === '/api/jobs') {
-        const body = await req.json().catch(() => ({} as any));
+        const body = await req.json().catch(() => ({})) as any;
         const domainId = String(body.domainId ?? '').trim();
         const type = String(body.type ?? '').trim();
 
@@ -494,7 +492,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/webhooks - Create webhook
       if (method === 'POST' && url.pathname === '/api/webhooks') {
-        const body = await req.json().catch(() => ({} as any));
+        const body = await req.json().catch(() => ({})) as any;
         const url_value = String(body.url ?? '').trim();
         const events = body.events;
 
@@ -515,7 +513,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
         const m = url.pathname.match(/^\/api\/webhooks\/([^/]+)$/);
         if (m && method === 'PATCH') {
           const webhookId = decodeURIComponent(m[1]);
-          const body = await req.json().catch(() => ({} as any));
+          const body = await req.json().catch(() => ({})) as any;
 
           try {
             await updateWebhook(env, auth.orgId, webhookId, body);
@@ -538,7 +536,7 @@ if (method === 'POST' && url.pathname === '/api/create-checkout-session') {
 
       // POST /api/oauth/exchange - Exchange OAuth code for tokens
       if (method === 'POST' && url.pathname === '/api/oauth/exchange') {
-        const body = await req.json().catch(() => ({} as any));
+        const body = await req.json().catch(() => ({})) as any;
         const provider = String(body.provider ?? '').trim().toLowerCase();
         const code = String(body.code ?? '').trim();
         const redirectUri = String(body.redirectUri ?? '').trim();

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrandProvider } from './contexts/BrandContext';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -26,7 +25,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 10000, // 10 seconds
-      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      gcTime: 5 * 60 * 1000, // 5 minutes
       refetchOnWindowFocus: false,
       retry: 1,
     },
@@ -103,7 +102,7 @@ function AppContent() {
       case 'api-tokens':
         return <APITokensPage onNavigate={setCurrentPage} />;
       case 'webhooks':
-        return <WebhooksPage onNavigate={setCurrentPage} />;
+        return <WebhooksPage onNavigate={(page) => setCurrentPage(page)} />;
       case 'settings':
         return <SettingsPage onNavigate={setCurrentPage} />;
       case 'jobs':
@@ -131,18 +130,16 @@ function AppContent() {
 
 function App() {
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <BrandProvider>
-          <AuthProvider>
-            <ThemeProvider>
-              <AppContent />
-              <Toaster />
-            </ThemeProvider>
-          </AuthProvider>
+          <ThemeProvider>
+            <AppContent />
+            <Toaster position="top-right" richColors />
+          </ThemeProvider>
         </BrandProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
