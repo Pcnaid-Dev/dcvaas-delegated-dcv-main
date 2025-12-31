@@ -9,6 +9,11 @@ echo "DCVaaS Worker Deployment"
 echo "=================================="
 echo ""
 
+echo "📦 Building and Deploying Frontend..."
+npm run build
+npx wrangler deploy
+echo "✅ Frontend deployed"
+
 # Deploy API Worker
 echo "📦 Deploying API worker..."
 cd workers/api
