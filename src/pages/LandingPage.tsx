@@ -373,7 +373,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
                 <Lightning size={20} weight="fill" className="mr-2" />
-                {brand.brandId === 'autocertify.net' ? 'Secure My Site Now' : 'Get Started Free'}
+                {brand.brandId === 'autocertify.net' && 'Secure My Site Now'}
+                {brand.brandId === 'delegatedssl.com' && 'Start Your Agency Trial'}
+                {brand.brandId === 'keylessssl.dev' && 'Get Started Free'}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate('pricing')}>
                 View Pricing
