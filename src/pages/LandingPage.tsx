@@ -361,21 +361,15 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <section className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-y border-border py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <h2 className="text-4xl font-bold text-foreground">
-              {brand.brandId === 'autocertify.net' && "Ready to secure your website?"}
-              {brand.brandId === 'delegatedssl.com' && "Ready to streamline your agency operations?"}
-              {brand.brandId === 'keylessssl.dev' && "Ready to automate your certificate lifecycle?"}
+              {microcopy.cta_banner_headline || 'Ready to get started?'}
             </h2>
             <p className="text-xl text-muted-foreground">
-              {brand.brandId === 'autocertify.net' && "Get the green padlock in under 5 minutes. No credit card required."}
-              {brand.brandId === 'delegatedssl.com' && "Start managing client SSL certificates at scale. 14-day trial."}
-              {brand.brandId === 'keylessssl.dev' && "Start with 3 free domains. No credit card required."}
+              {microcopy.cta_banner_subheadline || 'Start your journey today'}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
                 <Lightning size={20} weight="fill" className="mr-2" />
-                {brand.brandId === 'autocertify.net' && 'Secure My Site Now'}
-                {brand.brandId === 'delegatedssl.com' && 'Start Your Agency Trial'}
-                {brand.brandId === 'keylessssl.dev' && 'Get Started Free'}
+                {microcopy.cta_banner_button || 'Get Started Free'}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate('pricing')}>
                 View Pricing

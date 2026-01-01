@@ -41,5 +41,8 @@
   "faq_4_q": "Do you offer SLA guarantees?",
   "faq_4_a": "Yes. Enterprise plans include 99.9% uptime SLA with financial credits for downtime. Contact sales for details.",
   "faq_5_q": "How quickly can certificates be issued?",
-  "faq_5_a": "Most certificates issue within 5-10 minutes after DNS verification. Renewals happen automatically 30 days before expiration."
+  "faq_5_a": "Most certificates issue within 5-10 minutes after DNS verification. Renewals happen automatically 30 days before expiration.",
+  "cta_banner_headline": "Ready to streamline your agency operations?",
+  "cta_banner_subheadline": "Start managing client SSL certificates at scale. 14-day trial.",
+  "cta_banner_button": "Start Your Agency Trial"
 }

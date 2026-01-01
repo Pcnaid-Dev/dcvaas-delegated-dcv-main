@@ -24,38 +24,38 @@ const rules = [
     name: 'AutoCertify: No TerminalWindow in WizardLayout',
     file: 'wizardLayout',
     shouldNotContain: ['TerminalWindow', '<Terminal'],
-    severity: 'error'
+    severity: 'error',
   },
   {
     name: 'LandingPage: Conditional TerminalWindow rendering',
     file: 'landingPage',
     shouldContain: ["brand.brandId === 'keylessssl.dev'", 'TerminalWindow'],
-    severity: 'error'
+    severity: 'error',
   },
   {
     name: 'KeylessSSL: Dark mode enforced',
     file: 'keylessLayout',
     shouldContain: ['bg-[#0d1117]', 'font-mono'],
-    severity: 'error'
+    severity: 'error',
   },
   {
     name: 'AgencyLayout: Deep navigation',
     file: 'agencyLayout',
-    shouldContain: ['Clients', 'Brand Kits', 'Audit Log'],
-    severity: 'error'
+    shouldContain: ['Clients', 'Brand Kits', 'Audit Log', 'Billing'],
+    severity: 'error',
   },
   {
-    name: 'LandingPage: Brand-specific CTAs',
+    name: 'LandingPage: Brand-specific CTAs from microcopy',
     file: 'landingPage',
-    shouldContain: ['Secure My Site Now', 'Start Your Agency Trial', 'Get Started Free'],
-    severity: 'error'
+    shouldContain: ['microcopy.cta_banner_button'],
+    severity: 'error',
   },
   {
     name: 'LandingPage: No "3 free domains" for AutoCertify',
     file: 'landingPage',
     shouldContain: ["brand.brandId === 'keylessssl.dev'", '3 free domains'],
-    severity: 'error'
-  }
+    severity: 'error',
+  },
 ];
 
 function validateFile(filePath, rule) {
@@ -85,11 +85,11 @@ function validateFile(filePath, rule) {
 
 // Run validations
 console.log('\n🔍 Multi-Brand Validation\n');
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 
 let totalTests = 0;
 let passedTests = 0;
-let errors = [];
+const errors = [];
 
 for (const rule of rules) {
   totalTests++;
@@ -109,21 +109,21 @@ for (const rule of rules) {
     passedTests++;
   } else {
     console.log(`❌ [${rule.name}]`);
-    result.messages.forEach(msg => console.log(`   ${msg}`));
+    result.messages.forEach((msg) => console.log(`   ${msg}`));
     console.log('');
     errors.push({ rule: rule.name, messages: result.messages });
   }
 }
 
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 console.log(`\nResults: ${passedTests}/${totalTests} tests passed\n`);
 
 if (errors.length > 0) {
   console.log('⚠️  Failed validations:');
-  errors.forEach(err => {
+  errors.forEach((err) => {
     console.log(`\n  • ${err.rule}`);
     if (err.messages) {
-      err.messages.forEach(msg => console.log(`    - ${msg}`));
+      err.messages.forEach((msg) => console.log(`    - ${msg}`));
     }
   });
   console.log('');

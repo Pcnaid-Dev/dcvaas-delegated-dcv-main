@@ -23,5 +23,8 @@
   "faq_4_q": "What rate limits apply?",
   "faq_4_a": "Free tier: 10 requests/minute. Pro: 100/minute. Enterprise: custom limits. Rate limit headers included in all responses.",
   "faq_5_q": "Is there a webhook system for cert lifecycle events?",
-  "faq_5_a": "Yes. Configure webhooks to receive real-time notifications for issuance, renewal, and error events. Supports HMAC signature verification."
+  "faq_5_a": "Yes. Configure webhooks to receive real-time notifications for issuance, renewal, and error events. Supports HMAC signature verification.",
+  "cta_banner_headline": "Ready to automate your certificate lifecycle?",
+  "cta_banner_subheadline": "Start with 3 free domains. No credit card required.",
+  "cta_banner_button": "Get Started Free"
 }
