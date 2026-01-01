@@ -48,6 +48,12 @@ const BRAND_DEFINITIONS: BrandDefinition[] = [
     marketingHost: 'keylessssl.dev',
     appHost: 'app.keylessssl.dev',
   },
+  {
+    brandId: 'delegatedssl.com', // Reusing this ID ensures theme/microcopy loads correctly
+    brandName: 'DCVaaS (Production)',
+    marketingHost: 'dcv.pcnaid.com', // Assuming this is your landing or generic host
+    appHost: 'cert.pcnaid.com',      // The active app host
+  },
 ];
 
 /**

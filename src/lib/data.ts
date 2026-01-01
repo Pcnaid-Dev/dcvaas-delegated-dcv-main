@@ -146,29 +146,43 @@ export async function setUser(user: User | null): Promise<void> {
 }
 
 export async function getUserOrganizations(): Promise<Organization[]> {
-  if (!isBrowser()) return [DEFAULT_ORG];
+  // If running in browser, try to get the current logged-in user context
+  let currentUserId = null;
+  try {
+    const userRaw = localStorage.getItem(LOCAL_USER_KEY);
+    if (userRaw) currentUserId = JSON.parse(userRaw).id;
+  } catch {}
 
+  // 1. Try API if token is present
   const orgFromAPI = await fetchOrganizationFromAPI();
   if (orgFromAPI) return [orgFromAPI];
 
+  // 2. Fallback to Local Storage (Stub Mode)
   const rawList = localStorage.getItem(LOCAL_ORG_LIST_KEY);
   if (rawList) {
     try {
       const list = JSON.parse(rawList) as Organization[];
-      if (Array.isArray(list) && list.length > 0) return list;
+      
+      // FILTER: Only return orgs owned by THIS user (fixes data leak)
+      if (currentUserId && Array.isArray(list)) {
+        const userOrgs = list.filter(o => o.ownerId === currentUserId);
+        if (userOrgs.length > 0) return userOrgs;
+      } else if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
     } catch { /* ignore */ }
-  }
 
-  const rawOrg = localStorage.getItem(LOCAL_ORG_KEY);
-  if (rawOrg) {
-    try {
-      const org = JSON.parse(rawOrg) as Organization;
-      return [org];
-    } catch { /* ignore */ }
+    // 3. Create a fresh default org for this SPECIFIC user if none exists
+  const newDefaultOrg = {
+    ...DEFAULT_ORG,
+    id: currentUserId ? `org_${currentUserId}` : DEFAULT_ORG.id,
+    ownerId: currentUserId || DEFAULT_USER.id,
+    name: currentUserId ? 'My Organization' : DEFAULT_ORG.name
+    };
   }
-
   localStorage.setItem(LOCAL_ORG_KEY, JSON.stringify(DEFAULT_ORG));
-  localStorage.setItem(LOCAL_ORG_LIST_KEY, JSON.stringify([DEFAULT_ORG]));
+  // Don't save to global list yet to avoid polluting shared state, 
+  // but return it so the UI works
   return [DEFAULT_ORG];
 }
 
@@ -299,7 +313,8 @@ export async function getOrgAPITokens(): Promise<APIToken[]> {
   }
 }
 
-export async function createAPIToken(name: string, expiresAt?: string | null): Promise<{ token: string; tokenMeta: APIToken }> {
+// FIX: Update this function signature
+export async function createAPIToken(name: string, expiresAt: string | null = null): Promise<{ token: string; tokenMeta: APIToken }> {
   const res = await api<{ token: string; tokenMeta: APIToken }>('/api/tokens', {
     method: 'POST',
     body: JSON.stringify({ name, expiresAt }),

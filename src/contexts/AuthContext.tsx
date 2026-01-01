@@ -65,6 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadRole() {
       if (user && currentOrg) {
+        // FAILSAFE: If the user ID matches the Org Owner ID, they are the OWNER.
+        // This fixes the missing "Team" / "Settings" menu issue.
+        if (currentOrg.ownerId === user.id) {
+          setUserRole('owner');
+          return;
+        }
+
         try {
           const { getOrgMembers } = await import('@/lib/data');
           const members = await getOrgMembers(currentOrg.id);
@@ -72,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserRole(member?.role || null);
         } catch (err) {
           console.warn('Failed to load user role', err);
-          // Set role to null on failure to avoid assigning an incorrect role.
           setUserRole(null);
         }
       } else {
@@ -80,9 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     loadRole();
-  }, [user?.id, currentOrg?.id]);
+  }, [user?.id, currentOrg?.id, currentOrg?.ownerId]); // Added currentOrg.ownerId dependency
 
   const handleLogout = () => {
+    // CLEAR LOCAL DATA to prevent leakage between users
+    localStorage.removeItem('dcvaas_user');
+    localStorage.removeItem('dcvaas_org');
+    localStorage.removeItem('dcvaas_orgs');
+    localStorage.removeItem('dcvaas_members');
+    localStorage.removeItem('dcvaas_tokens');
+    localStorage.removeItem('dcvaas_audit_logs');
+    
+    // Perform Auth0 logout
     auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   };
 

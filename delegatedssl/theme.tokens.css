@@ -1,4 +1,8 @@
 :root[data-brand="delegatedssl.com"] {
+    /* Brand identity */
+  --brand-name: "DelegatedSSL";
+  --brand-domain: "delegatedssl.com";
+  --brand-tone: "professional-scalable-invisible";
   /* Fonts */
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-sans-alt: Manrope, Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Added */

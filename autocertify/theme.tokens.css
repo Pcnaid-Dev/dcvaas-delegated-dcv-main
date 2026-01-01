@@ -1,6 +1,7 @@
 :root[data-brand="autocertify.net"] {
   /* Brand */
   --brand-name: "AutoCertify";
+  --brand-domain: "autocertify.net";
   --brand-tone: "calm-trust-urgent";
 
   /* Typography */

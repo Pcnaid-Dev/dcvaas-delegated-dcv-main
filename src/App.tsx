@@ -4,8 +4,10 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrandProvider } from './contexts/BrandContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
+// Import the new Layout Wrapper
+import { BrandLayout } from '@/components/BrandLayout'; 
+
 import { LandingPage } from './pages/LandingPage';
-import { OverviewPage } from './pages/OverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PricingPage } from './pages/PricingPage';
 import { DocsPage } from './pages/DocsPage';
@@ -20,12 +22,11 @@ import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 
-// Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10000, // 10 seconds
-      gcTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 10000,
+      gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: 1,
     },
@@ -37,7 +38,6 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
 
-  // Check if this is an OAuth callback
   const isOAuthCallback = window.location.pathname === '/oauth/callback';
 
   if (isLoading && !isOAuthCallback) {
@@ -51,37 +51,22 @@ function AppContent() {
     );
   }
 
-  // Handle OAuth callback without checking authentication
-  if (isOAuthCallback) {
-    return <OAuthCallbackPage />;
-  }
+  if (isOAuthCallback) return <OAuthCallbackPage />;
 
-  if (!isAuthenticated && currentPage === 'home') {
-    return <LandingPage onNavigate={setCurrentPage} />;
-  }
-
-  if (!isAuthenticated && currentPage === 'pricing') {
-    return <PricingPage onNavigate={setCurrentPage} />;
-  }
-
-  if (!isAuthenticated && currentPage === 'docs') {
-    return <DocsPage onNavigate={setCurrentPage} />;
-  }
-
+  // PUBLIC ROUTES (Landing manages its own layout internally)
   if (!isAuthenticated) {
+    if (currentPage === 'pricing') return <PricingPage onNavigate={setCurrentPage} />;
+    if (currentPage === 'docs') return <DocsPage onNavigate={setCurrentPage} />;
     return <LandingPage onNavigate={setCurrentPage} />;
   }
 
+  // PROTECTED ROUTES (Wrapped in BrandLayout)
   const renderPage = () => {
     switch (currentPage) {
-      case 'overview':
-        return (
-          <OverviewPage
-            onNavigate={setCurrentPage}
-            onSelectDomain={setSelectedDomainId}
-          />
-        );
+      // Dashboard is now the "Switch" we created
       case 'dashboard':
+      case 'overview': // Map overview to dashboard for now
+      case 'home':
         return (
           <DashboardPage
             onNavigate={setCurrentPage}
@@ -89,35 +74,21 @@ function AppContent() {
           />
         );
       case 'domain-detail':
-        return (
-          <DomainDetailPage
-            domainId={selectedDomainId}
-            onNavigate={setCurrentPage}
-          />
-        );
-      case 'team':
-        return <TeamPage onNavigate={setCurrentPage} />;
-      case 'billing':
-        return <BillingPage onNavigate={setCurrentPage} />;
-      case 'api-tokens':
-        return <APITokensPage onNavigate={setCurrentPage} />;
-      case 'webhooks':
-        return <WebhooksPage onNavigate={(page) => setCurrentPage(page)} />;
-      case 'settings':
-        return <SettingsPage onNavigate={setCurrentPage} />;
-      case 'jobs':
-        return <JobsPage onNavigate={setCurrentPage} />;
-      case 'audit':
-        return <AuditLogsPage onNavigate={setCurrentPage} />;
-      case 'admin':
-        return <AdminPage onNavigate={setCurrentPage} />;
-      case 'pricing':
-        return <PricingPage onNavigate={setCurrentPage} />;
-      case 'docs':
-        return <DocsPage onNavigate={setCurrentPage} />;
+        return <DomainDetailPage domainId={selectedDomainId} onNavigate={setCurrentPage} />;
+      case 'team': return <TeamPage onNavigate={setCurrentPage} />;
+      case 'billing': return <BillingPage onNavigate={setCurrentPage} />;
+      case 'api-tokens': return <APITokensPage onNavigate={setCurrentPage} />;
+      case 'webhooks': return <WebhooksPage onNavigate={setCurrentPage} />;
+      case 'settings': return <SettingsPage onNavigate={setCurrentPage} />;
+      case 'jobs': return <JobsPage onNavigate={setCurrentPage} />;
+      case 'audit': return <AuditLogsPage onNavigate={setCurrentPage} />;
+      case 'admin': return <AdminPage onNavigate={setCurrentPage} />;
+      // Keep public pages accessible even when logged in if needed
+      case 'pricing': return <PricingPage onNavigate={setCurrentPage} />;
+      case 'docs': return <DocsPage onNavigate={setCurrentPage} />;
       default:
         return (
-          <OverviewPage
+          <DashboardPage
             onNavigate={setCurrentPage}
             onSelectDomain={setSelectedDomainId}
           />
@@ -125,7 +96,12 @@ function AppContent() {
     }
   };
 
-  return renderPage();
+  // The Magic: Wrap protected content in the Persona-Specific Layout
+  return (
+    <BrandLayout>
+      {renderPage()}
+    </BrandLayout>
+  );
 }
 
 function App() {

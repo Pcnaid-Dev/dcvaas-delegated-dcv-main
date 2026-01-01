@@ -1,273 +1,127 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { CheckCircle, Certificate } from '@phosphor-icons/react';
-import { createStripeCheckoutSession } from '@/lib/data';
-import { STRIPE_PRICE_IDS } from '@/lib/stripe-constants';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import { useBrand } from '@/contexts/BrandContext';
+import { Button } from '@/components/ui/button';
+import { Check, X } from '@phosphor-icons/react';
+import { useAuth0 } from '@auth0/auth0-react';
 
-type PricingPageProps = {
-  onNavigate: (page: string) => void;
-};
-
-export function PricingPage({ onNavigate }: PricingPageProps) {
-  const { brand, microcopy } = useBrand();
-  const [loading, setLoading] = useState<string | null>(null);
-
-  const handleSubscribe = async (planName: string, priceId: string) => {
-    if (planName === 'Free') {
-      window.location.href = `https://${brand.appHost}`;
-      return;
-    }
-
-    setLoading(planName);
-    try {
-      const { url } = await createStripeCheckoutSession(priceId);
-      window.location.href = url;
-    } catch (error) {
-      console.error('Failed to create checkout session:', error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : 'Unknown error';
-      toast.error('Failed to start checkout', {
-        description: errorMessage,
-      });
-      setLoading(null);
-    }
-  };
-
-  // Brand-specific pricing plans
-  const getPlansForBrand = () => {
-    if (brand.brandId === 'autocertify.net') {
-      return [
-        {
-          name: 'Business Pro',
-          price: '$15',
-          period: 'per month',
-          description: microcopy.plan_name || 'Secure up to 50 custom domains',
-          features: (microcopy.plan_includes as string || '')
-            .split('·')
-            .map(f => f.trim())
-            .filter(f => f),
-          cta: microcopy.pricing_cta || 'Secure My Site Now',
-          highlighted: true,
-          priceId: STRIPE_PRICE_IDS.pro,
-        },
-      ];
-    } else if (brand.brandId === 'delegatedssl.com') {
-      return [
-        {
-          name: 'Agency',
-          price: '$79',
-          period: 'per month',
-          description: 'Up to 250 client domains with flat-rate pricing',
-          features: [
-            'Up to 250 domains',
-            'White-label branding',
-            'Client management dashboard',
-            'Automated renewals',
-            'Email support',
-            'Bulk import',
-          ],
-          cta: 'Start Agency Trial',
-          highlighted: true,
-          priceId: STRIPE_PRICE_IDS.agency,
-        },
-        {
-          name: 'Enterprise',
-          price: '$299',
-          period: 'per month',
-          description: '2000+ domains with SLA guarantees',
-          features: [
-            'Unlimited domains',
-            'All Agency features',
-            '99.9% uptime SLA',
-            'Priority support',
-            'Custom integrations',
-            'Dedicated account manager',
-          ],
-          cta: 'Contact Sales',
-          highlighted: false,
-          priceId: '',
-        },
-      ];
-    } else {
-      // KeylessSSL
-      return [
-        {
-          name: 'Free',
-          price: '$0',
-          period: 'forever',
-          description: 'For developers and small projects',
-          features: [
-            'Up to 3 domains',
-            'API access',
-            'Basic rate limits',
-            'Community support',
-            'Webhook notifications',
-          ],
-          cta: 'Get Started',
-          highlighted: false,
-          priceId: '',
-        },
-        {
-          name: 'Pro',
-          price: '$29',
-          period: 'per month',
-          description: 'For production applications',
-          features: [
-            'Up to 50 domains',
-            'All Free features',
-            'Higher rate limits',
-            'Priority API access',
-            'Email support',
-            'Advanced webhooks',
-          ],
-          cta: 'Start Trial',
-          highlighted: true,
-          priceId: STRIPE_PRICE_IDS.pro,
-        },
-      ];
-    }
-  };
-
-  const plans = getPlansForBrand();
-
-  // Get brand-specific link text for docs/guides
-  const docsLinkText = brand.brandId === 'autocertify.net' ? 'Guides' : 'Docs';
-  const docsRoute = brand.brandId === 'autocertify.net' ? 'guides' : 'docs';
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => onNavigate('home')}
-              className="flex items-center gap-2"
-            >
-              <Certificate size={32} weight="bold" className="text-primary" />
-              <span className="text-xl font-bold text-foreground">{brand.brandName}</span>
-            </button>
-            <nav className="flex items-center gap-6">
-              <button
-                onClick={() => onNavigate('home')}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => onNavigate('pricing')}
-                className="text-sm font-medium text-primary"
-              >
-                Pricing
-              </button>
-              <button
-                onClick={() => onNavigate(docsRoute)}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                {docsLinkText}
-              </button>
-              <Button onClick={() => window.location.href = `https://${brand.appHost}`}>
-                Sign In
-              </Button>
-            </nav>
-          </div>
+// --- KEYLESS PRICING (Dark, Dev-Focused) ---
+const KeylessPricing = ({ login }: any) => (
+  <div className="min-h-screen bg-[#0d1117] text-gray-300 font-mono py-20 px-6">
+    <div className="max-w-7xl mx-auto">
+      <div className="text-center mb-16">
+        <h1 className="text-4xl text-white font-bold mb-4">Pricing that doesn't punish automation.</h1>
+        <p className="text-gray-500">No per-certificate fees. No "Enterprise" gates for SSO.</p>
+      </div>
+      
+      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Hacker Tier */}
+        <div className="border border-gray-700 bg-[#161b22] p-8 rounded-lg">
+          <h3 className="text-xl text-white font-bold mb-2">Hacker</h3>
+          <div className="text-4xl text-white font-bold mb-6">$0<span className="text-lg text-gray-500 font-normal">/mo</span></div>
+          <Button onClick={() => login({ screen_hint: 'signup' })} variant="outline" className="w-full mb-8 border-gray-600 text-white hover:bg-gray-800">Get API Key</Button>
+          <ul className="space-y-3 text-sm">
+            <li className="flex gap-2"><Check className="text-emerald-500"/> 3 Domains</li>
+            <li className="flex gap-2"><Check className="text-emerald-500"/> Unlimited Renewals</li>
+            <li className="flex gap-2"><Check className="text-emerald-500"/> Community Queue</li>
+          </ul>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            {brand.brandId === 'autocertify.net' 
-              ? 'Simple, Affordable SSL Protection'
-              : brand.brandId === 'delegatedssl.com'
-              ? 'Flat-Rate Pricing for Agencies'
-              : 'Developer-Friendly Pricing'}
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            {microcopy.pricing_line || 'Start free and scale as you grow. No hidden fees, cancel anytime.'}
-          </p>
+        
+        {/* Pro Tier */}
+        <div className="border border-emerald-900/50 bg-[#161b22] p-8 rounded-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs px-3 py-1 font-bold uppercase">Recommended</div>
+          <h3 className="text-xl text-white font-bold mb-2">Pro</h3>
+          <div className="text-4xl text-white font-bold mb-6">$29<span className="text-lg text-gray-500 font-normal">/mo</span></div>
+          <Button onClick={() => login({ screen_hint: 'signup' })} className="w-full mb-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Start Pro</Button>
+          <ul className="space-y-3 text-sm">
+            <li className="flex gap-2"><Check className="text-emerald-500"/> 50 Domains</li>
+            <li className="flex gap-2"><Check className="text-emerald-500"/> Priority Queue</li>
+            <li className="flex gap-2"><Check className="text-emerald-500"/> Team Access (RBAC)</li>
+          </ul>
         </div>
-
-        <div className={`grid ${plans.length === 1 ? 'max-w-lg mx-auto' : plans.length === 2 ? 'md:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-3'} gap-8 mb-16`}>
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`p-8 relative ${
-                plan.highlighted
-                  ? 'ring-2 ring-primary shadow-xl'
-                  : ''
-              }`}
-            >
-              {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                  Most Popular
-                </div>
-              )}
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  {plan.description}
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  <span className="text-muted-foreground">
-                    /{plan.period}
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                className="w-full mb-6"
-                variant={plan.highlighted ? 'default' : 'outline'}
-                onClick={() => handleSubscribe(plan.name, plan.priceId)}
-                disabled={loading === plan.name}
-              >
-                {loading === plan.name ? 'Loading...' : plan.cta}
-              </Button>
-
-              <div className="space-y-3">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-2">
-                    <CheckCircle
-                      size={20}
-                      weight="fill"
-                      className="text-success flex-shrink-0 mt-0.5"
-                    />
-                    <span className="text-sm text-foreground">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="p-8 bg-muted/30">
-          <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
-            Why Certificate Automation Matters Now
-          </h2>
-          <p className="text-muted-foreground text-center max-w-3xl mx-auto mb-6">
-            Certificate lifetimes are shrinking—from 90 days today to 47 days by
-            2029. Manual renewals become impossible at scale. DCVaaS automates
-            the entire lifecycle with delegated DNS-01 validation, keeping your
-            certificates valid without exposing root DNS credentials.
-          </p>
-          <div className="text-center">
-            <Button variant="outline" onClick={() => onNavigate('docs')}>
-              Learn More About Delegated DCV
-            </Button>
-          </div>
-        </Card>
-      </main>
+      </div>
     </div>
-  );
+  </div>
+);
+
+// --- DELEGATED PRICING (SaaS / Agency Table) ---
+const DelegatedPricing = ({ login }: any) => (
+  <div className="min-h-screen bg-slate-50 py-20 px-6 font-sans text-slate-900">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <h1 className="text-4xl font-extrabold mb-4 text-slate-900">Flat-Rate Plans for Agencies</h1>
+        <p className="text-xl text-slate-500">Stop paying per-domain overages. Predictable billing for your entire portfolio.</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-200 p-4 font-semibold text-slate-700">
+          <div className="col-span-2">Features</div>
+          <div className="text-center">Agency</div>
+          <div className="text-center">Enterprise</div>
+        </div>
+        
+        {[
+          { name: "Domains Included", agency: "250", ent: "2,000+" },
+          { name: "Price", agency: "$79/mo", ent: "$299/mo" },
+          { name: "White Label Portal", agency: true, ent: true },
+          { name: "Custom Domain (CNAME)", agency: true, ent: true },
+          { name: "SLA Guarantee", agency: false, ent: true },
+          { name: "Dedicated Account Mgr", agency: false, ent: true },
+        ].map((row, i) => (
+          <div key={i} className="grid grid-cols-4 p-4 border-b border-slate-100 hover:bg-slate-50/50">
+            <div className="col-span-2 text-slate-600 font-medium">{row.name}</div>
+            <div className="text-center font-bold text-slate-800">
+              {typeof row.agency === 'boolean' ? (row.agency ? <Check className="inline text-green-600"/> : <X className="inline text-slate-300"/>) : row.agency}
+            </div>
+            <div className="text-center font-bold text-slate-800">
+              {typeof row.ent === 'boolean' ? (row.ent ? <Check className="inline text-blue-600"/> : <X className="inline text-slate-300"/>) : row.ent}
+            </div>
+          </div>
+        ))}
+        
+        <div className="grid grid-cols-4 p-8 bg-slate-50">
+           <div className="col-span-2"></div>
+           <div className="px-2">
+             <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => login({ screen_hint: 'signup' })}>Start Trial</Button>
+           </div>
+           <div className="px-2">
+             <Button variant="outline" className="w-full" onClick={() => window.location.href = 'mailto:sales@delegatedssl.com'}>Contact Sales</Button>
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// --- AUTOCERTIFY PRICING (Simple) ---
+const AutoCertifyPricing = ({ login }: any) => (
+  <div className="min-h-screen bg-white py-20 px-6 font-sans">
+    <div className="max-w-md mx-auto text-center">
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h1>
+      <p className="text-gray-500 mb-10">Everything you need to secure your site.</p>
+      
+      <div className="bg-emerald-50 rounded-2xl p-8 border border-emerald-100 shadow-xl shadow-emerald-900/5">
+        <div className="text-emerald-800 font-bold tracking-wide uppercase text-sm mb-2">Business Pro</div>
+        <div className="text-5xl font-bold text-gray-900 mb-2">$15<span className="text-lg text-gray-500 font-normal">/mo</span></div>
+        <p className="text-gray-500 text-sm mb-8">billed monthly, cancel anytime</p>
+        
+        <Button onClick={() => login({ screen_hint: 'signup' })} size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-lg mb-6">
+          Secure My Site
+        </Button>
+        
+        <div className="space-y-4 text-left">
+          <div className="flex gap-3 text-gray-700"><div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm"><Check weight="bold"/></div> 24/7 Monitoring</div>
+          <div className="flex gap-3 text-gray-700"><div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm"><Check weight="bold"/></div> Auto-Renewal</div>
+          <div className="flex gap-3 text-gray-700"><div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm"><Check weight="bold"/></div> Email Support</div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+export function PricingPage({ onNavigate }: any) {
+  const { brand } = useBrand();
+  const { loginWithRedirect } = useAuth0();
+
+  if (brand.brandId === 'keylessssl.dev') return <KeylessPricing login={loginWithRedirect} />;
+  if (brand.brandId === 'delegatedssl.com') return <DelegatedPricing login={loginWithRedirect} />;
+  return <AutoCertifyPricing login={loginWithRedirect} />;
 }
