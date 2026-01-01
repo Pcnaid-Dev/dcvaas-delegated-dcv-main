@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Buildings, Gear, SignOut, MagnifyingGlass, Bell, ChartPieSlice, ListDashes, UsersThree } from '@phosphor-icons/react';
+import { Buildings, Gear, SignOut, MagnifyingGlass, Bell, ChartPieSlice, ListDashes, UsersThree, Briefcase, Palette, ClockCounterClockwise } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext'; // CHANGED: Use Context
 
 export function AgencyLayout({ children }: { children: ReactNode }) {
@@ -25,13 +25,22 @@ export function AgencyLayout({ children }: { children: ReactNode }) {
             <ChartPieSlice size={18} /> Dashboard
           </button>
           <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+            <Briefcase size={18} /> Clients
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <ListDashes size={18} /> Domains
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+            <Palette size={18} /> Brand Kits
           </button>
           <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <UsersThree size={18} /> Team
           </button>
           
           <div className="mt-8 border-t border-slate-100 pt-4">
+            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+               <ClockCounterClockwise size={18} /> Audit Log
+            </button>
             <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
                <Gear size={18} /> Settings
             </button>
