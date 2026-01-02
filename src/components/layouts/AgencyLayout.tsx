@@ -55,7 +55,7 @@ export function AgencyLayout({ children, onNavigate, currentPage }: { children: 
           <button onClick={() => handleNavigation('clients')} className={getNavClasses('clients')}>
             <Briefcase size={18} /> Clients
           </button>
-          <button onClick={() => handleNavigation('dashboard')} className={getNavClasses('domains')}>
+          <button onClick={() => handleNavigation('domains')} className={getNavClasses('domains')}>
             <ListDashes size={18} /> Domains
           </button>
           <button onClick={() => handleNavigation('brand-kits')} className={getNavClasses('brand-kits')}>

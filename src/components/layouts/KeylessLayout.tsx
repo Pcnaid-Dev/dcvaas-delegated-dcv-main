@@ -2,9 +2,13 @@ import { ReactNode } from 'react';
 import { Terminal, Book, Code, Pulse } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext'; // CHANGED: Use Context
 
-export function KeylessLayout({ children }: { children: ReactNode }) {
+export function KeylessLayout({ children, currentPage }: { children: ReactNode; currentPage?: string }) {
   // Use the wrapper context, not raw Auth0
-  const { loginWithRedirect, isAuthenticated, logout } = useAuth(); 
+  const { loginWithRedirect, isAuthenticated, logout } = useAuth();
+  
+  // currentPage is accepted for consistency but not used in KeylessLayout
+  // since it doesn't have a sidebar with active states
+  void currentPage; 
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-gray-300 font-mono selection:bg-emerald-900 selection:text-white">

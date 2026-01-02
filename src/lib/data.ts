@@ -37,14 +37,14 @@ function resolveApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname.toLowerCase().replace(/^www\./, '');
     
-    // Brand-specific API URLs
-    if (hostname === 'keylessssl.dev' || hostname === 'app.keylessssl.dev') {
+    // Brand-specific API URLs - use endsWith to match subdomains
+    if (hostname === 'keylessssl.dev' || hostname.endsWith('.keylessssl.dev')) {
       return 'https://api.keylessssl.dev';
     }
-    if (hostname === 'delegatedssl.com' || hostname === 'portal.delegatedssl.com') {
+    if (hostname === 'delegatedssl.com' || hostname.endsWith('.delegatedssl.com')) {
       return 'https://api.delegatedssl.com';
     }
-    if (hostname === 'autocertify.net' || hostname === 'wizard.autocertify.net') {
+    if (hostname === 'autocertify.net' || hostname.endsWith('.autocertify.net')) {
       return 'https://api.autocertify.net';
     }
   }
@@ -107,22 +107,20 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     
     try {
       body = await res.json();
-      errorMessage = body?.error || body?.message || body?.details || res.statusText;
       
-      // If body has additional error details, include them
-      if (body?.details && typeof body.details === 'string') {
+      // Extract primary error message from multiple possible fields
+      const primaryError = body?.error || body?.message || body?.details;
+      errorMessage = primaryError || res.statusText;
+      
+      // Only append details if it exists and is different from the primary error message
+      if (body?.details && typeof body.details === 'string' && body.details !== primaryError) {
         errorMessage = `${errorMessage} - ${body.details}`;
       }
     } catch {
-      // If JSON parsing fails, try to get text response
-      try {
-        const text = await res.text();
-        if (text) {
-          errorMessage = `${res.statusText}: ${text.substring(0, 200)}`;
-        }
-      } catch {
-        // ignore parse error
-      }
+      // If JSON parsing fails, clone the response and try to get text
+      // Note: We can't read the response body again here since it was already consumed
+      // by the failed json() call. We'll use the statusText as the error message.
+      errorMessage = res.statusText;
     }
     
     console.error('API error', { url, status: res.status, statusText: res.statusText, body });
