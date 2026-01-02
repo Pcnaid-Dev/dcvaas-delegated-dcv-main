@@ -5,7 +5,7 @@ import { KeylessLayout } from './layouts/KeylessLayout';
 import { AgencyLayout } from './layouts/AgencyLayout';
 import { WizardLayout } from './layouts/WizardLayout';
 
-export function BrandLayout({ children }: { children: ReactNode }) {
+export function BrandLayout({ children, onNavigate }: { children: ReactNode; onNavigate?: (page: string) => void }) {
   const { brand } = useBrand();
 
   if (brand.brandId === 'keylessssl.dev') {
@@ -13,7 +13,7 @@ export function BrandLayout({ children }: { children: ReactNode }) {
   }
 
   if (brand.brandId === 'delegatedssl.com') {
-    return <AgencyLayout>{children}</AgencyLayout>;
+    return <AgencyLayout onNavigate={onNavigate}>{children}</AgencyLayout>;
   }
 
   // Default to AutoCertify (Wizard)

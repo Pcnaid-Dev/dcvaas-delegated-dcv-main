@@ -26,5 +26,6 @@
   "faq_5_a": "Yes. Configure webhooks to receive real-time notifications for issuance, renewal, and error events. Supports HMAC signature verification.",
   "cta_banner_headline": "Ready to automate your certificate lifecycle?",
   "cta_banner_subheadline": "Start with 3 free domains. No credit card required.",
-  "cta_banner_button": "Get Started Free"
+  "cta_banner_button": "Get API Key — Free for 3 Domains",
+  "hero_pricing_line": "Free: 3 domains • Pro: $15/mo for 50"
 }

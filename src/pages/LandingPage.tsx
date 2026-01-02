@@ -10,6 +10,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stepper } from '@/components/common';
 import { TerminalWindow } from '@/components/TerminalWindow';
+import { RFCArchitectureDiagram } from '@/components/RFCArchitectureDiagram';
 import { useBrand } from '@/contexts/BrandContext';
 import {
   Certificate,
@@ -137,13 +138,18 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             {microcopy.hero_cta_note && (
               <p className="text-sm text-muted-foreground">{microcopy.hero_cta_note}</p>
             )}
+            
+            {/* KeylessSSL: Show pricing line under CTA */}
+            {brand.brandId === 'keylessssl.dev' && microcopy.hero_pricing_line && (
+              <p className="text-sm text-gray-400 font-mono mt-2">{microcopy.hero_pricing_line}</p>
+            )}
 
             {/* Brand-Specific Hero Visual */}
             <div className="mt-16 relative">
-              {/* KeylessSSL: Show Terminal/CLI Animation */}
+              {/* KeylessSSL: Show RFC-style Architecture Diagram */}
               {brand.brandId === 'keylessssl.dev' && (
-                <div className="mx-auto max-w-4xl transform scale-100 hover:scale-105 transition-transform duration-500 shadow-2xl rounded-lg overflow-hidden">
-                  <TerminalWindow />
+                <div className="mx-auto max-w-5xl">
+                  <RFCArchitectureDiagram />
                 </div>
               )}
               

@@ -20,6 +20,8 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { JobsPage } from './pages/JobsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
+import { ClientsPage } from './pages/ClientsPage';
+import { BrandKitsPage } from './pages/BrandKitsPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 
 const queryClient = new QueryClient({
@@ -75,6 +77,8 @@ function AppContent() {
         );
       case 'domain-detail':
         return <DomainDetailPage domainId={selectedDomainId} onNavigate={setCurrentPage} />;
+      case 'clients': return <ClientsPage onNavigate={setCurrentPage} />;
+      case 'brand-kits': return <BrandKitsPage onNavigate={setCurrentPage} />;
       case 'team': return <TeamPage onNavigate={setCurrentPage} />;
       case 'billing': return <BillingPage onNavigate={setCurrentPage} />;
       case 'api-tokens': return <APITokensPage onNavigate={setCurrentPage} />;
@@ -98,7 +102,7 @@ function AppContent() {
 
   // The Magic: Wrap protected content in the Persona-Specific Layout
   return (
-    <BrandLayout>
+    <BrandLayout onNavigate={setCurrentPage}>
       {renderPage()}
     </BrandLayout>
   );

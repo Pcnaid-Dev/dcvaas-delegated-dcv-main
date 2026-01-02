@@ -2,8 +2,17 @@ import { ReactNode } from 'react';
 import { Buildings, Gear, SignOut, MagnifyingGlass, Bell, ChartPieSlice, ListDashes, UsersThree, Briefcase, Palette, ClockCounterClockwise, CreditCard } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext'; // CHANGED: Use Context
 
-export function AgencyLayout({ children }: { children: ReactNode }) {
+export function AgencyLayout({ children, onNavigate }: { children: ReactNode; onNavigate?: (page: string) => void }) {
   const { logout, user, currentOrg } = useAuth();
+  
+  const handleNavigation = (page: string) => {
+    if (onNavigate) {
+      onNavigate(page);
+    } else {
+      // Fallback: use hash-based navigation
+      window.location.hash = page;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex">
@@ -21,30 +30,30 @@ export function AgencyLayout({ children }: { children: ReactNode }) {
             {currentOrg?.name || 'Agency Console'}
           </div>
           
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-md">
+          <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-md">
             <ChartPieSlice size={18} /> Dashboard
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('clients')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <Briefcase size={18} /> Clients
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <ListDashes size={18} /> Domains
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('brand-kits')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <Palette size={18} /> Brand Kits
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('billing')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <CreditCard size={18} /> Billing
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('team')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
             <UsersThree size={18} /> Team
           </button>
           
           <div className="mt-8 border-t border-slate-100 pt-4">
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
+            <button onClick={() => handleNavigation('audit')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
                <ClockCounterClockwise size={18} /> Audit Log
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
+            <button onClick={() => handleNavigation('settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
                <Gear size={18} /> Settings
             </button>
           </div>
