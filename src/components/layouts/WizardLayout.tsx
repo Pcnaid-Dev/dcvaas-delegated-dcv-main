@@ -1,7 +1,11 @@
 import { ReactNode } from 'react';
 import { ShieldCheck, ChatCircleText } from '@phosphor-icons/react';
 
-export function WizardLayout({ children }: { children: ReactNode }) {
+export function WizardLayout({ children, currentPage }: { children: ReactNode; currentPage?: string }) {
+  // currentPage is accepted for consistency but not used in WizardLayout
+  // since it's a simple wizard flow without complex navigation
+  void currentPage;
+  
   return (
     <div className="min-h-screen bg-emerald-50/50 text-gray-800 font-sans">
       <header className="bg-white border-b border-emerald-100 py-4 px-6 flex justify-between items-center sticky top-0 z-20">

@@ -175,7 +175,11 @@ const AgencyDashboard = ({ onNavigate, onSelectDomain }: any) => {
       setDomainName('');
       toast.success("Client Domain Added");
     },
-    onError: (err: any) => toast.error(err.message || "Failed to add domain")
+    onError: (error: any) => {
+      const errorMsg = error?.message || "Failed to add domain";
+      console.error('Add domain error:', error);
+      toast.error(errorMsg);
+    }
   });
 
   return (
@@ -303,7 +307,11 @@ const AutoCertifyDashboard = ({ onNavigate, onSelectDomain }: any) => {
       onSelectDomain(data.id);
       onNavigate('domain-detail');
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (error: any) => {
+      const errorMsg = error?.message || "Failed to add domain";
+      console.error('Add domain error:', error);
+      toast.error(errorMsg);
+    }
   });
 
   const handleStart = () => {

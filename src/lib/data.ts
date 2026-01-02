@@ -23,7 +23,37 @@ const DEFAULT_ORG: Organization = {
   createdAt: new Date().toISOString(),
 };
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://dcv.pcnaid.com').replace(/\/+$/, '');
+/**
+ * Resolve brand-specific API base URL
+ * Falls back to VITE_API_BASE_URL or default production URL
+ */
+function resolveApiBaseUrl(): string {
+  // If explicit API base URL is set, use it
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+  }
+
+  // Otherwise, determine based on current hostname (brand)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase().replace(/^www\./, '');
+    
+    // Brand-specific API URLs - use endsWith to match subdomains
+    if (hostname === 'keylessssl.dev' || hostname.endsWith('.keylessssl.dev')) {
+      return 'https://api.keylessssl.dev';
+    }
+    if (hostname === 'delegatedssl.com' || hostname.endsWith('.delegatedssl.com')) {
+      return 'https://api.delegatedssl.com';
+    }
+    if (hostname === 'autocertify.net' || hostname.endsWith('.autocertify.net')) {
+      return 'https://api.autocertify.net';
+    }
+  }
+
+  // Default to production URL
+  return 'https://dcv.pcnaid.com';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const PLATFORM_OWNER_EMAIL = import.meta.env.VITE_PLATFORM_OWNER_EMAIL;
 
@@ -73,14 +103,28 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     let body: any;
+    let errorMessage = res.statusText;
+    
     try {
       body = await res.json();
+      
+      // Extract primary error message from multiple possible fields
+      const primaryError = body?.error || body?.message || body?.details;
+      errorMessage = primaryError || res.statusText;
+      
+      // Only append details if it exists and is different from the primary error message
+      if (body?.details && typeof body.details === 'string' && body.details !== primaryError) {
+        errorMessage = `${errorMessage} - ${body.details}`;
+      }
     } catch {
-      // ignore parse error
+      // If JSON parsing fails, clone the response and try to get text
+      // Note: We can't read the response body again here since it was already consumed
+      // by the failed json() call. We'll use the statusText as the error message.
+      errorMessage = res.statusText;
     }
-    const msg = body?.error || body?.message || res.statusText;
-    console.error('API error', { url, status: res.status, body });
-    throw new Error(`API ${res.status} ${msg}`);
+    
+    console.error('API error', { url, status: res.status, statusText: res.statusText, body });
+    throw new Error(`API ${res.status}: ${errorMessage}`);
   }
 
   if (res.status === 204) {
