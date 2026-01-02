@@ -42,5 +42,8 @@
   "faq_4_q": "Q: Will it work with my website builder / host?",
   "faq_4_a": "A: Works with Everything. WordPress, Shopify, Wix, ClickFunnels, and custom sites.",
   "faq_5_q": "Q: How will I know it’s fixed?",
-  "faq_5_a": "A: We show a live status, and you’ll see the green padlock once it’s active."
+  "faq_5_a": "A: We show a live status, and you’ll see the green padlock once it’s active.",
+  "cta_banner_headline": "Ready to secure your website?",
+  "cta_banner_subheadline": "Get the green padlock in under 5 minutes. No credit card required.",
+  "cta_banner_button": "Secure My Site Now"
 }

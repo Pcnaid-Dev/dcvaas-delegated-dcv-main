@@ -10,6 +10,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stepper } from '@/components/common';
 import { TerminalWindow } from '@/components/TerminalWindow';
+import { RFCArchitectureDiagram } from '@/components/RFCArchitectureDiagram';
 import { useBrand } from '@/contexts/BrandContext';
 import {
   Certificate,
@@ -20,6 +21,9 @@ import {
   Sparkle,
   Lock,
   Lightning,
+  ShieldCheck,
+  Buildings,
+  Terminal,
 } from '@phosphor-icons/react';
 
 type LandingPageProps = {
@@ -75,7 +79,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Certificate size={32} weight="bold" className="text-primary" />
+              {/* Brand-Specific Icon */}
+              {brand.brandId === 'autocertify.net' && <ShieldCheck size={32} weight="fill" className="text-primary" />}
+              {brand.brandId === 'delegatedssl.com' && <Buildings size={32} weight="bold" className="text-primary" />}
+              {brand.brandId === 'keylessssl.dev' && <Terminal size={32} weight="fill" className="text-primary" />}
               <span className="text-xl font-bold text-foreground">{brand.brandName}</span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
@@ -131,12 +138,71 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             {microcopy.hero_cta_note && (
               <p className="text-sm text-muted-foreground">{microcopy.hero_cta_note}</p>
             )}
+            
+            {/* KeylessSSL: Show pricing line under CTA */}
+            {brand.brandId === 'keylessssl.dev' && microcopy.hero_pricing_line && (
+              <p className="text-sm text-gray-400 font-mono mt-2">{microcopy.hero_pricing_line}</p>
+            )}
 
-{/* Terminal Window Animation */}
+            {/* Brand-Specific Hero Visual */}
             <div className="mt-16 relative">
-              <div className="mx-auto max-w-4xl transform scale-100 hover:scale-105 transition-transform duration-500 shadow-2xl rounded-lg overflow-hidden">
-                <TerminalWindow />
-              </div>
+              {/* KeylessSSL: Show RFC-style Architecture Diagram */}
+              {brand.brandId === 'keylessssl.dev' && (
+                <div className="mx-auto max-w-5xl">
+                  <RFCArchitectureDiagram />
+                </div>
+              )}
+              
+              {/* AutoCertify: Show Big Green Shield (No Terminal!) */}
+              {brand.brandId === 'autocertify.net' && (
+                <div className="mx-auto max-w-md">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full"></div>
+                    <div className="relative bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 p-12 border-4 border-emerald-100">
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center animate-pulse">
+                          <ShieldCheck size={72} weight="fill" className="text-white" />
+                        </div>
+                        <div className="text-center">
+                          <h3 className="text-2xl font-bold text-emerald-800 mb-2">Your Site Will Look Like This</h3>
+                          <p className="text-emerald-600 text-lg font-semibold">✓ Secure Connection</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* DelegatedSSL: Show Clean Dashboard Preview */}
+              {brand.brandId === 'delegatedssl.com' && (
+                <div className="mx-auto max-w-5xl">
+                  <Card className="p-8 bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-blue-100 shadow-2xl">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <Buildings size={32} weight="fill" className="text-blue-600" />
+                          <h3 className="text-xl font-bold text-slate-800">Agency Dashboard Preview</h3>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">127 Active</div>
+                          <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">15 Clients</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-xs text-slate-500">client{i}.com</span>
+                            </div>
+                            <div className="text-sm font-semibold text-slate-800">SSL Active</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -297,37 +363,75 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </Accordion>
         </section>
 
-        {/* CTA Banner */}
+        {/* CTA Banner - Brand Specific */}
         <section className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-y border-border py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <h2 className="text-4xl font-bold text-foreground">
-              Ready to automate your certificate lifecycle?
+              {microcopy.cta_banner_headline || 'Ready to get started?'}
             </h2>
             <p className="text-xl text-muted-foreground">
-              Start with 3 free domains. No credit card required.
+              {microcopy.cta_banner_subheadline || 'Start your journey today'}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
                 <Lightning size={20} weight="fill" className="mr-2" />
-                Get Started Free
+                {microcopy.cta_banner_button || 'Get Started Free'}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate('pricing')}>
                 View Pricing
               </Button>
             </div>
-            <div className="pt-6 flex items-center justify-center gap-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} weight="fill" className="text-success" />
-                <span>No credit card</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} weight="fill" className="text-success" />
-                <span>3 free domains</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} weight="fill" className="text-success" />
-                <span>5 min setup</span>
-              </div>
+            
+            {/* Brand-Specific Benefits */}
+            <div className="pt-6 flex items-center justify-center gap-8 text-sm text-muted-foreground flex-wrap">
+              {brand.brandId === 'keylessssl.dev' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>No credit card</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>3 free domains</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>5 min setup</span>
+                  </div>
+                </>
+              )}
+              {brand.brandId === 'autocertify.net' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>Zero downtime</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>Works with everything</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>24/7 support</span>
+                  </div>
+                </>
+              )}
+              {brand.brandId === 'delegatedssl.com' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>Bulk imports</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>White-label ready</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} weight="fill" className="text-success" />
+                    <span>Team management</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -337,7 +441,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Certificate size={24} weight="bold" className="text-primary" />
+              {/* Brand-Specific Footer Icon */}
+              {brand.brandId === 'autocertify.net' && <ShieldCheck size={24} weight="fill" className="text-primary" />}
+              {brand.brandId === 'delegatedssl.com' && <Buildings size={24} weight="bold" className="text-primary" />}
+              {brand.brandId === 'keylessssl.dev' && <Terminal size={24} weight="fill" className="text-primary" />}
               <span className="font-semibold text-foreground">{brand.brandName}</span>
             </div>
             <p className="text-sm text-muted-foreground">
