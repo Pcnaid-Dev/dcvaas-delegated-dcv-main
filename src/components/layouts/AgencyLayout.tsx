@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Buildings, Gear, SignOut, MagnifyingGlass, Bell, ChartPieSlice, ListDashes, UsersThree, Briefcase, Palette, ClockCounterClockwise, CreditCard } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext'; // CHANGED: Use Context
 
-export function AgencyLayout({ children, onNavigate }: { children: ReactNode; onNavigate?: (page: string) => void }) {
+export function AgencyLayout({ children, onNavigate, currentPage }: { children: ReactNode; onNavigate?: (page: string) => void; currentPage?: string }) {
   const { logout, user, currentOrg } = useAuth();
   
   const handleNavigation = (page: string) => {
@@ -12,6 +12,25 @@ export function AgencyLayout({ children, onNavigate }: { children: ReactNode; on
       // Fallback: use hash-based navigation
       window.location.hash = page;
     }
+  };
+
+  // Helper function to determine if a nav item is active
+  const isActive = (page: string) => {
+    if (!currentPage) return false;
+    // Check exact match or common aliases
+    if (currentPage === page) return true;
+    // "overview" and "dashboard" are treated as the same
+    if ((currentPage === 'overview' || currentPage === 'home') && page === 'dashboard') return true;
+    return false;
+  };
+
+  // Helper to get nav button classes
+  const getNavClasses = (page: string) => {
+    const baseClasses = "w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors";
+    if (isActive(page)) {
+      return `${baseClasses} text-blue-700 bg-blue-50`;
+    }
+    return `${baseClasses} text-slate-600 hover:bg-slate-50 hover:text-blue-600`;
   };
 
   return (
@@ -30,30 +49,30 @@ export function AgencyLayout({ children, onNavigate }: { children: ReactNode; on
             {currentOrg?.name || 'Agency Console'}
           </div>
           
-          <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-md">
+          <button onClick={() => handleNavigation('dashboard')} className={getNavClasses('dashboard')}>
             <ChartPieSlice size={18} /> Dashboard
           </button>
-          <button onClick={() => handleNavigation('clients')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('clients')} className={getNavClasses('clients')}>
             <Briefcase size={18} /> Clients
           </button>
-          <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('dashboard')} className={getNavClasses('domains')}>
             <ListDashes size={18} /> Domains
           </button>
-          <button onClick={() => handleNavigation('brand-kits')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('brand-kits')} className={getNavClasses('brand-kits')}>
             <Palette size={18} /> Brand Kits
           </button>
-          <button onClick={() => handleNavigation('billing')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('billing')} className={getNavClasses('billing')}>
             <CreditCard size={18} /> Billing
           </button>
-          <button onClick={() => handleNavigation('team')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-blue-600 transition-colors">
+          <button onClick={() => handleNavigation('team')} className={getNavClasses('team')}>
             <UsersThree size={18} /> Team
           </button>
           
           <div className="mt-8 border-t border-slate-100 pt-4">
-            <button onClick={() => handleNavigation('audit')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
+            <button onClick={() => handleNavigation('audit')} className={getNavClasses('audit')}>
                <ClockCounterClockwise size={18} /> Audit Log
             </button>
-            <button onClick={() => handleNavigation('settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-colors">
+            <button onClick={() => handleNavigation('settings')} className={getNavClasses('settings')}>
                <Gear size={18} /> Settings
             </button>
           </div>

@@ -102,7 +102,7 @@ function AppContent() {
 
   // The Magic: Wrap protected content in the Persona-Specific Layout
   return (
-    <BrandLayout onNavigate={setCurrentPage}>
+    <BrandLayout onNavigate={setCurrentPage} currentPage={currentPage}>
       {renderPage()}
     </BrandLayout>
   );

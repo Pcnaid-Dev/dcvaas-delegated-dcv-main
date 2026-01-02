@@ -117,7 +117,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Button size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
-                {microcopy.hero_primary_cta || 'Get Started Free'}
+                {microcopy.hero_primary_cta || microcopy.cta_banner_button || 'Get Started Free'}
               </Button>
               <Button size="lg" variant="outline" onClick={() => onNavigate(docsRoute)}>
                 {microcopy.hero_secondary_cta || 'Read Documentation'}

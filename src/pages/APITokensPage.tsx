@@ -47,8 +47,10 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
       setTokenName('');
       toast.success('API token created');
     },
-    onError: () => {
-      toast.error('Failed to create token');
+    onError: (error: any) => {
+      const errorMsg = error?.message || 'Failed to create token';
+      console.error('Token creation error:', error);
+      toast.error(errorMsg);
     },
   });
 
@@ -59,8 +61,10 @@ export function APITokensPage({ onNavigate }: APITokensPageProps) {
       queryClient.invalidateQueries({ queryKey: ['apiTokens', currentOrg?.id] });
       toast.success('Token deleted');
     },
-    onError: () => {
-      toast.error('Failed to delete token');
+    onError: (error: any) => {
+      const errorMsg = error?.message || 'Failed to delete token';
+      console.error('Token deletion error:', error);
+      toast.error(errorMsg);
     },
   });
 
