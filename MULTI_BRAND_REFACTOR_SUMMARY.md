@@ -13,10 +13,10 @@ Successfully implemented multi-brand anti-drift enforcement to ensure AutoCertif
   - **AutoCertify**: Big Green Check shield animation (no terminal!)
   - **KeylessSSL**: Terminal/CLI animation (dev-focused)
   - **DelegatedSSL**: Clean dashboard preview
-  
+
 #### Brand-Specific Icons:
 - AutoCertify: ShieldCheck icon
-- DelegatedSSL: Buildings icon  
+- DelegatedSSL: Buildings icon
 - KeylessSSL: Terminal icon
 
 #### Brand-Specific CTAs:
@@ -171,7 +171,7 @@ export VITE_BRAND_OVERRIDE=autocertify.net
 npm run dev
 # or visit: http://localhost:5173/?brand=autocertify.net
 
-# Test KeylessSSL  
+# Test KeylessSSL
 export VITE_BRAND_OVERRIDE=keylessssl.dev
 npm run dev
 # or visit: http://localhost:5173/?brand=keylessssl.dev
