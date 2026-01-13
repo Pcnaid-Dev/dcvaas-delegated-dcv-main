@@ -56,7 +56,7 @@
         "date-fns": "^3.6.0",
         "embla-carousel-react": "^8.5.2",
         "framer-motion": "^12.6.2",
-        "hono": "^4.10.7",
+        "hono": "^4.11.4",
         "input-otp": "^1.4.2",
         "lucide-react": "^0.484.0",
         "marked": "^15.0.7",
