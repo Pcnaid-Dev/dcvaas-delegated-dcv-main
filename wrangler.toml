@@ -4,6 +4,8 @@ compatibility_date = "2024-09-23"
 account_id = "fc84e278ed073c8a37e8e2c6990cdb66"
 workers_dev = true
 
+# Build this workers.dev deployment with
+# VITE_API_BASE_URL=https://dcvaas-api.broker-fc8.workers.dev.
 # This uploads your "dist" folder (the React build) to Cloudflare
 [assets]
 directory = "./dist"

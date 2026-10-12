@@ -86,9 +86,11 @@ Visit `http://localhost:5173` and sign in with GitHub.
 
 ## Deployment
 
-The `dcvaas-frontend` and `dcvaas-api` Workers deploy from the **Startups** Cloudflare account (`fc84e278ed073c8a37e8e2c6990cdb66`). The API `DB` binding uses `dcvaas-db` with database ID `ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9`.
+The `dcvaas-api`, `dcvaas-cron`, `dcvaas-consumer`, and `dcvaas-dlq` Workers, plus `dcvaas-frontend`, deploy from the **Startups** Cloudflare account (`fc84e278ed073c8a37e8e2c6990cdb66`). All four backend Workers share the `dcvaas-db` D1 database with ID `ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9`.
 
-Default deployments use `workers.dev` until the `pcnaid.com` zone is moved to the Startups account. After the zone is staged, replace the documented old zone ID in `workers/api/wrangler.toml`, then deploy the custom-domain configurations with `wrangler deploy --env production` from the repository root and from `workers/api`.
+The staging endpoints are `https://dcvaas-frontend.broker-fc8.workers.dev` and `https://dcvaas-api.broker-fc8.workers.dev`. Build the staging frontend with `VITE_API_BASE_URL=https://dcvaas-api.broker-fc8.workers.dev`; `.env.example` records this build value. If the variable is omitted, the frontend keeps its `https://dcv.pcnaid.com` production fallback.
+
+At the `pcnaid.com` zone cutover, replace the documented old zone ID in `workers/api/wrangler.toml`, rebuild the frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com` (or omit it to use the fallback), and remove the workers.dev frontend origin from both API `CORS_ALLOW_ORIGINS` blocks after custom-domain traffic is live. Then deploy the frontend and API custom-domain configurations with `wrangler deploy --env production` from the repository root and from `workers/api`.
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for bindings, zone staging, and required secret names.
 
