@@ -25,7 +25,8 @@ const DEFAULT_ORG: Organization = {
 
 /**
  * Resolve brand-specific API base URL
- * Falls back to VITE_API_BASE_URL or default production URL
+ * Uses the build-time VITE_API_BASE_URL when set (including workers.dev staging).
+ * Otherwise resolves brand URLs and finally falls back to the production URL.
  */
 function resolveApiBaseUrl(): string {
   // If explicit API base URL is set, use it

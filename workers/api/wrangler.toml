@@ -1,28 +1,55 @@
 name = "dcvaas-api"
 main = "src/index.ts"
 compatibility_date = "2025-12-03"
-
-[[routes]]
-pattern = "dcv.pcnaid.com/api/*"
-zone_name = "pcnaid.com"
-
-[[routes]]
-pattern = "dcv.pcnaid.com/health"
-zone_name = "pcnaid.com"
+account_id = "fc84e278ed073c8a37e8e2c6990cdb66"
+workers_dev = true
 
 [vars]
 # Your SaaS Fallback origin (e.g., proxy.dcvaas.com)
 SAAS_CNAME_TARGET = "dcv.pcnaid.com"
+# IMPORTANT: This is the OLD Pcnaid account zone ID. Replace it with the
+# pcnaid.com zone ID in Startups when that zone is staged there.
 CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
 
 # Comma-separated list for CORS
-CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"
+CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcvaas-frontend.broker-fc8.workers.dev,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "dcvaas-db"
-database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
+database_id = "ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9"
 
 [[queues.producers]]
+binding = "QUEUE"
+queue = "dcvaas-jobs"
+
+[env.production]
+name = "dcvaas-api"
+workers_dev = false
+
+[[env.production.routes]]
+pattern = "dcv.pcnaid.com/api/*"
+zone_name = "pcnaid.com"
+
+[[env.production.routes]]
+pattern = "dcv.pcnaid.com/health"
+zone_name = "pcnaid.com"
+
+[env.production.vars]
+# Your SaaS Fallback origin (e.g., proxy.dcvaas.com)
+SAAS_CNAME_TARGET = "dcv.pcnaid.com"
+# IMPORTANT: This is the OLD Pcnaid account zone ID. Replace it with the
+# pcnaid.com zone ID in Startups when that zone is staged there.
+CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
+
+# Comma-separated list for CORS
+CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcvaas-frontend.broker-fc8.workers.dev,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "dcvaas-db"
+database_id = "ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9"
+
+[[env.production.queues.producers]]
 binding = "QUEUE"
 queue = "dcvaas-jobs"

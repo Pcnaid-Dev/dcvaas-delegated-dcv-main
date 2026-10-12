@@ -1,11 +1,12 @@
 name = "dcvaas-cron"
 main = "src/index.ts"
 compatibility_date = "2024-05-01"
+account_id = "fc84e278ed073c8a37e8e2c6990cdb66"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "dcvaas-db"
-database_id = "e9089f74-a448-48c6-994b-04eb0c2fc1df"
+database_id = "ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9"
 
 [[queues.producers]]
 binding = "QUEUE"
