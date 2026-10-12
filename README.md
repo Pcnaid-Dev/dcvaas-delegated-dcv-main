@@ -84,6 +84,14 @@ npm run dev
 
 Visit `http://localhost:5173` and sign in with GitHub.
 
+## Deployment
+
+The `dcvaas-frontend` and `dcvaas-api` Workers deploy from the **Startups** Cloudflare account (`fc84e278ed073c8a37e8e2c6990cdb66`). The API `DB` binding uses `dcvaas-db` with database ID `ee1c72f2-0fe3-4d38-8cb8-8c749be9b9f9`.
+
+Default deployments use `workers.dev` until the `pcnaid.com` zone is moved to the Startups account. After the zone is staged, replace the documented old zone ID in `workers/api/wrangler.toml`, then deploy the custom-domain configurations with `wrangler deploy --env production` from the repository root and from `workers/api`.
+
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for bindings, zone staging, and required secret names.
+
 ### Quick Demo
 
 1.  **Sign In**: Click "Sign In with GitHub"
