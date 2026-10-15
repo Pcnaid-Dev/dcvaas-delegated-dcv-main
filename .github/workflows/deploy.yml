@@ -74,6 +74,9 @@ jobs:
 
   deploy:
     name: deploy
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     needs: verify
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
