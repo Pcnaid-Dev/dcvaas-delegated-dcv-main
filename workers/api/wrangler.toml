@@ -7,9 +7,8 @@ workers_dev = true
 [vars]
 # Your SaaS Fallback origin (e.g., proxy.dcvaas.com)
 SAAS_CNAME_TARGET = "dcv.pcnaid.com"
-# IMPORTANT: This is the OLD Pcnaid account zone ID. Replace it with the
-# pcnaid.com zone ID in Startups when that zone is staged there.
-CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
+# Startups account pcnaid.com zone.
+CLOUDFLARE_ZONE_ID = "67de79c1ed7877ad11c1518cf8765680"
 
 # Comma-separated list for CORS
 CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcvaas-frontend.broker-fc8.workers.dev,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"
@@ -38,9 +37,8 @@ zone_name = "pcnaid.com"
 [env.production.vars]
 # Your SaaS Fallback origin (e.g., proxy.dcvaas.com)
 SAAS_CNAME_TARGET = "dcv.pcnaid.com"
-# IMPORTANT: This is the OLD Pcnaid account zone ID. Replace it with the
-# pcnaid.com zone ID in Startups when that zone is staged there.
-CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
+# Startups account pcnaid.com zone.
+CLOUDFLARE_ZONE_ID = "67de79c1ed7877ad11c1518cf8765680"
 
 # Comma-separated list for CORS
 CORS_ALLOW_ORIGINS = "http://localhost:5000,https://dcvaas-frontend.broker-fc8.workers.dev,https://dcv.pcnaid.com,https://cert.pcnaid.com,https://autocertify.net,https://www.autocertify.net,https://delegatedssl.com,https://www.delegatedssl.com,https://keylessssl.dev,https://www.keylessssl.dev"

@@ -90,9 +90,9 @@ The `dcvaas-api`, `dcvaas-cron`, `dcvaas-consumer`, and `dcvaas-dlq` Workers, pl
 
 The staging endpoints are `https://dcvaas-frontend.broker-fc8.workers.dev` and `https://dcvaas-api.broker-fc8.workers.dev`. Build the staging frontend with `VITE_API_BASE_URL=https://dcvaas-api.broker-fc8.workers.dev`; `.env.example` records this build value. If the variable is omitted, the frontend keeps its `https://dcv.pcnaid.com` production fallback.
 
-At the `pcnaid.com` zone cutover, replace the documented old zone ID in `workers/api/wrangler.toml`, rebuild the frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com` (or omit it to use the fallback), and remove the workers.dev frontend origin from both API `CORS_ALLOW_ORIGINS` blocks after custom-domain traffic is live. Then deploy the frontend and API custom-domain configurations with `wrangler deploy --env production` from the repository root and from `workers/api`.
+The `pcnaid.com` zone now uses the Startups zone ID recorded in the API and consumer Wrangler configs. Build the production frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com` (or omit it to use the fallback), and remove the workers.dev frontend origin from both API `CORS_ALLOW_ORIGINS` blocks after custom-domain traffic is live. Deploy the frontend and API custom-domain configurations with `wrangler deploy --env production` from the repository root and from `workers/api`.
 
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for bindings, zone staging, and required secret names.
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for bindings, zone configuration, and required secret names.
 
 ### Quick Demo
 

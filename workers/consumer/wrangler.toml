@@ -16,4 +16,4 @@ max_retries = 3
 dead_letter_queue = "dcvaas-jobs-dlq"
 
 [vars]
-CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"
+CLOUDFLARE_ZONE_ID = "67de79c1ed7877ad11c1518cf8765680"
