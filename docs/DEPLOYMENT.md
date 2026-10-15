@@ -36,6 +36,8 @@ The `dcvaas-frontend` and `dcvaas-api` production environments set `workers_dev 
 
 `CLOUDFLARE_ZONE_ID = "67de79c1ed7877ad11c1518cf8765680"` in both API variable blocks and the consumer config is the Startups `pcnaid.com` zone ID.
 
+certui.pcnaid.com is served by the same frontend Worker (dcvaas-ui retired).
+
 1. Rebuild the frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com`, or omit the variable to use the production fallback.
 2. In both `[vars]` and `[env.production.vars]`, remove `https://dcvaas-frontend.broker-fc8.workers.dev` from `CORS_ALLOW_ORIGINS` after the frontend custom domain is live; retain the custom-domain origins.
 3. Deploy the frontend custom domain from the repository root with `wrangler deploy --env production`.
