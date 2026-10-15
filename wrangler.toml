@@ -19,6 +19,10 @@ workers_dev = false
 pattern = "cert.pcnaid.com/*"
 zone_name = "pcnaid.com"
 
+[[env.production.routes]]
+pattern = "certui.pcnaid.com/*"
+zone_name = "pcnaid.com"
+
 [env.production.assets]
 directory = "./dist"
 binding = "ASSETS"
