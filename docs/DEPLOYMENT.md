@@ -19,7 +19,7 @@ These Workers deploy from the **Startups** Cloudflare account:
 
 ## Deployment environments
 
-Use these staging endpoints until the `pcnaid.com` zone exists in the Startups account:
+These staging endpoints remain available for non-production validation:
 
 - Frontend: `https://dcvaas-frontend.broker-fc8.workers.dev`
 - API: `https://dcvaas-api.broker-fc8.workers.dev`
@@ -32,15 +32,14 @@ VITE_API_BASE_URL=https://dcvaas-api.broker-fc8.workers.dev npm run build
 
 The same staging value is recorded in `.env.example`. When `VITE_API_BASE_URL` is absent, the code retains `https://dcv.pcnaid.com` as the production fallback.
 
-The `dcvaas-frontend` and `dcvaas-api` production environments set `workers_dev = false` and contain the `pcnaid.com` custom routes. After the zone is staged in Startups:
+The `dcvaas-frontend` and `dcvaas-api` production environments set `workers_dev = false` and contain the `pcnaid.com` custom routes. The zone is now hosted in the Startups account:
 
-1. Replace `CLOUDFLARE_ZONE_ID = "466bdf66d7498a2167140d334df52787"` in both API variable blocks with the `pcnaid.com` zone ID from the Startups account.
-2. Rebuild the frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com`, or omit the variable to use the production fallback.
-3. In both `[vars]` and `[env.production.vars]`, remove `https://dcvaas-frontend.broker-fc8.workers.dev` from `CORS_ALLOW_ORIGINS` after the frontend custom domain is live; retain the custom-domain origins.
-4. Deploy the frontend custom domain from the repository root with `wrangler deploy --env production`.
-5. Deploy the API custom domains from `workers/api` with `wrangler deploy --env production`.
+`CLOUDFLARE_ZONE_ID = "67de79c1ed7877ad11c1518cf8765680"` in both API variable blocks and the consumer config is the Startups `pcnaid.com` zone ID.
 
-In `workers/api/wrangler.toml`, the old zone ID remains as a documented staging placeholder. Do not use the production environment before replacing it.
+1. Rebuild the frontend with `VITE_API_BASE_URL=https://dcv.pcnaid.com`, or omit the variable to use the production fallback.
+2. In both `[vars]` and `[env.production.vars]`, remove `https://dcvaas-frontend.broker-fc8.workers.dev` from `CORS_ALLOW_ORIGINS` after the frontend custom domain is live; retain the custom-domain origins.
+3. Deploy the frontend custom domain from the repository root with `wrangler deploy --env production`.
+4. Deploy the API custom domains from `workers/api` with `wrangler deploy --env production`.
 
 ## API secrets
 
